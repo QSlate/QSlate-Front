@@ -18,11 +18,11 @@ export default function Navbar() {
                 </Link>
 
                 {/* Center links next to logo */}
-                <div className="flex items-center gap-4 sm:gap-6">
-                    <Link href="/lab" className="text-gray-300 hover:text-white transition-colors text-md font-medium">
+                <div className="flex items-center gap-4 sm:gap-10">
+                    <Link href="/lab" className="text-gray-300 hover:text-white transition-colors text-base font-semibold">
                         Lab
                     </Link>
-                    <Link href="/script" className="text-gray-300 hover:text-white transition-colors text-md font-medium">
+                    <Link href="/script" className="text-gray-300 hover:text-white transition-colors text-base font-semibold">
                         Script
                     </Link>
                 </div>

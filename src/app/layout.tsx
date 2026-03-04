@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "QSlate",
-  description: "Dashboard de backtesting hyper modulaire",
+  description: "Highly modular backtesting dashboard",
 };
 
 export default function RootLayout({
