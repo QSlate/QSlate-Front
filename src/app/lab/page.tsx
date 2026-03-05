@@ -5,6 +5,7 @@ import { BacktestResult } from "../../types/backtest";
 import { MetricWidget } from "../../components/widgets/MetricWidget";
 import { AssetWidget } from "../../components/widgets/AssetWidget";
 import { calculateProgress } from "../../utils/metrics";
+import { TradingViewChart } from "../../components/widgets/TradingViewChart";
 
 const fetchMockBacktestData = async (): Promise<BacktestResult> => {
     return new Promise((resolve) => {
@@ -25,6 +26,8 @@ const fetchMockBacktestData = async (): Promise<BacktestResult> => {
                     margin: 8.70,
                 },
                 chartData: [
+                    { time: "2023-12-18", open: 175, high: 182, low: 174, close: 181 },
+                    { time: "2023-12-25", open: 181, high: 183, low: 178, close: 180 },
                     { time: "2024-01-01", open: 180, high: 185, low: 178, close: 184 },
                     { time: "2024-01-08", open: 184, high: 190, low: 182, close: 189 },
                     { time: "2024-01-15", open: 188, high: 195, low: 187, close: 192 },
@@ -65,8 +68,8 @@ export default function LabPage() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Left Column (3 cols) */}
                 <div className="lg:col-span-3">
-                    <div className="bg-[#1E2229] rounded-xl h-full min-h-[500px] flex items-center justify-center border border-gray-800 text-white">
-                        TradingView Chart Component
+                    <div className="bg-[#1E2229] rounded-xl h-full min-h-[500px] w-full overflow-hidden border border-gray-800">
+                        <TradingViewChart symbol={`NASDAQ:${backtestData.asset.symbol}`} />
                     </div>
                 </div>
 
