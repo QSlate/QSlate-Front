@@ -69,7 +69,7 @@ export default function LabPage() {
                 {/* Left Column (3 cols) */}
                 <div className="lg:col-span-3">
                     <div className="bg-[#1E2229] rounded-xl h-full min-h-[500px] w-full overflow-hidden border border-gray-800">
-                        <TradingViewChart symbol="NASDAQ:AAPL" />
+                        <TradingViewChart symbol={`NASDAQ:${backtestData.asset.symbol}`} />
                     </div>
                 </div>
 

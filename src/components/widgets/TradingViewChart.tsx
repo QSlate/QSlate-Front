@@ -1,18 +1,24 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 
 interface TradingViewChartProps {
     symbol: string;
 }
 
-export const TradingViewChart = ({ symbol }: TradingViewChartProps) => {
+export const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol }) => {
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (!containerRef.current) return;
+        const container = containerRef.current;
+        if (!container) return;
 
-        containerRef.current.innerHTML = '';
+        container.innerHTML = '';
+
+        if (!symbol || typeof symbol !== 'string' || symbol.trim() === '') {
+            console.warn("TradingViewChart: Invalid symbol provided.");
+            return;
+        }
 
         const script = document.createElement("script");
         script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
@@ -37,16 +43,22 @@ export const TradingViewChart = ({ symbol }: TradingViewChartProps) => {
             "support_host": "https://www.tradingview.com"
         });
 
-        containerRef.current.appendChild(script);
+        const widgetContainer = document.createElement("div");
+        widgetContainer.className = "tradingview-widget-container__widget";
+        widgetContainer.style.height = "100%";
+        widgetContainer.style.width = "100%";
+
+        container.appendChild(widgetContainer);
+        container.appendChild(script);
 
         return () => {
-            if (containerRef.current) {
-                containerRef.current.innerHTML = '';
+            if (container) {
+                container.innerHTML = '';
             }
         };
     }, [symbol]);
 
     return (
-        <div className="w-full h-full" ref={containerRef} />
+        <div className="tradingview-widget-container w-full h-full" ref={containerRef} />
     );
 };
