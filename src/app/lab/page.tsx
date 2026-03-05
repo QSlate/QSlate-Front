@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { BacktestResult } from "../../types/backtest";
+import { MetricWidget } from "../../components/widgets/MetricWidget";
+import { AssetWidget } from "../../components/widgets/AssetWidget";
+import { calculateProgress } from "../../utils/metrics";
 
 const fetchMockBacktestData = async (): Promise<BacktestResult> => {
     return new Promise((resolve) => {
@@ -58,6 +61,30 @@ export default function LabPage() {
         return <div className="p-4 text-white">No data available.</div>;
     }
     return (
-        <pre className="p-4 text-white">{JSON.stringify(backtestData, null, 2)}</pre>
+        <div className="p-6 flex flex-col gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                {/* Left Column (3 cols) */}
+                <div className="lg:col-span-3">
+                    <div className="bg-[#1E2229] rounded-xl h-full min-h-[500px] flex items-center justify-center border border-gray-800 text-white">
+                        TradingView Chart Component
+                    </div>
+                </div>
+
+                {/* Right Column (1 col) */}
+                <div className="lg:col-span-1 flex flex-col gap-6">
+                    <AssetWidget asset={backtestData.asset} chartData={backtestData.chartData} />
+                    <MetricWidget title="Sharpe" value={backtestData.metrics.sharpe} visualType="segmented" progressValue={calculateProgress(backtestData.metrics.sharpe, -2, 3)} />
+                    <MetricWidget title="Fitness" value={backtestData.metrics.fitness} subValue="/ 3" visualType="segmented" progressValue={calculateProgress(backtestData.metrics.fitness, -2, 3)} />
+                    <MetricWidget title="Turnover" value={`${backtestData.metrics.turnover} %`} visualType="progress" progressValue={calculateProgress(backtestData.metrics.turnover, 0, 100)} />
+                </div>
+            </div>
+
+            {/* Bottom Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <MetricWidget title="Drawdown" value={`${backtestData.metrics.drawdown} %`} visualType="segmented" progressValue={calculateProgress(backtestData.metrics.drawdown, 0, 100, true)} />
+                <MetricWidget title="Returns" value={`${backtestData.metrics.returns} %`} visualType="progress" progressValue={calculateProgress(backtestData.metrics.returns, 0, 100)} />
+                <MetricWidget title="Margin" value={`${backtestData.metrics.margin} %`} visualType="progress" progressValue={calculateProgress(backtestData.metrics.margin, 0, 100)} />
+            </div>
+        </div>
     );
 }
