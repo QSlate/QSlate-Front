@@ -23,6 +23,9 @@ export const MetricWidget: React.FC<MetricWidgetProps> = ({
                 <h3 className="text-sm text-gray-400 mb-1">{title}</h3>
                 <div className="flex items-baseline space-x-2">
                     <span className="text-3xl font-bold text-white">{value}</span>
+                    {trend === 'up' && <span className="text-[#00E676] text-sm font-bold">▲</span>}
+                    {trend === 'down' && <span className="text-red-500 text-sm font-bold">▼</span>}
+                    {trend === 'neutral' && <span className="text-gray-500 text-sm font-bold">-</span>}
                     {subValue && <span className="text-lg text-gray-500">{subValue}</span>}
                 </div>
             </div>
@@ -46,7 +49,7 @@ export const MetricWidget: React.FC<MetricWidgetProps> = ({
                             <div className="bg-green-500 h-full flex-1" />
                             <div
                                 className="absolute top-1/2 -translate-y-1/2 w-1.5 h-3.5 bg-white rounded-full shadow-sm"
-                                style={{ left: `calc(${Math.min(Math.max(progressValue, 0), 100)}% - 3px)` }}
+                                style={{ left: `clamp(0px, calc(${Math.min(Math.max(progressValue, 0), 100)}% - 3px), calc(100% - 6px))` }}
                             />
                         </div>
                     )}

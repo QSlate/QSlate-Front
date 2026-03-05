@@ -6,9 +6,11 @@ export const calculateProgress = (
 ): number => {
     if (max === min) return 0;
 
-    const clampedValue = Math.max(min, Math.min(max, value));
+    const lower = Math.min(min, max);
+    const upper = Math.max(min, max);
+    const clampedValue = Math.max(lower, Math.min(upper, value));
 
-    let percentage = ((clampedValue - min) / (max - min)) * 100;
+    let percentage = ((clampedValue - lower) / (upper - lower)) * 100;
 
     if (inverse) {
         percentage = 100 - percentage;

@@ -15,8 +15,17 @@ export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData }) =>
         const validPrices = chartData.filter(d => d.close !== undefined).map(d => d.close as number);
 
         if (validPrices.length > 1) {
-            const minPrice = Math.min(...validPrices);
-            const maxPrice = Math.max(...validPrices);
+            let minPrice = validPrices[0];
+            let maxPrice = validPrices[0];
+            for (let i = 1; i < validPrices.length; i++) {
+                const price = validPrices[i];
+                if (price < minPrice) {
+                    minPrice = price;
+                }
+                if (price > maxPrice) {
+                    maxPrice = price;
+                }
+            }
             const range = maxPrice - minPrice || 1;
 
             const width = 100;
@@ -50,6 +59,8 @@ export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData }) =>
                     viewBox="0 0 100 40"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                    focusable="false"
                 >
                     <path
                         d={sparklinePath}
