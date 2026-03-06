@@ -64,8 +64,8 @@ function DashboardContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
-    const urlSymbol = searchParams.get("symbol") || "AAPL";
-    const [currentSymbol, setCurrentSymbol] = useState(urlSymbol);
+    const currentSymbol = searchParams.get("symbol") || "AAPL";
+    const currentExchange = searchParams.get("exchange") || "NASDAQ";
     const [backtestData, setBacktestData] = useState<BacktestResult | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isSymbolModalOpen, setIsSymbolModalOpen] = useState(false);
@@ -73,6 +73,7 @@ function DashboardContent() {
     useEffect(() => {
         const loadData = async () => {
             setIsLoading(true);
+            setBacktestData(null);
             try {
                 const data = await fetchMockBacktestData(currentSymbol);
                 setBacktestData(data);
@@ -85,10 +86,9 @@ function DashboardContent() {
         loadData();
     }, [currentSymbol]);
 
-    const handleSymbolChange = (symbol: string) => {
+    const handleSymbolChange = (symbol: string, exchange: string) => {
         setIsSymbolModalOpen(false);
-        setCurrentSymbol(symbol);
-        router.push("/lab?symbol=" + symbol);
+        router.push("/lab?symbol=" + encodeURIComponent(symbol) + "&exchange=" + encodeURIComponent(exchange));
     };
 
     if (isLoading && !backtestData) {
@@ -111,7 +111,7 @@ function DashboardContent() {
                 {/* Left Column (3 cols) */}
                 <div className="lg:col-span-3">
                     <div className="bg-[#1E2229] rounded-xl h-full min-h-[500px] w-full overflow-hidden border border-gray-800">
-                        <TradingViewChart symbol={`NASDAQ:${currentSymbol}`} />
+                        <TradingViewChart symbol={`${currentExchange}:${currentSymbol}`} />
                     </div>
                 </div>
 

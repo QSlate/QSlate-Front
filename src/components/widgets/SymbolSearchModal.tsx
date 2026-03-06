@@ -23,7 +23,7 @@ const mockSymbols: SearchSymbol[] = [
 interface SymbolSearchModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSelectSymbol: (symbol: string) => void;
+    onSelectSymbol: (symbol: string, exchange: string) => void;
 }
 
 export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({ isOpen, onClose, onSelectSymbol }) => {
@@ -31,23 +31,31 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({ isOpen, on
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
+        let timeoutId: number;
         if (isOpen) {
-            setTimeout(() => inputRef.current?.focus(), 100);
+            timeoutId = window.setTimeout(() => inputRef.current?.focus(), 100);
             setSearchQuery("");
         }
+        return () => {
+            if (timeoutId) clearTimeout(timeoutId);
+        };
     }, [isOpen]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
         };
+        let originalOverflow = '';
         if (isOpen) {
             window.addEventListener('keydown', handleKeyDown);
+            originalOverflow = document.body.style.overflow;
             document.body.style.overflow = 'hidden';
         }
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
-            document.body.style.overflow = 'auto';
+            if (isOpen) {
+                document.body.style.overflow = originalOverflow;
+            }
         };
     }, [isOpen, onClose]);
 
@@ -59,11 +67,17 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({ isOpen, on
     );
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={onClose}
+        >
             <div
                 className="bg-[#1E2229] w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col border border-gray-800"
                 style={{ height: '80vh', maxHeight: '700px' }}
                 onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Search for a symbol"
             >
                 {/* Header / Search Input */}
                 <div className="flex items-center p-4 border-b border-gray-800">
@@ -73,7 +87,7 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({ isOpen, on
                     <input
                         ref={inputRef}
                         type="text"
-                        placeholder="Recherche de symbole"
+                        placeholder="Search for a symbol"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="flex-1 bg-transparent text-white text-xl outline-none placeholder-gray-500 font-medium"
@@ -81,6 +95,7 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({ isOpen, on
                     <button
                         onClick={onClose}
                         className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-800 transition-colors ml-2"
+                        aria-label="Close"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -90,20 +105,20 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({ isOpen, on
 
                 {/* Tabs Faux */}
                 <div className="flex px-4 py-2 border-b border-gray-800 overflow-x-auto space-x-6 text-sm font-medium">
-                    <button className="text-white border-b-2 border-blue-500 pb-2 whitespace-nowrap">Tous</button>
-                    <button className="text-gray-400 hover:text-gray-300 pb-2 whitespace-nowrap">Actions</button>
-                    <button className="text-gray-400 hover:text-gray-300 pb-2 whitespace-nowrap">Fonds</button>
+                    <button className="text-white border-b-2 border-blue-500 pb-2 whitespace-nowrap">All</button>
+                    <button className="text-gray-400 hover:text-gray-300 pb-2 whitespace-nowrap">Stocks</button>
+                    <button className="text-gray-400 hover:text-gray-300 pb-2 whitespace-nowrap">Funds</button>
                     <button className="text-gray-400 hover:text-gray-300 pb-2 whitespace-nowrap">Crypto</button>
                     <button className="text-gray-400 hover:text-gray-300 pb-2 whitespace-nowrap">Indices</button>
                 </div>
 
                 {/* Symbols List */}
-                <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto py-2">
                     {filteredSymbols.length > 0 ? (
-                        filteredSymbols.map((item, idx) => (
+                        filteredSymbols.map((item) => (
                             <div
-                                key={`${item.symbol}-${idx}`}
-                                onClick={() => onSelectSymbol(item.symbol)}
+                                key={item.symbol}
+                                onClick={() => onSelectSymbol(item.symbol, item.exchange)}
                                 className="flex items-center justify-between px-6 py-3 hover:bg-[#2A2E35] cursor-pointer transition-colors group"
                             >
                                 <div className="flex items-center space-x-4">
@@ -129,14 +144,11 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({ isOpen, on
                         ))
                     ) : (
                         <div className="p-8 text-center text-gray-500">
-                            Aucun symbole ne correspond à vos critères
+                            No symbols match your criteria
                         </div>
                     )}
                 </div>
             </div>
-
-            {/* Click outside to close trigger */}
-            <div className="absolute inset-0 z-[-1]" onClick={onClose}></div>
         </div>
     );
 };

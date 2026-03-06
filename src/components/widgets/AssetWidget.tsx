@@ -44,10 +44,12 @@ export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData, onCl
         }
     }
 
+    const Container = onClick ? 'button' : 'div';
+
     return (
-        <div
+        <Container
             onClick={onClick}
-            className={`bg-[#1E2229] rounded-xl p-5 flex items-center justify-between h-full min-h-[100px] ${onClick ? 'cursor-pointer hover:bg-[#2A2E35] transition-colors shadow-sm hover:shadow-md border border-transparent hover:border-gray-700' : ''}`}
+            className={`bg-[#1E2229] rounded-xl p-5 flex items-center justify-between h-full min-h-[100px] w-full text-left ${onClick ? 'cursor-pointer hover:bg-[#2A2E35] transition-colors shadow-sm hover:shadow-md border border-transparent hover:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500' : ''}`}
         >
             {/* Left: Symbol & Name */}
             <div className="flex flex-col">
@@ -85,6 +87,6 @@ export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData, onCl
                     {isPositive ? '+' : ''}{asset.changePercent.toFixed(2)}%
                 </span>
             </div>
-        </div>
+        </Container>
     );
 };
