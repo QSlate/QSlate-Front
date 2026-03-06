@@ -4,9 +4,10 @@ import { AssetInfo, ChartDataPoint } from '../../types/backtest';
 interface AssetWidgetProps {
     asset: AssetInfo;
     chartData?: ChartDataPoint[];
+    onClick?: () => void;
 }
 
-export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData }) => {
+export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData, onClick }) => {
     const isPositive = asset.changePercent >= 0;
 
     let sparklinePath = "M 0 20 L 100 20";
@@ -44,7 +45,10 @@ export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData }) =>
     }
 
     return (
-        <div className="bg-[#1E2229] rounded-xl p-5 flex items-center justify-between h-full min-h-[100px]">
+        <div
+            onClick={onClick}
+            className={`bg-[#1E2229] rounded-xl p-5 flex items-center justify-between h-full min-h-[100px] ${onClick ? 'cursor-pointer hover:bg-[#2A2E35] transition-colors shadow-sm hover:shadow-md border border-transparent hover:border-gray-700' : ''}`}
+        >
             {/* Left: Symbol & Name */}
             <div className="flex flex-col">
                 <span className="text-lg font-bold text-white leading-none">{asset.symbol}</span>
