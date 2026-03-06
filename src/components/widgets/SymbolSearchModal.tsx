@@ -7,18 +7,7 @@ interface SearchSymbol {
     type: string;
 }
 
-const mockSymbols: SearchSymbol[] = [
-    { symbol: "AAPL", name: "Apple Inc.", exchange: "NASDAQ", type: "stock" },
-    { symbol: "AMZN", name: "Amazon.com, Inc.", exchange: "NASDAQ", type: "stock" },
-    { symbol: "GOOGL", name: "Alphabet Inc.", exchange: "NASDAQ", type: "stock" },
-    { symbol: "MSFT", name: "Microsoft Corporation", exchange: "NASDAQ", type: "stock" },
-    { symbol: "TSLA", name: "Tesla, Inc.", exchange: "NASDAQ", type: "stock" },
-    { symbol: "NVDA", name: "NVIDIA Corporation", exchange: "NASDAQ", type: "stock" },
-    { symbol: "META", name: "Meta Platforms, Inc.", exchange: "NASDAQ", type: "stock" },
-    { symbol: "BTCUSD", name: "Bitcoin / Dollar", exchange: "BINANCE", type: "crypto" },
-    { symbol: "ETHUSD", name: "Ethereum / Dollar", exchange: "BINANCE", type: "crypto" },
-    { symbol: "SOLUSD", name: "Solana / Dollar", exchange: "CBSE", type: "crypto" },
-];
+
 
 interface SymbolSearchModalProps {
     isOpen: boolean;
@@ -29,6 +18,24 @@ interface SymbolSearchModalProps {
 export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({ isOpen, onClose, onSelectSymbol }) => {
     const [searchQuery, setSearchQuery] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
+    const [symbols, setSymbols] = useState<SearchSymbol[]>([]);
+
+    useEffect(() => {
+        const fetchSymbols = async () => {
+            try {
+                const url = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+                const response = await fetch(`${url}/api/assets`);
+                if (!response.ok) throw new Error("Network response was not ok");
+                const data = await response.json();
+                if (Array.isArray(data)) {
+                    setSymbols(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch symbols:", error);
+            }
+        };
+        fetchSymbols();
+    }, []);
 
     useEffect(() => {
         let timeoutId: number;
@@ -61,7 +68,7 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({ isOpen, on
 
     if (!isOpen) return null;
 
-    const filteredSymbols = mockSymbols.filter(s =>
+    const filteredSymbols = symbols.filter(s =>
         s.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
