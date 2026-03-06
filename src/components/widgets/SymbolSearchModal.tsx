@@ -28,7 +28,18 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({ isOpen, on
                 if (!response.ok) throw new Error("Network response was not ok");
                 const data = await response.json();
                 if (Array.isArray(data)) {
-                    setSymbols(data);
+                    const normalized = data.map(item => {
+                        if (typeof item === 'string') {
+                            return { symbol: item, name: item, exchange: "UNKNOWN", type: "UNKNOWN" };
+                        }
+                        return {
+                            symbol: item.symbol || "",
+                            name: item.name || item.symbol || "",
+                            exchange: item.exchange || "UNKNOWN",
+                            type: item.type || "UNKNOWN"
+                        };
+                    });
+                    setSymbols(normalized);
                 }
             } catch (error) {
                 console.error("Failed to fetch symbols:", error);
@@ -68,10 +79,12 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({ isOpen, on
 
     if (!isOpen) return null;
 
-    const filteredSymbols = symbols.filter(s =>
-        s.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredSymbols = symbols.filter(s => {
+        const symbol = (s.symbol || "").toLowerCase();
+        const name = (s.name || "").toLowerCase();
+        const query = searchQuery.toLowerCase();
+        return symbol.includes(query) || name.includes(query);
+    });
 
     return (
         <div

@@ -28,13 +28,18 @@ const getMetricsFromSession = (): BacktestMetrics => {
         if (!parsed?.report) return defaultMetrics;
 
         const r = parsed.report;
+        const parseMetric = (val: any) => {
+            const num = Number(val);
+            return Number.isFinite(num) ? num : 0;
+        };
+
         return {
-            sharpe: Number(r.sharpe ?? r["Sharpe Ratio"] ?? 0),
-            fitness: Number(r.fitness ?? r["Fitness Score"] ?? 0),
-            turnover: Number(r.turnover ?? r["Turnover"] ?? r["Total Trades"] ?? 0),
-            drawdown: Number(r.drawdown ?? r["Max Drawdown (%)"] ?? 0),
-            returns: Number(r.returns ?? r["Returns (%)"] ?? 0),
-            margin: Number(r.margin ?? r["Margin Util. (%)"] ?? 0),
+            sharpe: parseMetric(r.sharpe ?? r["Sharpe Ratio"] ?? 0),
+            fitness: parseMetric(r.fitness ?? r["Fitness Score"] ?? 0),
+            turnover: parseMetric(r.turnover ?? r["Turnover"] ?? r["Total Trades"] ?? 0),
+            drawdown: parseMetric(r.drawdown ?? r["Max Drawdown (%)"] ?? 0),
+            returns: parseMetric(r.returns ?? r["Returns (%)"] ?? 0),
+            margin: parseMetric(r.margin ?? r["Margin Util. (%)"] ?? 0),
         };
     } catch (error) {
         console.error("Failed to parse backtest data from session storage:", error);
@@ -88,6 +93,7 @@ function DashboardContent() {
 
         const loadData = async () => {
             setIsLoading(true);
+            setBacktestData(null);
 
             const { chartData, currentPrice, changePercent } = await fetchChartData(currentSymbol);
             const metrics = getMetricsFromSession();

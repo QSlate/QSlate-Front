@@ -14,7 +14,7 @@ interface EditorProps {
     onChange: (value: string) => void;
 }
 
-export default function NativeMonacoEditor({ code, onChange }: EditorProps) {
+export default function SimpleCodeEditor({ code, onChange }: EditorProps) {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {

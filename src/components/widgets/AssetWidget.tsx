@@ -13,7 +13,9 @@ export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData, onCl
     let sparklinePath = "M 0 20 L 100 20";
 
     if (chartData && chartData.length > 0) {
-        const validPrices = chartData.filter(d => d.close !== undefined && d.close !== null).map(d => Number(d.close));
+        const validPrices = chartData
+            .map(d => Number(d.close))
+            .filter(price => Number.isFinite(price));
 
         if (validPrices.length > 1) {
             let minPrice = validPrices[0];

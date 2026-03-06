@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
-const NativeMonacoEditor = dynamic(
-    () => import("@/components/widgets/NativeMonacoEditor"),
+const SimpleCodeEditor = dynamic(
+    () => import("@/components/widgets/SimpleCodeEditor"),
     {
         ssr: false,
         loading: () => (
@@ -61,10 +61,20 @@ export default function ScriptPage() {
 
                 const data = await response.json();
                 if (isMounted && Array.isArray(data)) {
-                    setAssets(data);
-                    if (data.length > 0) {
-                        const firstSymbol = typeof data[0] === "string" ? data[0] : data[0].symbol;
-                        setSelectedTicker(firstSymbol || "");
+                    const normalized = data.map(item => {
+                        if (typeof item === "string") {
+                            return { symbol: item, name: item, exchange: "UNKNOWN", type: "UNKNOWN" };
+                        }
+                        return {
+                            symbol: item.symbol || "",
+                            name: item.name || item.symbol || "",
+                            exchange: item.exchange || "UNKNOWN",
+                            type: item.type || "UNKNOWN"
+                        };
+                    });
+                    setAssets(normalized);
+                    if (normalized.length > 0) {
+                        setSelectedTicker(normalized[0].symbol);
                     }
                 }
             } catch (error) {
@@ -116,6 +126,7 @@ export default function ScriptPage() {
         } catch (error: any) {
             console.error("Backtest execution error:", error);
             setErrorMsg(error.message || "An unexpected error occurred during execution.");
+        } finally {
             setIsRunning(false);
         }
     };
@@ -218,7 +229,7 @@ export default function ScriptPage() {
                     </div>
                 </div>
                 <div className="flex-grow relative">
-                    <NativeMonacoEditor
+                    <SimpleCodeEditor
                         code={editorContent}
                         onChange={(value) => setEditorContent(value)}
                     />
