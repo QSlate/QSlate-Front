@@ -8,12 +8,14 @@ interface AssetWidgetProps {
 }
 
 export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData, onClick }) => {
-    const isPositive = asset.changePercent >= 0;
+    const isPositive = Number(asset.changePercent || 0) >= 0;
 
     let sparklinePath = "M 0 20 L 100 20";
 
     if (chartData && chartData.length > 0) {
-        const validPrices = chartData.filter(d => d.close !== undefined).map(d => d.close as number);
+        const validPrices = chartData
+            .map(d => Number(d.close))
+            .filter(price => Number.isFinite(price));
 
         if (validPrices.length > 1) {
             let minPrice = validPrices[0];
@@ -81,10 +83,10 @@ export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData, onCl
             {/* Right: Price & Change */}
             <div className="flex flex-col items-end">
                 <span className="text-xl font-bold text-white leading-none">
-                    {asset.currentPrice.toFixed(2)}
+                    {Number(asset.currentPrice || 0).toFixed(2)}
                 </span>
                 <span className={`text-sm mt-1 font-medium ${isPositive ? 'text-[#00E676]' : 'text-red-500'}`}>
-                    {isPositive ? '+' : ''}{asset.changePercent.toFixed(2)}%
+                    {isPositive ? '+' : ''}{Number(asset.changePercent || 0).toFixed(2)}%
                 </span>
             </div>
         </Container>

@@ -2,63 +2,80 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { BacktestResult } from "../../types/backtest";
+import { BacktestResult, BacktestMetrics, ChartDataPoint } from "../../types/backtest";
 import { MetricWidget } from "../../components/widgets/MetricWidget";
 import { AssetWidget } from "../../components/widgets/AssetWidget";
 import { SymbolSearchModal } from "../../components/widgets/SymbolSearchModal";
 import { calculateProgress } from "../../utils/metrics";
 import { TradingViewChart } from "../../components/widgets/TradingViewChart";
 
-const fetchMockBacktestData = async (symbol: string): Promise<BacktestResult> => {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const getAssetInfo = (sym: string) => {
-                switch (sym) {
-                    case "AAPL": return { name: "Apple Inc.", price: 196.26, change: 2.69 };
-                    case "AMZN": return { name: "Amazon.com, Inc.", price: 178.50, change: 1.45 };
-                    case "GOOGL": return { name: "Alphabet Inc.", price: 145.20, change: -0.32 };
-                    case "MSFT": return { name: "Microsoft Corporation", price: 415.50, change: 1.25 };
-                    case "TSLA": return { name: "Tesla, Inc.", price: 202.64, change: -1.75 };
-                    case "NVDA": return { name: "NVIDIA Corporation", price: 822.79, change: 3.54 };
-                    case "META": return { name: "Meta Platforms, Inc.", price: 485.58, change: 0.82 };
-                    case "BTCUSD": return { name: "Bitcoin / Dollar", price: 65432.10, change: 5.4 };
-                    case "ETHUSD": return { name: "Ethereum / Dollar", price: 3456.78, change: 4.2 };
-                    case "SOLUSD": return { name: "Solana / Dollar", price: 145.67, change: 8.9 };
-                    default: return { name: `${sym} Asset`, price: 100.00, change: 0.00 };
-                }
-            };
 
-            const info = getAssetInfo(symbol);
+const getMetricsFromSession = (): BacktestMetrics => {
+    const defaultMetrics: BacktestMetrics = {
+        sharpe: 0,
+        fitness: 0,
+        turnover: 0,
+        drawdown: 0,
+        returns: 0,
+        margin: 0,
+    };
 
-            let assetData = {
-                symbol: symbol,
-                name: info.name,
-                currentPrice: info.price,
-                changePercent: info.change,
-            };
+    try {
+        const sessionData = sessionStorage.getItem("latest_backtest");
+        if (!sessionData) return defaultMetrics;
 
-            resolve({
-                asset: assetData,
-                metrics: {
-                    sharpe: 1.11,
-                    fitness: 0.88,
-                    turnover: 25.66,
-                    drawdown: 9.64,
-                    returns: 16.57,
-                    margin: 8.70,
-                },
-                chartData: [
-                    { time: "2023-12-18", open: 175, high: 182, low: 174, close: 181 },
-                    { time: "2023-12-25", open: 181, high: 183, low: 178, close: 180 },
-                    { time: "2024-01-01", open: 180, high: 185, low: 178, close: 184 },
-                    { time: "2024-01-08", open: 184, high: 190, low: 182, close: 189 },
-                    { time: "2024-01-15", open: 188, high: 195, low: 187, close: 192 },
-                    { time: "2024-01-22", open: 191, high: 198, low: 186, close: 186.26 },
-                ],
-            });
-        }, 500);
-    });
+        const parsed = JSON.parse(sessionData);
+        if (!parsed?.report) return defaultMetrics;
+
+        const r = parsed.report;
+        const parseMetric = (val: any) => {
+            const num = Number(val);
+            return Number.isFinite(num) ? num : 0;
+        };
+
+        return {
+            sharpe: parseMetric(r.sharpe ?? r["Sharpe Ratio"] ?? 0),
+            fitness: parseMetric(r.fitness ?? r["Fitness Score"] ?? 0),
+            turnover: parseMetric(r.turnover ?? r["Turnover"] ?? r["Total Trades"] ?? 0),
+            drawdown: parseMetric(r.drawdown ?? r["Max Drawdown (%)"] ?? 0),
+            returns: parseMetric(r.returns ?? r["Returns (%)"] ?? 0),
+            margin: parseMetric(r.margin ?? r["Margin Util. (%)"] ?? 0),
+        };
+    } catch (error) {
+        console.error("Failed to parse backtest data from session storage:", error);
+        return defaultMetrics;
+    }
 };
+
+const fetchChartData = async (symbol: string) => {
+    try {
+        const url = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+        const res = await fetch(`${url}/api/data/${symbol}?limit=5`);
+
+        if (!res.ok) throw new Error("Failed to fetch chart data");
+
+        const jsonData: ChartDataPoint[] = await res.json();
+        if (!Array.isArray(jsonData) || jsonData.length === 0) {
+            return { chartData: [], currentPrice: 0, changePercent: 0 };
+        }
+
+        const currentPrice = Number(jsonData[jsonData.length - 1].close) || 0;
+        let changePercent = 0;
+
+        if (jsonData.length >= 2) {
+            const prevClose = Number(jsonData[jsonData.length - 2].close);
+            if (prevClose) {
+                changePercent = ((currentPrice - prevClose) / prevClose) * 100;
+            }
+        }
+
+        return { chartData: jsonData, currentPrice, changePercent };
+    } catch (error) {
+        console.error("Error fetching chart data:", error);
+        return { chartData: [], currentPrice: 0, changePercent: 0 };
+    }
+};
+
 
 function DashboardContent() {
     const searchParams = useSearchParams();
@@ -66,69 +83,131 @@ function DashboardContent() {
 
     const currentSymbol = searchParams.get("symbol") || "AAPL";
     const currentExchange = searchParams.get("exchange") || "NASDAQ";
+
     const [backtestData, setBacktestData] = useState<BacktestResult | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isSymbolModalOpen, setIsSymbolModalOpen] = useState(false);
 
     useEffect(() => {
+        let isMounted = true;
+
         const loadData = async () => {
             setIsLoading(true);
             setBacktestData(null);
-            try {
-                const data = await fetchMockBacktestData(currentSymbol);
-                setBacktestData(data);
-            } catch (error) {
-                console.error("Error loading data:", error);
-            } finally {
+
+            const { chartData, currentPrice, changePercent } = await fetchChartData(currentSymbol);
+            const metrics = getMetricsFromSession();
+
+            if (isMounted) {
+                setBacktestData({
+                    asset: {
+                        symbol: currentSymbol,
+                        name: currentSymbol,
+                        currentPrice,
+                        changePercent,
+                    },
+                    metrics,
+                    chartData,
+                });
                 setIsLoading(false);
             }
         };
+
         loadData();
+
+        return () => {
+            isMounted = false;
+        };
     }, [currentSymbol]);
 
     const handleSymbolChange = (symbol: string, exchange: string) => {
         setIsSymbolModalOpen(false);
-        router.push("/lab?symbol=" + encodeURIComponent(symbol) + "&exchange=" + encodeURIComponent(exchange));
+        router.push(`/lab?symbol=${encodeURIComponent(symbol)}&exchange=${encodeURIComponent(exchange)}`);
     };
 
     if (isLoading && !backtestData) {
-        return <div className="p-4 text-white">Loading data...</div>;
+        return (
+            <div className="p-6 flex items-center justify-center h-full min-h-[400px]">
+                <div className="text-gray-400 font-medium animate-pulse">Loading dashboard data...</div>
+            </div>
+        );
     }
 
     if (!backtestData) {
-        return <div className="p-4 text-white">No data available.</div>;
+        return (
+            <div className="p-6 flex items-center justify-center h-full min-h-[400px]">
+                <div className="text-gray-400 font-medium">No data available for {currentSymbol}.</div>
+            </div>
+        );
     }
 
+    const { metrics, asset, chartData } = backtestData;
+
     return (
-        <div className="p-6 flex flex-col gap-6">
+        <div className="p-6 flex flex-col gap-6 h-full w-full">
             <SymbolSearchModal
                 isOpen={isSymbolModalOpen}
                 onClose={() => setIsSymbolModalOpen(false)}
                 onSelectSymbol={handleSymbolChange}
             />
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                {/* Left Column (3 cols) */}
-                <div className="lg:col-span-3">
-                    <div className="bg-[#1E2229] rounded-xl h-full min-h-[500px] w-full overflow-hidden border border-gray-800">
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+                {/* Left Column - Chart */}
+                <div className="xl:col-span-3">
+                    <div className="bg-[#1E2229] rounded-xl h-full min-h-[500px] w-full overflow-hidden border border-gray-800/50 shadow-sm relative">
                         <TradingViewChart symbol={`${currentExchange}:${currentSymbol}`} />
                     </div>
                 </div>
 
-                {/* Right Column (1 col) */}
-                <div className="lg:col-span-1 flex flex-col gap-6">
-                    <AssetWidget asset={backtestData.asset} chartData={backtestData.chartData} onClick={() => setIsSymbolModalOpen(true)} />
-                    <MetricWidget title="Sharpe" value={backtestData.metrics.sharpe} visualType="segmented" progressValue={calculateProgress(backtestData.metrics.sharpe, -2, 3)} />
-                    <MetricWidget title="Fitness" value={backtestData.metrics.fitness} subValue="/ 3" visualType="segmented" progressValue={calculateProgress(backtestData.metrics.fitness, -2, 3)} />
-                    <MetricWidget title="Turnover" value={`${backtestData.metrics.turnover} %`} visualType="progress" progressValue={calculateProgress(backtestData.metrics.turnover, 0, 100)} />
+                {/* Right Column - Top Metrics */}
+                <div className="xl:col-span-1 flex flex-col gap-6">
+                    <AssetWidget
+                        asset={asset}
+                        chartData={chartData}
+                        onClick={() => setIsSymbolModalOpen(true)}
+                    />
+                    <MetricWidget
+                        title="Sharpe Ratio"
+                        value={metrics.sharpe.toFixed(2)}
+                        visualType="segmented"
+                        progressValue={calculateProgress(metrics.sharpe, -2, 3)}
+                    />
+                    <MetricWidget
+                        title="Fitness Score"
+                        value={metrics.fitness.toFixed(1)}
+                        subValue="/ 5.0"
+                        visualType="segmented"
+                        progressValue={calculateProgress(metrics.fitness, -2, 5)}
+                    />
+                    <MetricWidget
+                        title="Turnover"
+                        value={`${metrics.turnover.toFixed(1)}%`}
+                        visualType="progress"
+                        progressValue={calculateProgress(metrics.turnover, 0, 100)}
+                    />
                 </div>
             </div>
 
             {/* Bottom Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <MetricWidget title="Drawdown" value={`${backtestData.metrics.drawdown} %`} visualType="segmented" progressValue={calculateProgress(backtestData.metrics.drawdown, 0, 100, true)} />
-                <MetricWidget title="Returns" value={`${backtestData.metrics.returns} %`} visualType="progress" progressValue={calculateProgress(backtestData.metrics.returns, 0, 100)} />
-                <MetricWidget title="Margin" value={`${backtestData.metrics.margin} %`} visualType="progress" progressValue={calculateProgress(backtestData.metrics.margin, 0, 100)} />
+                <MetricWidget
+                    title="Max Drawdown"
+                    value={`${Math.abs(metrics.drawdown).toFixed(2)}%`}
+                    visualType="segmented"
+                    progressValue={calculateProgress(Math.abs(metrics.drawdown), 0, 100, true)}
+                />
+                <MetricWidget
+                    title="Total Returns"
+                    value={`${metrics.returns.toFixed(2)}%`}
+                    visualType="progress"
+                    progressValue={calculateProgress(metrics.returns, 0, 80)}
+                />
+                <MetricWidget
+                    title="Margin Utilization"
+                    value={`${metrics.margin.toFixed(2)}%`}
+                    visualType="progress"
+                    progressValue={calculateProgress(metrics.margin, 0, 80)}
+                />
             </div>
         </div>
     );
@@ -136,7 +215,11 @@ function DashboardContent() {
 
 export default function LabPage() {
     return (
-        <Suspense fallback={<div className="p-6 text-white">Loading dashboard...</div>}>
+        <Suspense fallback={
+            <div className="p-6 flex items-center justify-center min-h-screen">
+                <div className="text-gray-400 font-medium animate-pulse">Initializing dashboard...</div>
+            </div>
+        }>
             <DashboardContent />
         </Suspense>
     );
