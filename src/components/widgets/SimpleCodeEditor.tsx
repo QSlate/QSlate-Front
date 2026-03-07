@@ -39,7 +39,7 @@ export default function SimpleCodeEditor({ code, onChange }: EditorProps) {
                 padding={15}
                 style={{
                     fontSize: 14,
-                    backgroundColor: "#1E1E1E",
+                    backgroundColor: "#18171E",
                     fontFamily:
                         "ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace",
                     minHeight: "100%",

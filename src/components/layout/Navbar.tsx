@@ -3,7 +3,7 @@ import Image from "next/image";
 
 export default function Navbar() {
     return (
-        <nav className="h-16 bg-[#111418] text-white border-b border-gray-800 flex items-center justify-between px-15 sticky top-0 z-50">
+        <nav className="h-16 bg-[#100F13] text-white border-b border-[#211F28] flex items-center justify-between px-15 sticky top-0 z-50">
             {/* Left section: Logo, Title, and main links */}
             <div className="flex items-center gap-25">
                 <Link href="/" className="flex items-center gap-3">
@@ -32,13 +32,13 @@ export default function Navbar() {
             <div className="flex items-center gap-4">
                 <Link
                     href="/login"
-                    className="bg-[#1E2229] hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors"
+                    className="bg-[#18171E] hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded-full border border-transparent hover:border-[#211F28] transition-colors"
                 >
                     Log in
                 </Link>
                 <Link
                     href="/register"
-                    className="bg-[#00E676] hover:bg-[#00d069] text-[#111418] text-sm font-semibold px-4 py-2 rounded-md transition-colors"
+                    className="bg-[#00FFB2] hover:bg-[#00e6a0] text-[#100F13] text-sm font-semibold px-4 py-2 rounded-full transition-colors"
                 >
                     Sign up
                 </Link>

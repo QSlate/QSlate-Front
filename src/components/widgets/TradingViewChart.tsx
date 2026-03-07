@@ -42,7 +42,7 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol }) =>
                     style: "1",
                     locale: "en",
                     enable_publishing: false,
-                    backgroundColor: "#1E2229",
+                    backgroundColor: "#18171E",
                     gridColor: "#2B2B43",
                     hide_top_toolbar: false,
                     hide_legend: false,

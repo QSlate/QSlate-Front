@@ -134,7 +134,7 @@ export default function ScriptPage() {
     return (
         <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-80px)] w-full">
             {/* Settings Panel */}
-            <div className="col-span-1 bg-[#1E2229] border border-gray-800 rounded-xl p-5 flex flex-col gap-5 shadow-sm">
+            <div className="col-span-1 bg-[#18171E] border border-[#211F28] rounded-xl p-5 flex flex-col gap-5 shadow-sm">
                 <div className="border-b border-gray-800 pb-3">
                     <h2 className="text-xl font-semibold text-white">Strategy Parameters</h2>
                     <p className="text-sm text-gray-400 mt-1">Configure your backtest settings</p>
@@ -147,7 +147,7 @@ export default function ScriptPage() {
                             value={selectedTicker}
                             onChange={(e) => setSelectedTicker(e.target.value)}
                             disabled={isLoadingAssets}
-                            className="w-full bg-gray-900 border border-gray-700/80 rounded-lg px-3 py-2.5 text-white outline-none focus:border-[#00E676] focus:ring-1 focus:ring-[#00E676]/30 transition-all appearance-none disabled:opacity-50"
+                            className="w-full bg-gray-900 border border-gray-700/80 rounded-lg px-3 py-2.5 text-white outline-none focus:border-[#00FFB2] focus:ring-1 focus:ring-[#00FFB2]/30 transition-all appearance-none disabled:opacity-50"
                         >
                             {isLoadingAssets && <option value="">Loading assets...</option>}
                             {!isLoadingAssets && assets.length === 0 && <option value="">No assets available</option>}
@@ -174,7 +174,7 @@ export default function ScriptPage() {
                         type="number"
                         value={capital}
                         onChange={(e) => setCapital(e.target.value)}
-                        className="w-full bg-gray-900 border border-gray-700/80 rounded-lg px-3 py-2.5 text-white outline-none focus:border-[#00E676] focus:ring-1 focus:ring-[#00E676]/30 transition-all"
+                        className="w-full bg-gray-900 border border-gray-700/80 rounded-lg px-3 py-2.5 text-white outline-none focus:border-[#00FFB2] focus:ring-1 focus:ring-[#00FFB2]/30 transition-all"
                         step="100"
                         min="1"
                     />
@@ -186,7 +186,7 @@ export default function ScriptPage() {
                         type="number"
                         value={windowLimit}
                         onChange={(e) => setWindowLimit(e.target.value)}
-                        className="w-full bg-gray-900 border border-gray-700/80 rounded-lg px-3 py-2.5 text-white outline-none focus:border-[#00E676] focus:ring-1 focus:ring-[#00E676]/30 transition-all"
+                        className="w-full bg-gray-900 border border-gray-700/80 rounded-lg px-3 py-2.5 text-white outline-none focus:border-[#00FFB2] focus:ring-1 focus:ring-[#00FFB2]/30 transition-all"
                         min="1"
                     />
                 </div>
@@ -200,7 +200,7 @@ export default function ScriptPage() {
                     <button
                         onClick={handleRunBacktest}
                         disabled={isRunning || !selectedTicker || isLoadingAssets}
-                        className="w-full bg-[#00E676] hover:bg-[#00c966] disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed text-black font-bold py-3.5 rounded-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,230,118,0.2)] disabled:shadow-none"
+                        className="w-full bg-[#00FFB2] hover:bg-[#00e6a0] disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed text-[#100F13] font-bold py-3.5 rounded-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,255,178,0.2)] disabled:shadow-none"
                     >
                         {isRunning ? (
                             <>
@@ -218,10 +218,10 @@ export default function ScriptPage() {
             </div>
 
             {/* Editor Panel */}
-            <div className="col-span-1 lg:col-span-2 bg-[#1E2229] rounded-xl flex flex-col overflow-hidden border border-gray-800 shadow-sm">
-                <div className="bg-gray-800/80 px-5 py-3 border-b border-gray-800 font-mono flex items-center justify-between">
+            <div className="col-span-1 lg:col-span-2 bg-[#18171E] rounded-xl flex flex-col overflow-hidden border border-[#211F28] shadow-sm">
+                <div className="bg-gray-800/80 px-5 py-3 border-b border-[#211F28] font-mono flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <span className="text-[#00E676] font-bold">{'</>'}</span>
+                        <span className="text-[#00FFB2] font-bold">{'</>'}</span>
                         <span className="text-gray-300 text-sm font-medium">strategy.py</span>
                     </div>
                     <div className="flex gap-2 text-xs">
