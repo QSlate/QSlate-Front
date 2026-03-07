@@ -9,6 +9,46 @@ import { SymbolSearchModal } from "../../components/widgets/SymbolSearchModal";
 import { calculateProgress } from "../../utils/metrics";
 import { TradingViewChart } from "../../components/widgets/TradingViewChart";
 
+import type { Layout, ResponsiveLayouts } from "react-grid-layout";
+import { Responsive, WidthProvider } from "react-grid-layout/legacy";
+import "react-grid-layout/css/styles.css";
+import "react-resizable/css/styles.css";
+
+const ResponsiveGridLayout = WidthProvider(Responsive);
+
+const DEFAULT_LAYOUTS: ResponsiveLayouts = {
+    lg: [
+        { i: "chart", x: 0, y: 0, w: 9, h: 8, minW: 4, minH: 6 },
+        { i: "asset", x: 9, y: 0, w: 3, h: 2, minW: 2, minH: 2 },
+        { i: "sharpe", x: 9, y: 2, w: 3, h: 2, minW: 2, minH: 2 },
+        { i: "fitness", x: 9, y: 4, w: 3, h: 2, minW: 2, minH: 2 },
+        { i: "turnover", x: 9, y: 6, w: 3, h: 2, minW: 2, minH: 2 },
+        { i: "drawdown", x: 0, y: 8, w: 4, h: 2, minW: 2, minH: 2 },
+        { i: "returns", x: 4, y: 8, w: 4, h: 2, minW: 2, minH: 2 },
+        { i: "margin", x: 8, y: 8, w: 4, h: 2, minW: 2, minH: 2 },
+    ],
+    md: [
+        { i: "chart", x: 0, y: 0, w: 8, h: 8, minW: 4, minH: 6 },
+        { i: "asset", x: 8, y: 0, w: 4, h: 2, minW: 2, minH: 2 },
+        { i: "sharpe", x: 8, y: 2, w: 4, h: 2, minW: 2, minH: 2 },
+        { i: "fitness", x: 8, y: 4, w: 4, h: 2, minW: 2, minH: 2 },
+        { i: "turnover", x: 8, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
+        { i: "drawdown", x: 0, y: 8, w: 4, h: 2, minW: 2, minH: 2 },
+        { i: "returns", x: 4, y: 8, w: 4, h: 2, minW: 2, minH: 2 },
+        { i: "margin", x: 8, y: 8, w: 4, h: 2, minW: 2, minH: 2 },
+    ],
+    sm: [
+        { i: "chart", x: 0, y: 0, w: 6, h: 8, minW: 4, minH: 6 },
+        { i: "asset", x: 0, y: 8, w: 6, h: 2, minW: 2, minH: 2 },
+        { i: "sharpe", x: 0, y: 10, w: 6, h: 2, minW: 2, minH: 2 },
+        { i: "fitness", x: 0, y: 12, w: 6, h: 2, minW: 2, minH: 2 },
+        { i: "turnover", x: 0, y: 14, w: 6, h: 2, minW: 2, minH: 2 },
+        { i: "drawdown", x: 0, y: 16, w: 6, h: 2, minW: 2, minH: 2 },
+        { i: "returns", x: 0, y: 18, w: 6, h: 2, minW: 2, minH: 2 },
+        { i: "margin", x: 0, y: 20, w: 6, h: 2, minW: 2, minH: 2 },
+    ]
+};
+
 
 const getMetricsFromSession = (): BacktestMetrics => {
     const defaultMetrics: BacktestMetrics = {
@@ -50,7 +90,7 @@ const getMetricsFromSession = (): BacktestMetrics => {
 const fetchChartData = async (symbol: string) => {
     try {
         const url = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-        const res = await fetch(`${url}/api/data/${symbol}?limit=5`);
+        const res = await fetch(`${url}/api/data/${symbol}?limit=10`);
 
         if (!res.ok) throw new Error("Failed to fetch chart data");
 
@@ -87,6 +127,31 @@ function DashboardContent() {
     const [backtestData, setBacktestData] = useState<BacktestResult | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isSymbolModalOpen, setIsSymbolModalOpen] = useState(false);
+
+    // Grid layout state
+    const [layouts, setLayouts] = useState<ResponsiveLayouts>(DEFAULT_LAYOUTS);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        const savedLayouts = localStorage.getItem("qslate_lab_layouts_v2");
+        if (savedLayouts) {
+            try {
+                setLayouts(JSON.parse(savedLayouts));
+            } catch (e) {
+                console.error("Failed to parse saved layout", e);
+            }
+        }
+    }, []);
+
+    const onLayoutChange = (_currentLayout: Layout, allLayouts: ResponsiveLayouts) => {
+        setLayouts(allLayouts);
+        try {
+            localStorage.setItem("qslate_lab_layouts_v2", JSON.stringify(allLayouts));
+        } catch (error) {
+            console.error("Failed to persist layout to localStorage", error);
+        }
+    };
 
     useEffect(() => {
         let isMounted = true;
@@ -144,71 +209,182 @@ function DashboardContent() {
     const { metrics, asset, chartData } = backtestData;
 
     return (
-        <div className="p-6 flex flex-col gap-6 h-full w-full">
+        <div className="p-6 flex flex-col gap-6 h-full w-full min-h-screen">
             <SymbolSearchModal
                 isOpen={isSymbolModalOpen}
                 onClose={() => setIsSymbolModalOpen(false)}
                 onSelectSymbol={handleSymbolChange}
             />
 
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-                {/* Left Column - Chart */}
-                <div className="xl:col-span-3">
-                    <div className="bg-[#1E2229] rounded-xl h-full min-h-[500px] w-full overflow-hidden border border-gray-800/50 shadow-sm relative">
-                        <TradingViewChart symbol={`${currentExchange}:${currentSymbol}`} />
-                    </div>
+            {!mounted ? (
+                <div className="text-gray-400 font-medium animate-pulse flex items-center justify-center p-12">
+                    Loading workspace...
                 </div>
+            ) : (
+                <div className="flex-1 -mx-3"> {/* Offset for grid margin */}
+                    <ResponsiveGridLayout
+                        className="layout"
+                        layouts={layouts}
+                        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+                        cols={{ lg: 12, md: 12, sm: 6, xs: 4, xxs: 2 }}
+                        rowHeight={55}
+                        onLayoutChange={onLayoutChange}
+                        draggableHandle=".drag-handle"
+                        margin={[24, 24]}
+                        useCSSTransforms={true}
+                    >
+                        {/* Chart Widget */}
+                        <div key="chart" className="bg-[#18171E] rounded-xl w-full h-full overflow-hidden border border-[#211F28] shadow-sm relative group">
+                            <div className="drag-handle absolute top-4 right-4 z-50 p-1.5 rounded bg-[#211F28]/80 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity border border-[#383544] backdrop-blur-sm flex items-center justify-center" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="9" cy="12" r="1.5" />
+                                    <circle cx="9" cy="5" r="1.5" />
+                                    <circle cx="9" cy="19" r="1.5" />
+                                    <circle cx="15" cy="12" r="1.5" />
+                                    <circle cx="15" cy="5" r="1.5" />
+                                    <circle cx="15" cy="19" r="1.5" />
+                                </svg>
+                            </div>
+                            <TradingViewChart symbol={`${currentExchange}:${currentSymbol}`} />
+                        </div>
 
-                {/* Right Column - Top Metrics */}
-                <div className="xl:col-span-1 flex flex-col gap-6">
-                    <AssetWidget
-                        asset={asset}
-                        chartData={chartData}
-                        onClick={() => setIsSymbolModalOpen(true)}
-                    />
-                    <MetricWidget
-                        title="Sharpe Ratio"
-                        value={metrics.sharpe.toFixed(2)}
-                        visualType="segmented"
-                        progressValue={calculateProgress(metrics.sharpe, -2, 3)}
-                    />
-                    <MetricWidget
-                        title="Fitness Score"
-                        value={metrics.fitness.toFixed(1)}
-                        subValue="/ 5.0"
-                        visualType="segmented"
-                        progressValue={calculateProgress(metrics.fitness, -2, 5)}
-                    />
-                    <MetricWidget
-                        title="Turnover"
-                        value={`${metrics.turnover.toFixed(1)}%`}
-                        visualType="progress"
-                        progressValue={calculateProgress(metrics.turnover, 0, 100)}
-                    />
+                        {/* Right Column - Top Metrics */}
+                        <div key="asset" className="relative group w-full h-full">
+                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="9" cy="12" r="1.5" />
+                                    <circle cx="9" cy="5" r="1.5" />
+                                    <circle cx="9" cy="19" r="1.5" />
+                                    <circle cx="15" cy="12" r="1.5" />
+                                    <circle cx="15" cy="5" r="1.5" />
+                                    <circle cx="15" cy="19" r="1.5" />
+                                </svg>
+                            </div>
+                            <AssetWidget
+                                asset={asset}
+                                chartData={chartData}
+                                onClick={() => setIsSymbolModalOpen(true)}
+                            />
+                        </div>
+
+                        <div key="sharpe" className="relative group w-full h-full">
+                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="9" cy="12" r="1.5" />
+                                    <circle cx="9" cy="5" r="1.5" />
+                                    <circle cx="9" cy="19" r="1.5" />
+                                    <circle cx="15" cy="12" r="1.5" />
+                                    <circle cx="15" cy="5" r="1.5" />
+                                    <circle cx="15" cy="19" r="1.5" />
+                                </svg>
+                            </div>
+                            <MetricWidget
+                                title="Sharpe Ratio"
+                                value={metrics.sharpe.toFixed(2)}
+                                visualType="segmented"
+                                progressValue={calculateProgress(metrics.sharpe, -2, 3)}
+                            />
+                        </div>
+
+                        <div key="fitness" className="relative group w-full h-full">
+                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="9" cy="12" r="1.5" />
+                                    <circle cx="9" cy="5" r="1.5" />
+                                    <circle cx="9" cy="19" r="1.5" />
+                                    <circle cx="15" cy="12" r="1.5" />
+                                    <circle cx="15" cy="5" r="1.5" />
+                                    <circle cx="15" cy="19" r="1.5" />
+                                </svg>
+                            </div>
+                            <MetricWidget
+                                title="Fitness Score"
+                                value={metrics.fitness.toFixed(1)}
+                                subValue="/ 5.0"
+                                visualType="segmented"
+                                progressValue={calculateProgress(metrics.fitness, -2, 5)}
+                            />
+                        </div>
+
+                        <div key="turnover" className="relative group w-full h-full">
+                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="9" cy="12" r="1.5" />
+                                    <circle cx="9" cy="5" r="1.5" />
+                                    <circle cx="9" cy="19" r="1.5" />
+                                    <circle cx="15" cy="12" r="1.5" />
+                                    <circle cx="15" cy="5" r="1.5" />
+                                    <circle cx="15" cy="19" r="1.5" />
+                                </svg>
+                            </div>
+                            <MetricWidget
+                                title="Turnover"
+                                value={`${metrics.turnover.toFixed(1)}%`}
+                                visualType="progress"
+                                progressValue={calculateProgress(metrics.turnover, 0, 100)}
+                            />
+                        </div>
+
+                        {/* Bottom Metrics */}
+                        <div key="drawdown" className="relative group w-full h-full">
+                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="9" cy="12" r="1.5" />
+                                    <circle cx="9" cy="5" r="1.5" />
+                                    <circle cx="9" cy="19" r="1.5" />
+                                    <circle cx="15" cy="12" r="1.5" />
+                                    <circle cx="15" cy="5" r="1.5" />
+                                    <circle cx="15" cy="19" r="1.5" />
+                                </svg>
+                            </div>
+                            <MetricWidget
+                                title="Max Drawdown"
+                                value={`${Math.abs(metrics.drawdown).toFixed(2)}%`}
+                                visualType="segmented"
+                                progressValue={calculateProgress(Math.abs(metrics.drawdown), 0, 100, true)}
+                            />
+                        </div>
+
+                        <div key="returns" className="relative group w-full h-full">
+                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="9" cy="12" r="1.5" />
+                                    <circle cx="9" cy="5" r="1.5" />
+                                    <circle cx="9" cy="19" r="1.5" />
+                                    <circle cx="15" cy="12" r="1.5" />
+                                    <circle cx="15" cy="5" r="1.5" />
+                                    <circle cx="15" cy="19" r="1.5" />
+                                </svg>
+                            </div>
+                            <MetricWidget
+                                title="Total Returns"
+                                value={`${metrics.returns.toFixed(2)}%`}
+                                visualType="progress"
+                                progressValue={calculateProgress(metrics.returns, 0, 80)}
+                            />
+                        </div>
+
+                        <div key="margin" className="relative group w-full h-full">
+                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="9" cy="12" r="1.5" />
+                                    <circle cx="9" cy="5" r="1.5" />
+                                    <circle cx="9" cy="19" r="1.5" />
+                                    <circle cx="15" cy="12" r="1.5" />
+                                    <circle cx="15" cy="5" r="1.5" />
+                                    <circle cx="15" cy="19" r="1.5" />
+                                </svg>
+                            </div>
+                            <MetricWidget
+                                title="Margin Utilization"
+                                value={`${metrics.margin.toFixed(2)}%`}
+                                visualType="progress"
+                                progressValue={calculateProgress(metrics.margin, 0, 80)}
+                            />
+                        </div>
+                    </ResponsiveGridLayout>
                 </div>
-            </div>
-
-            {/* Bottom Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <MetricWidget
-                    title="Max Drawdown"
-                    value={`${Math.abs(metrics.drawdown).toFixed(2)}%`}
-                    visualType="segmented"
-                    progressValue={calculateProgress(Math.abs(metrics.drawdown), 0, 100, true)}
-                />
-                <MetricWidget
-                    title="Total Returns"
-                    value={`${metrics.returns.toFixed(2)}%`}
-                    visualType="progress"
-                    progressValue={calculateProgress(metrics.returns, 0, 80)}
-                />
-                <MetricWidget
-                    title="Margin Utilization"
-                    value={`${metrics.margin.toFixed(2)}%`}
-                    visualType="progress"
-                    progressValue={calculateProgress(metrics.margin, 0, 80)}
-                />
-            </div>
+            )}
         </div>
     );
 }
