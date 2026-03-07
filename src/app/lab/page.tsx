@@ -9,14 +9,14 @@ import { SymbolSearchModal } from "../../components/widgets/SymbolSearchModal";
 import { calculateProgress } from "../../utils/metrics";
 import { TradingViewChart } from "../../components/widgets/TradingViewChart";
 
-import { Layout } from "react-grid-layout";
+import type { Layout, ResponsiveLayouts } from "react-grid-layout";
 import { Responsive, WidthProvider } from "react-grid-layout/legacy";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-const DEFAULT_LAYOUTS: any = {
+const DEFAULT_LAYOUTS: ResponsiveLayouts = {
     lg: [
         { i: "chart", x: 0, y: 0, w: 9, h: 6, minW: 4, minH: 6 },
         { i: "asset", x: 9, y: 0, w: 3, h: 2, minW: 2, minH: 2 },
@@ -129,7 +129,7 @@ function DashboardContent() {
     const [isSymbolModalOpen, setIsSymbolModalOpen] = useState(false);
 
     // Grid layout state
-    const [layouts, setLayouts] = useState<any>(DEFAULT_LAYOUTS);
+    const [layouts, setLayouts] = useState<ResponsiveLayouts>(DEFAULT_LAYOUTS);
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -144,9 +144,13 @@ function DashboardContent() {
         }
     }, []);
 
-    const onLayoutChange = (currentLayout: Layout[], allLayouts: any) => {
+    const onLayoutChange = (_currentLayout: Layout, allLayouts: ResponsiveLayouts) => {
         setLayouts(allLayouts);
-        localStorage.setItem("qslate_lab_layouts_v2", JSON.stringify(allLayouts));
+        try {
+            localStorage.setItem("qslate_lab_layouts_v2", JSON.stringify(allLayouts));
+        } catch (error) {
+            console.error("Failed to persist layout to localStorage", error);
+        }
     };
 
     useEffect(() => {
@@ -224,7 +228,6 @@ function DashboardContent() {
                         breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
                         cols={{ lg: 12, md: 12, sm: 6, xs: 4, xxs: 2 }}
                         rowHeight={55}
-                        // @ts-ignore
                         onLayoutChange={onLayoutChange}
                         draggableHandle=".drag-handle"
                         margin={[24, 24]}
@@ -232,7 +235,7 @@ function DashboardContent() {
                     >
                         {/* Chart Widget */}
                         <div key="chart" className="bg-[#18171E] rounded-xl w-full h-full overflow-hidden border border-[#211F28] shadow-sm relative group">
-                            <div className="drag-handle absolute top-4 right-4 z-50 p-1.5 rounded bg-[#211F28]/80 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity border border-[#383544] backdrop-blur-sm flex items-center justify-center" title="Drag to move">
+                            <div className="drag-handle absolute top-4 right-4 z-50 p-1.5 rounded bg-[#211F28]/80 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity border border-[#383544] backdrop-blur-sm flex items-center justify-center" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="9" cy="12" r="1.5" />
                                     <circle cx="9" cy="5" r="1.5" />
@@ -247,7 +250,7 @@ function DashboardContent() {
 
                         {/* Right Column - Top Metrics */}
                         <div key="asset" className="relative group w-full h-full">
-                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" title="Drag to move">
+                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="9" cy="12" r="1.5" />
                                     <circle cx="9" cy="5" r="1.5" />
@@ -265,7 +268,7 @@ function DashboardContent() {
                         </div>
 
                         <div key="sharpe" className="relative group w-full h-full">
-                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" title="Drag to move">
+                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="9" cy="12" r="1.5" />
                                     <circle cx="9" cy="5" r="1.5" />
@@ -284,7 +287,7 @@ function DashboardContent() {
                         </div>
 
                         <div key="fitness" className="relative group w-full h-full">
-                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" title="Drag to move">
+                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="9" cy="12" r="1.5" />
                                     <circle cx="9" cy="5" r="1.5" />
@@ -304,7 +307,7 @@ function DashboardContent() {
                         </div>
 
                         <div key="turnover" className="relative group w-full h-full">
-                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" title="Drag to move">
+                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="9" cy="12" r="1.5" />
                                     <circle cx="9" cy="5" r="1.5" />
@@ -324,7 +327,7 @@ function DashboardContent() {
 
                         {/* Bottom Metrics */}
                         <div key="drawdown" className="relative group w-full h-full">
-                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" title="Drag to move">
+                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="9" cy="12" r="1.5" />
                                     <circle cx="9" cy="5" r="1.5" />
@@ -343,7 +346,7 @@ function DashboardContent() {
                         </div>
 
                         <div key="returns" className="relative group w-full h-full">
-                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" title="Drag to move">
+                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="9" cy="12" r="1.5" />
                                     <circle cx="9" cy="5" r="1.5" />
@@ -362,7 +365,7 @@ function DashboardContent() {
                         </div>
 
                         <div key="margin" className="relative group w-full h-full">
-                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" title="Drag to move">
+                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="9" cy="12" r="1.5" />
                                     <circle cx="9" cy="5" r="1.5" />
