@@ -51,7 +51,7 @@ export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData, onCl
     return (
         <Container
             onClick={onClick}
-            className={`bg-[#1E2229] rounded-xl p-5 flex items-center justify-between h-full min-h-[100px] w-full text-left ${onClick ? 'cursor-pointer hover:bg-[#2A2E35] transition-colors shadow-sm hover:shadow-md border border-transparent hover:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500' : ''}`}
+            className={`bg-[#18171E] rounded-xl p-5 flex items-center justify-between h-full w-full text-left border border-[#211F28] ${onClick ? 'cursor-pointer hover:bg-[#2A2E35] transition-colors shadow-sm hover:shadow-md hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500' : ''}`}
         >
             {/* Left: Symbol & Name */}
             <div className="flex flex-col">
@@ -72,7 +72,7 @@ export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData, onCl
                 >
                     <path
                         d={sparklinePath}
-                        stroke={isPositive ? "#00E676" : "#EF4444"}
+                        stroke={isPositive ? "#00FFB2" : "#EF4444"}
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -85,7 +85,7 @@ export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData, onCl
                 <span className="text-xl font-bold text-white leading-none">
                     {Number(asset.currentPrice || 0).toFixed(2)}
                 </span>
-                <span className={`text-sm mt-1 font-medium ${isPositive ? 'text-[#00E676]' : 'text-red-500'}`}>
+                <span className={`text-sm mt-1 font-medium ${isPositive ? 'text-[#00FFB2]' : 'text-red-500'}`}>
                     {isPositive ? '+' : ''}{Number(asset.changePercent || 0).toFixed(2)}%
                 </span>
             </div>

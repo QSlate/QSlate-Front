@@ -18,12 +18,12 @@ export const MetricWidget: React.FC<MetricWidgetProps> = ({
     trend = 'neutral',
 }) => {
     return (
-        <div className="bg-[#1E2229] rounded-xl p-5 flex flex-col justify-between h-full min-h-[140px]">
+        <div className="bg-[#18171E] border border-[#211F28] rounded-xl p-5 flex flex-col justify-between h-full w-full">
             <div>
                 <h3 className="text-sm text-gray-400 mb-1">{title}</h3>
                 <div className="flex items-baseline space-x-2">
                     <span className="text-3xl font-bold text-white">{value}</span>
-                    {trend === 'up' && <span className="text-[#00E676] text-sm font-bold">▲</span>}
+                    {trend === 'up' && <span className="text-[#00FFB2] text-sm font-bold">▲</span>}
                     {trend === 'down' && <span className="text-red-500 text-sm font-bold">▼</span>}
                     {trend === 'neutral' && <span className="text-gray-500 text-sm font-bold">-</span>}
                     {subValue && <span className="text-lg text-gray-500">{subValue}</span>}
