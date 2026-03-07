@@ -18,7 +18,7 @@ const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const DEFAULT_LAYOUTS: ResponsiveLayouts = {
     lg: [
-        { i: "chart", x: 0, y: 0, w: 9, h: 6, minW: 4, minH: 6 },
+        { i: "chart", x: 0, y: 0, w: 9, h: 8, minW: 4, minH: 6 },
         { i: "asset", x: 9, y: 0, w: 3, h: 2, minW: 2, minH: 2 },
         { i: "sharpe", x: 9, y: 2, w: 3, h: 2, minW: 2, minH: 2 },
         { i: "fitness", x: 9, y: 4, w: 3, h: 2, minW: 2, minH: 2 },
@@ -28,7 +28,7 @@ const DEFAULT_LAYOUTS: ResponsiveLayouts = {
         { i: "margin", x: 8, y: 8, w: 4, h: 2, minW: 2, minH: 2 },
     ],
     md: [
-        { i: "chart", x: 0, y: 0, w: 8, h: 6, minW: 4, minH: 6 },
+        { i: "chart", x: 0, y: 0, w: 8, h: 8, minW: 4, minH: 6 },
         { i: "asset", x: 8, y: 0, w: 4, h: 2, minW: 2, minH: 2 },
         { i: "sharpe", x: 8, y: 2, w: 4, h: 2, minW: 2, minH: 2 },
         { i: "fitness", x: 8, y: 4, w: 4, h: 2, minW: 2, minH: 2 },
@@ -38,7 +38,7 @@ const DEFAULT_LAYOUTS: ResponsiveLayouts = {
         { i: "margin", x: 8, y: 8, w: 4, h: 2, minW: 2, minH: 2 },
     ],
     sm: [
-        { i: "chart", x: 0, y: 0, w: 6, h: 6, minW: 4, minH: 6 },
+        { i: "chart", x: 0, y: 0, w: 6, h: 8, minW: 4, minH: 6 },
         { i: "asset", x: 0, y: 8, w: 6, h: 2, minW: 2, minH: 2 },
         { i: "sharpe", x: 0, y: 10, w: 6, h: 2, minW: 2, minH: 2 },
         { i: "fitness", x: 0, y: 12, w: 6, h: 2, minW: 2, minH: 2 },
