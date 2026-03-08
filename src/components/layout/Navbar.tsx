@@ -13,7 +13,8 @@ export default function Navbar() {
         const handleScroll = () => {
             setIsScrolled(window.scrollY > 20);
         };
-        window.addEventListener("scroll", handleScroll);
+        handleScroll();
+        window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
@@ -22,9 +23,9 @@ export default function Navbar() {
 
     return (
         <nav
-            className={`h-16 flex items-center justify-between px-15 sticky top-0 z-50 transition-all duration-300 ${isScrolled
-                    ? "bg-[#050505]/70 backdrop-blur-md shadow-sm"
-                    : "bg-[#050505]"
+            className={`h-16 flex items-center justify-between px-[50px] sticky top-0 z-50 transition-all duration-300 ${isScrolled
+                ? "bg-[#050505]/70 backdrop-blur-md shadow-sm"
+                : "bg-[#050505]"
                 } ${showBorder ? "border-b border-white/5" : "border-b border-transparent"}`}
         >
             {/* Left section: Logo, Title, and main links */}

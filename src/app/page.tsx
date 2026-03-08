@@ -1,12 +1,14 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Terminal, Star, LayoutDashboard, Activity, Shield } from "lucide-react";
 import ScrollRevealText from "@/components/ui/ScrollRevealText";
 
 export default function Home() {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <div className="bg-[#050505] text-white min-h-[calc(100vh-4rem)] relative flex flex-col items-center pt-24 pb-20 overflow-x-hidden font-sans">
 
@@ -85,7 +87,7 @@ export default function Home() {
         className="w-full max-w-6xl mx-auto mt-20 px-4 md:px-8 relative z-10"
       >
         <motion.div
-          animate={{ y: [0, -20, 0] }}
+          animate={shouldReduceMotion ? { y: 0 } : { y: [0, -20, 0] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           className="relative rounded-2xl md:rounded-[32px] border border-white/10 shadow-[0_0_120px_-20px_rgba(0,255,178,0.25)] overflow-hidden mx-auto before:absolute before:top-0 before:left-1/2 before:-translate-x-1/2 before:w-1/2 before:h-px before:bg-gradient-to-r before:from-transparent before:via-[#00FFB2]/50 before:to-transparent"
         >
@@ -109,12 +111,12 @@ export default function Home() {
         </p>
         <div className="flex whitespace-nowrap overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_20%,black_80%,transparent)]">
           <motion.div
-            animate={{ x: ["0%", "-50%"] }}
+            animate={shouldReduceMotion ? { x: 0 } : { x: ["0%", "-50%"] }}
             transition={{ repeat: Infinity, ease: "linear", duration: 30 }}
             className="flex gap-16 items-center px-8"
           >
             {[...Array(2)].map((_, i) => (
-              <div key={i} className="flex gap-16 items-center min-w-max">
+              <div key={i} aria-hidden={i !== 0} className="flex gap-16 items-center min-w-max">
                 <span className="text-white/40 text-xl font-bold tracking-tight">BINANCE</span>
                 <span className="text-white/40 text-xl font-bold tracking-tight">Interactive Brokers</span>
                 <span className="text-white/40 text-xl font-bold tracking-tight">ALPACA</span>

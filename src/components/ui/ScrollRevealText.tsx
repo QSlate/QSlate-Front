@@ -15,6 +15,7 @@ export default function ScrollRevealText({ text }: ScrollRevealTextProps) {
     });
 
     const words = text.split(" ");
+    const step = 1 / words.length;
 
     return (
         <p
@@ -22,7 +23,6 @@ export default function ScrollRevealText({ text }: ScrollRevealTextProps) {
             className="text-2xl md:text-3xl lg:text-4xl font-medium tracking-tight text-white text-center leading-[1.5] max-w-4xl mx-auto"
         >
             {words.map((word, i) => {
-                const step = 1 / words.length;
                 const start = i * step;
 
                 const end = Math.min(start + step * 1.5, 1);
