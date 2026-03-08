@@ -18,7 +18,7 @@ export const MetricWidget: React.FC<MetricWidgetProps> = ({
     trend = 'neutral',
 }) => {
     return (
-        <div className="bg-[#18171E] border border-[#211F28] rounded-xl p-5 flex flex-col justify-between h-full w-full">
+        <div className="bg-[#0D0F14] border border-white/5 rounded-xl p-5 flex flex-col justify-between h-full w-full">
             <div>
                 <h3 className="text-sm text-gray-400 mb-1">{title}</h3>
                 <div className="flex items-baseline space-x-2">

@@ -51,7 +51,7 @@ export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData, onCl
     return (
         <Container
             onClick={onClick}
-            className={`bg-[#18171E] rounded-xl p-5 flex items-center justify-between h-full w-full text-left border border-[#211F28] ${onClick ? 'cursor-pointer hover:bg-[#2A2E35] transition-colors shadow-sm hover:shadow-md hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500' : ''}`}
+            className={`bg-[#0D0F14] rounded-xl p-5 flex items-center justify-between h-full w-full text-left border border-white/5 ${onClick ? 'cursor-pointer hover:bg-[#2A2E35] transition-colors shadow-sm hover:shadow-md hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500' : ''}`}
         >
             {/* Left: Symbol & Name */}
             <div className="flex flex-col">
