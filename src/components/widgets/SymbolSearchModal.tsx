@@ -92,7 +92,7 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({ isOpen, on
             onClick={onClose}
         >
             <div
-                className="bg-[#18171E] w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col border border-[#211F28]"
+                className="bg-[#0D0F14] w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col border border-white/5"
                 style={{ height: '80vh', maxHeight: '700px' }}
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
@@ -100,7 +100,7 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({ isOpen, on
                 aria-label="Search for a symbol"
             >
                 {/* Header / Search Input */}
-                <div className="flex items-center p-4 border-b border-[#211F28]">
+                <div className="flex items-center p-4 border-b border-white/5">
                     <svg className="w-6 h-6 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
@@ -124,7 +124,7 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({ isOpen, on
                 </div>
 
                 {/* Tabs Faux */}
-                <div className="flex px-4 py-2 border-b border-[#211F28] overflow-x-auto space-x-6 text-sm font-medium">
+                <div className="flex px-4 py-2 border-b border-white/5 overflow-x-auto space-x-6 text-sm font-medium">
                     <button className="text-white border-b-2 border-blue-500 pb-2 whitespace-nowrap">All</button>
                     <button className="text-gray-400 hover:text-gray-300 pb-2 whitespace-nowrap">Stocks</button>
                     <button className="text-gray-400 hover:text-gray-300 pb-2 whitespace-nowrap">Funds</button>

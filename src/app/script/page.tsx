@@ -9,7 +9,7 @@ const SimpleCodeEditor = dynamic(
     {
         ssr: false,
         loading: () => (
-            <div className="flex items-center justify-center w-full h-full text-gray-400 bg-[#1E1E1E]">
+            <div className="flex items-center justify-center w-full h-full text-gray-400 bg-[#0D0F14]">
                 Loading editor...
             </div>
         )
@@ -134,7 +134,7 @@ export default function ScriptPage() {
     return (
         <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-80px)] w-full">
             {/* Settings Panel */}
-            <div className="col-span-1 bg-[#18171E] border border-[#211F28] rounded-xl p-5 flex flex-col gap-5 shadow-sm">
+            <div className="col-span-1 bg-[#0D0F14] border border-white/5 rounded-xl p-5 flex flex-col gap-5 shadow-sm">
                 <div className="border-b border-gray-800 pb-3">
                     <h2 className="text-xl font-semibold text-white">Strategy Parameters</h2>
                     <p className="text-sm text-gray-400 mt-1">Configure your backtest settings</p>
@@ -218,8 +218,8 @@ export default function ScriptPage() {
             </div>
 
             {/* Editor Panel */}
-            <div className="col-span-1 lg:col-span-2 bg-[#18171E] rounded-xl flex flex-col overflow-hidden border border-[#211F28] shadow-sm">
-                <div className="bg-gray-800/80 px-5 py-3 border-b border-[#211F28] font-mono flex items-center justify-between">
+            <div className="col-span-1 lg:col-span-2 bg-[#0D0F14] rounded-xl flex flex-col overflow-hidden border border-white/5 shadow-sm">
+                <div className="bg-white/5 px-5 py-3 border-b border-white/5 font-mono flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <span className="text-[#00FFB2] font-bold">{'</>'}</span>
                         <span className="text-gray-300 text-sm font-medium">strategy.py</span>

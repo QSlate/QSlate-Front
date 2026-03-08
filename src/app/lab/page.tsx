@@ -234,7 +234,7 @@ function DashboardContent() {
                         useCSSTransforms={true}
                     >
                         {/* Chart Widget */}
-                        <div key="chart" className="bg-[#18171E] rounded-xl w-full h-full overflow-hidden border border-[#211F28] shadow-sm relative group">
+                        <div key="chart" className="bg-[#0D0F14] rounded-xl w-full h-full overflow-hidden border border-white/5 shadow-sm relative group">
                             <div className="drag-handle absolute top-4 right-4 z-50 p-1.5 rounded bg-[#211F28]/80 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity border border-[#383544] backdrop-blur-sm flex items-center justify-center" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="9" cy="12" r="1.5" />
