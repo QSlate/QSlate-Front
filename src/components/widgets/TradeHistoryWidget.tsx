@@ -111,7 +111,9 @@ export const TradeHistoryWidget: React.FC<TradeHistoryWidgetProps> = ({ trades =
                                         <div className="flex-1 flex justify-center items-center gap-1.5 min-w-0 px-2 overflow-hidden">
                                             <span className="text-sm text-white truncate">${trade.entry_price?.toFixed(2)}</span>
                                             <ArrowRight className="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                                            <span className="text-sm text-white truncate">${trade.exit_price?.toFixed(2)}</span>
+                                            <span className="text-sm text-white truncate">
+                                                {trade.exit_price != null ? `$${trade.exit_price.toFixed(2)}` : '—'}
+                                            </span>
                                         </div>
 
                                         {/* Right */}

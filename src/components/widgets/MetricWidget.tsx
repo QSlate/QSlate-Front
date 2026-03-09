@@ -19,7 +19,8 @@ export const MetricWidget: React.FC<MetricWidgetProps> = ({
     trend = 'neutral',
     icon,
 }) => {
-    const clampedProgress = Math.min(Math.max(progressValue, 0), 100);
+    const safeProgress = Number.isFinite(progressValue) ? progressValue : 0;
+    const clampedProgress = Math.min(Math.max(safeProgress, 0), 100);
 
     const accentColor =
         trend === 'up' ? '#00FFB2' :

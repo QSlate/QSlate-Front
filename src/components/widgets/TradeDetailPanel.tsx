@@ -102,7 +102,7 @@ export const TradeDetailPanel: React.FC<TradeDetailPanelProps> = ({ trade, onClo
     const exitReasonStyle = getExitReasonColor(trade.exit_reason);
 
     const pnlPercent =
-        trade.entry_price && trade.size_usd
+        trade.entry_price
             ? ((((trade.exit_price ?? trade.entry_price) - trade.entry_price) / trade.entry_price) *
                 (isLong ? 1 : -1) *
                 (trade.leverage ?? 1) *

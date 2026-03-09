@@ -12,7 +12,7 @@ export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData, onCl
     const isPositive = changePercent >= 0;
     const accentColor = isPositive ? '#00FFB2' : '#EF4444';
 
-    let sparklinePath = "M 0 20 L 100 20";
+    let sparklinePath = "M 0 22 L 120 22";
     let areaPath = "";
 
     if (chartData && chartData.length > 0) {
@@ -53,6 +53,8 @@ export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData, onCl
     return (
         <Container
             onClick={onClick}
+            {...(onClick ? { type: 'button' as const } : {})}
+
             className={`relative bg-[#0D0F14] rounded-xl px-4 py-3 flex items-center justify-between h-full w-full text-left border border-white/5 overflow-hidden transition-all duration-200
                 ${onClick ? 'cursor-pointer hover:border-white/10 hover:bg-[#131720] focus:outline-none focus:ring-2 focus:ring-[#00FFB2]/20' : ''}`}
             style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}

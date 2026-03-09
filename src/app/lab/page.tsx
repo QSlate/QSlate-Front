@@ -105,7 +105,7 @@ const getMetricsFromSession = (): BacktestMetrics => {
             margin: parseMetric(r.margin ?? r["Margin Util. (%)"] ?? 0),
             winRate: parseMetric(r.winRate ?? r["Win Rate (%)"] ?? 0),
             netProfit: r["Final Capital ($)"]
-                ? parseMetric(r["Final Capital ($)"]) - ((parsed.config as Record<string, unknown>)?.initial_capital as number || 10000)
+                ? parseMetric(r["Final Capital ($)"]) - parseMetric((parsed.config as Record<string, unknown>)?.initial_capital ?? 10000)
                 : 0,
         };
     } catch (error) {
@@ -233,7 +233,10 @@ function WidgetPanel({ isOpen, onClose, visibleWidgets, onToggle }: WidgetPanelP
                         Show all
                     </button>
                     <button
-                        onClick={() => ALL_WIDGET_IDS.filter(id => id !== "chart").forEach(id => visibleWidgets.has(id) && onToggle(id))}
+                        onClick={() => {
+                            if (!visibleWidgets.has("chart")) onToggle("chart");
+                            ALL_WIDGET_IDS.filter(id => id !== "chart").forEach(id => visibleWidgets.has(id) && onToggle(id));
+                        }}
                         className="flex-1 text-xs py-2 rounded-lg bg-white/5 hover:bg-white/8 text-gray-400 hover:text-white border border-white/5 transition-all"
                     >
                         Chart only
