@@ -2,12 +2,13 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { BacktestResult, BacktestMetrics, ChartDataPoint } from "../../types/backtest";
+import { BacktestResult, BacktestMetrics, ChartDataPoint, Trade } from "../../types/backtest";
 import { MetricWidget } from "../../components/widgets/MetricWidget";
 import { AssetWidget } from "../../components/widgets/AssetWidget";
 import { SymbolSearchModal } from "../../components/widgets/SymbolSearchModal";
 import { calculateProgress } from "../../utils/metrics";
 import { TradingViewChart } from "../../components/widgets/TradingViewChart";
+import { TradeHistoryWidget } from "../../components/widgets/TradeHistoryWidget";
 
 import type { Layout, ResponsiveLayouts } from "react-grid-layout";
 import { Responsive, WidthProvider } from "react-grid-layout/legacy";
@@ -23,9 +24,12 @@ const DEFAULT_LAYOUTS: ResponsiveLayouts = {
         { i: "sharpe", x: 9, y: 2, w: 3, h: 2, minW: 2, minH: 2 },
         { i: "fitness", x: 9, y: 4, w: 3, h: 2, minW: 2, minH: 2 },
         { i: "turnover", x: 9, y: 6, w: 3, h: 2, minW: 2, minH: 2 },
-        { i: "drawdown", x: 0, y: 8, w: 4, h: 2, minW: 2, minH: 2 },
-        { i: "returns", x: 4, y: 8, w: 4, h: 2, minW: 2, minH: 2 },
-        { i: "margin", x: 8, y: 8, w: 4, h: 2, minW: 2, minH: 2 },
+        { i: "drawdown", x: 0, y: 8, w: 2, h: 2, minW: 2, minH: 2 },
+        { i: "returns", x: 2, y: 8, w: 2, h: 2, minW: 2, minH: 2 },
+        { i: "margin", x: 4, y: 8, w: 2, h: 2, minW: 2, minH: 2 },
+        { i: "netprofit", x: 6, y: 8, w: 3, h: 2, minW: 2, minH: 2 },
+        { i: "winrate", x: 9, y: 8, w: 3, h: 2, minW: 2, minH: 2 },
+        { i: "trades", x: 0, y: 10, w: 12, h: 5, minW: 1, minH: 3 },
     ],
     md: [
         { i: "chart", x: 0, y: 0, w: 8, h: 8, minW: 4, minH: 6 },
@@ -36,6 +40,9 @@ const DEFAULT_LAYOUTS: ResponsiveLayouts = {
         { i: "drawdown", x: 0, y: 8, w: 4, h: 2, minW: 2, minH: 2 },
         { i: "returns", x: 4, y: 8, w: 4, h: 2, minW: 2, minH: 2 },
         { i: "margin", x: 8, y: 8, w: 4, h: 2, minW: 2, minH: 2 },
+        { i: "netprofit", x: 0, y: 10, w: 4, h: 2, minW: 2, minH: 2 },
+        { i: "winrate", x: 4, y: 10, w: 4, h: 2, minW: 2, minH: 2 },
+        { i: "trades", x: 0, y: 12, w: 12, h: 5, minW: 1, minH: 3 },
     ],
     sm: [
         { i: "chart", x: 0, y: 0, w: 6, h: 8, minW: 4, minH: 6 },
@@ -46,6 +53,9 @@ const DEFAULT_LAYOUTS: ResponsiveLayouts = {
         { i: "drawdown", x: 0, y: 16, w: 6, h: 2, minW: 2, minH: 2 },
         { i: "returns", x: 0, y: 18, w: 6, h: 2, minW: 2, minH: 2 },
         { i: "margin", x: 0, y: 20, w: 6, h: 2, minW: 2, minH: 2 },
+        { i: "netprofit", x: 0, y: 22, w: 6, h: 2, minW: 2, minH: 2 },
+        { i: "winrate", x: 0, y: 24, w: 6, h: 2, minW: 2, minH: 2 },
+        { i: "trades", x: 0, y: 26, w: 6, h: 5, minW: 1, minH: 3 },
     ]
 };
 
@@ -58,6 +68,8 @@ const getMetricsFromSession = (): BacktestMetrics => {
         drawdown: 0,
         returns: 0,
         margin: 0,
+        winRate: 0,
+        netProfit: 0,
     };
 
     try {
@@ -80,6 +92,10 @@ const getMetricsFromSession = (): BacktestMetrics => {
             drawdown: parseMetric(r.drawdown ?? r["Max Drawdown (%)"] ?? 0),
             returns: parseMetric(r.returns ?? r["Returns (%)"] ?? 0),
             margin: parseMetric(r.margin ?? r["Margin Util. (%)"] ?? 0),
+            winRate: parseMetric(r.winRate ?? r["Win Rate (%)"] ?? 0),
+            netProfit: r["Final Capital ($)"]
+                ? parseMetric(r["Final Capital ($)"]) - (parsed?.config?.initial_capital || 10000)
+                : 0,
         };
     } catch (error) {
         console.error("Failed to parse backtest data from session storage:", error);
@@ -125,19 +141,33 @@ function DashboardContent() {
     const currentExchange = searchParams.get("exchange") || "NASDAQ";
 
     const [backtestData, setBacktestData] = useState<BacktestResult | null>(null);
+    const [trades, setTrades] = useState<Trade[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isSymbolModalOpen, setIsSymbolModalOpen] = useState(false);
 
-    // Grid layout state
     const [layouts, setLayouts] = useState<ResponsiveLayouts>(DEFAULT_LAYOUTS);
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         setMounted(true);
-        const savedLayouts = localStorage.getItem("qslate_lab_layouts_v2");
+        const savedLayouts = localStorage.getItem("qslate_lab_layouts_v6");
         if (savedLayouts) {
             try {
-                setLayouts(JSON.parse(savedLayouts));
+                const parsedLayouts = JSON.parse(savedLayouts);
+                Object.keys(parsedLayouts).forEach((bp) => {
+                    const bpLayout = parsedLayouts[bp];
+                    const tradesItem = bpLayout.find((item: any) => item.i === "trades");
+                    if (tradesItem) {
+                        tradesItem.minW = 1;
+                    }
+                    if (!bpLayout.find((item: any) => item.i === "netprofit")) {
+                        bpLayout.push({ i: "netprofit", x: 0, y: 10, w: 6, h: 2, minW: 2, minH: 2 });
+                    }
+                    if (!bpLayout.find((item: any) => item.i === "winrate")) {
+                        bpLayout.push({ i: "winrate", x: 6, y: 10, w: 6, h: 2, minW: 2, minH: 2 });
+                    }
+                });
+                setLayouts(parsedLayouts);
             } catch (e) {
                 console.error("Failed to parse saved layout", e);
             }
@@ -147,7 +177,7 @@ function DashboardContent() {
     const onLayoutChange = (_currentLayout: Layout, allLayouts: ResponsiveLayouts) => {
         setLayouts(allLayouts);
         try {
-            localStorage.setItem("qslate_lab_layouts_v2", JSON.stringify(allLayouts));
+            localStorage.setItem("qslate_lab_layouts_v6", JSON.stringify(allLayouts));
         } catch (error) {
             console.error("Failed to persist layout to localStorage", error);
         }
@@ -163,6 +193,17 @@ function DashboardContent() {
             const { chartData, currentPrice, changePercent } = await fetchChartData(currentSymbol);
             const metrics = getMetricsFromSession();
 
+            let loadedTrades: Trade[] = [];
+            try {
+                const sessionData = sessionStorage.getItem("latest_backtest");
+                if (sessionData) {
+                    const parsed = JSON.parse(sessionData);
+                    loadedTrades = parsed?.trades || parsed?.report?.trades || [];
+                }
+            } catch (e) {
+                console.error("Failed to parse trades out of sessionData", e);
+            }
+
             if (isMounted) {
                 setBacktestData({
                     asset: {
@@ -174,6 +215,7 @@ function DashboardContent() {
                     metrics,
                     chartData,
                 });
+                setTrades(loadedTrades);
                 setIsLoading(false);
             }
         };
@@ -381,6 +423,59 @@ function DashboardContent() {
                                 visualType="progress"
                                 progressValue={calculateProgress(metrics.margin, 0, 80)}
                             />
+                        </div>
+
+                        <div key="netprofit" className="relative group w-full h-full">
+                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="9" cy="12" r="1.5" />
+                                    <circle cx="9" cy="5" r="1.5" />
+                                    <circle cx="9" cy="19" r="1.5" />
+                                    <circle cx="15" cy="12" r="1.5" />
+                                    <circle cx="15" cy="5" r="1.5" />
+                                    <circle cx="15" cy="19" r="1.5" />
+                                </svg>
+                            </div>
+                            <MetricWidget
+                                title="Net Profit"
+                                value={metrics.netProfit >= 0 ? `+$${metrics.netProfit.toFixed(2)}` : `-$${Math.abs(metrics.netProfit).toFixed(2)}`}
+                                visualType="progress"
+                                progressValue={calculateProgress(metrics.netProfit, -10000, 10000)}
+                            />
+                        </div>
+
+                        <div key="winrate" className="relative group w-full h-full">
+                            <div className="drag-handle absolute top-3 right-3 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="9" cy="12" r="1.5" />
+                                    <circle cx="9" cy="5" r="1.5" />
+                                    <circle cx="9" cy="19" r="1.5" />
+                                    <circle cx="15" cy="12" r="1.5" />
+                                    <circle cx="15" cy="5" r="1.5" />
+                                    <circle cx="15" cy="19" r="1.5" />
+                                </svg>
+                            </div>
+                            <MetricWidget
+                                title="Win Rate"
+                                value={`${metrics.winRate.toFixed(2)}%`}
+                                visualType="segmented"
+                                progressValue={calculateProgress(metrics.winRate, 0, 100)}
+                            />
+                        </div>
+
+                        {/* Trades History */}
+                        <div key="trades" data-grid={{ w: 12, h: 5, x: 0, y: Infinity, minW: 1, minH: 3 }} className="relative group w-full h-full">
+                            <div className="drag-handle absolute top-4 right-4 z-50 p-1.5 rounded bg-[#211F28]/90 text-gray-500 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity shadow-sm flex items-center justify-center pointer-events-auto border border-[#383544]" role="button" tabIndex={0} aria-label="Drag to move" title="Drag to move">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="9" cy="12" r="1.5" />
+                                    <circle cx="9" cy="5" r="1.5" />
+                                    <circle cx="9" cy="19" r="1.5" />
+                                    <circle cx="15" cy="12" r="1.5" />
+                                    <circle cx="15" cy="5" r="1.5" />
+                                    <circle cx="15" cy="19" r="1.5" />
+                                </svg>
+                            </div>
+                            <TradeHistoryWidget trades={trades} />
                         </div>
                     </ResponsiveGridLayout>
                 </div>

@@ -120,6 +120,13 @@ export default function ScriptPage() {
             }
 
             const data = await response.json();
+
+            data.config = {
+                initial_capital: parseFloat(capital) || 10000.0,
+                ticker: selectedTicker,
+                window: parseInt(windowLimit, 10) || 10
+            };
+
             sessionStorage.setItem("latest_backtest", JSON.stringify(data));
 
             router.push(`/lab?symbol=${encodeURIComponent(selectedTicker)}`);
