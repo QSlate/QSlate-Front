@@ -10,13 +10,20 @@ export interface BacktestMetrics {
 }
 
 export interface Trade {
-    type: "LONG" | "SHORT";
+    id?: string;
+    type: string;
     entry_date: string;
     exit_date?: string;
     entry_price: number;
-    exit_price: number;
-    pnl_usd: number;
+    exit_price?: number;
+    pnl_usd?: number;
     exit_reason?: string;
+    size_usd?: number;
+    leverage?: number;
+    sl?: number;
+    tp?: number;
+    timeout?: string | number | null;
+    status?: string;
 }
 
 export interface AssetInfo {
