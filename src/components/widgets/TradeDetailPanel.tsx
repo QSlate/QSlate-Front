@@ -64,12 +64,20 @@ interface InfoRowProps {
 }
 
 const InfoRow: React.FC<InfoRowProps> = ({ icon, label, value, valueClass }) => (
-    <div className="flex items-center justify-between py-3.5 border-b border-white/5 last:border-0 group">
-        <div className="flex items-center gap-3 text-gray-500">
+    <div
+        className="flex items-center justify-between py-3.5 last:border-0 group"
+        style={{ borderBottom: "1px solid var(--divider)" }}
+    >
+        <div className="flex items-center gap-3" style={{ color: "var(--text-tertiary)" }}>
             <span className="w-4 h-4 flex items-center justify-center opacity-70">{icon}</span>
             <span className="text-xs font-medium tracking-wide uppercase">{label}</span>
         </div>
-        <span className={`text-sm font-semibold ${valueClass ?? "text-white"}`}>{value}</span>
+        <span
+            className={`text-sm font-semibold ${valueClass ?? ""}`}
+            style={!valueClass ? { color: "var(--text-primary)" } : undefined}
+        >
+            {value}
+        </span>
     </div>
 );
 
@@ -113,23 +121,33 @@ export const TradeDetailPanel: React.FC<TradeDetailPanelProps> = ({ trade, onClo
         <>
             {/* Backdrop */}
             <div
-                className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-                style={{ animation: "fadeIn 0.2s ease" }}
+                className="fixed inset-0 z-50 backdrop-blur-sm"
+                style={{
+                    background: "var(--bg-modal-backdrop)",
+                    animation: "fadeIn 0.2s ease",
+                }}
                 onClick={onClose}
                 aria-hidden="true"
             />
 
             {/* Panel */}
             <div
-                className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-md bg-[#0D0F14] border-l border-white/5 shadow-2xl"
-                style={{ animation: "slideInRight 0.25s cubic-bezier(0.22, 1, 0.36, 1)" }}
+                className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-md shadow-2xl"
+                style={{
+                    background: "var(--bg-panel)",
+                    borderLeft: "1px solid var(--border-default)",
+                    animation: "slideInRight 0.25s cubic-bezier(0.22, 1, 0.36, 1)",
+                }}
                 role="dialog"
                 aria-modal="true"
                 aria-label="Trade Details"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-5 border-b border-white/5 shrink-0">
+                <div
+                    className="flex items-center justify-between px-6 py-5 shrink-0"
+                    style={{ borderBottom: "1px solid var(--border-default)" }}
+                >
                     <div className="flex items-center gap-3">
                         <div className={`w-9 h-9 rounded-xl ${typeBg} border ${typeBorder} flex items-center justify-center`}>
                             {isLong
@@ -138,13 +156,32 @@ export const TradeDetailPanel: React.FC<TradeDetailPanelProps> = ({ trade, onClo
                             }
                         </div>
                         <div>
-                            <p className="text-white font-bold text-base tracking-tight">Trade Details</p>
-                            <p className="text-xs text-gray-500 mt-0.5 font-mono">{trade.id ?? "—"}</p>
+                            <p
+                                className="font-bold text-base tracking-tight"
+                                style={{ color: "var(--text-primary)" }}
+                            >
+                                Trade Details
+                            </p>
+                            <p
+                                className="text-xs mt-0.5 font-mono"
+                                style={{ color: "var(--text-tertiary)" }}
+                            >
+                                {trade.id ?? "—"}
+                            </p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-all"
+                        className="p-2 rounded-lg transition-all"
+                        style={{ color: "var(--text-tertiary)" }}
+                        onMouseEnter={e => {
+                            (e.currentTarget as HTMLElement).style.background = "var(--interactive-hover-bg)";
+                            (e.currentTarget as HTMLElement).style.color = "var(--text-primary)";
+                        }}
+                        onMouseLeave={e => {
+                            (e.currentTarget as HTMLElement).style.background = "transparent";
+                            (e.currentTarget as HTMLElement).style.color = "var(--text-tertiary)";
+                        }}
                         aria-label="Close panel"
                     >
                         <X className="w-4 h-4" />
@@ -153,7 +190,12 @@ export const TradeDetailPanel: React.FC<TradeDetailPanelProps> = ({ trade, onClo
 
                 {/* PnL Hero */}
                 <div className={`mx-6 mt-6 mb-2 rounded-2xl ${pnlBg} border ${isPositive ? "border-emerald-500/15" : "border-red-500/15"} px-6 py-5`}>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-1">Realized P&amp;L</p>
+                    <p
+                        className="text-xs font-medium uppercase tracking-widest mb-1"
+                        style={{ color: "var(--text-tertiary)" }}
+                    >
+                        Realized P&amp;L
+                    </p>
                     <div className="flex items-end gap-3">
                         <span className={`text-4xl font-bold tabular-nums ${pnlColor}`}>
                             {isPositive ? "+" : ""}
@@ -171,7 +213,14 @@ export const TradeDetailPanel: React.FC<TradeDetailPanelProps> = ({ trade, onClo
                             {trade.type?.toUpperCase() ?? "—"}
                         </span>
                         {trade.status && (
-                            <span className="text-[11px] font-medium px-2.5 py-1 rounded-lg border bg-white/5 border-white/10 text-gray-400 uppercase tracking-wider">
+                            <span
+                                className="text-[11px] font-medium px-2.5 py-1 rounded-lg border uppercase tracking-wider"
+                                style={{
+                                    background: "var(--bg-card-subtle)",
+                                    border: "1px solid var(--border-default)",
+                                    color: "var(--text-secondary)",
+                                }}
+                            >
                                 {trade.status}
                             </span>
                         )}
@@ -184,46 +233,87 @@ export const TradeDetailPanel: React.FC<TradeDetailPanelProps> = ({ trade, onClo
                 </div>
 
                 {/* Scrollable Body */}
-                <div className="flex-1 overflow-y-auto px-6 py-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#2A2D35] hover:[&::-webkit-scrollbar-thumb]:bg-[#3A3D45] [&::-webkit-scrollbar-thumb]:rounded-full">
-
+                <div
+                    className="flex-1 overflow-y-auto px-6 py-4"
+                    style={{
+                        scrollbarWidth: "thin",
+                        scrollbarColor: "var(--scrollbar-thumb) transparent",
+                    }}
+                >
                     {/* Price Section */}
-                    <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-widest mb-1 mt-2">Price</p>
-                    <div className="bg-white/[0.03] border border-white/5 rounded-xl px-4 mb-5">
-                        <div className="flex items-center justify-between py-4 border-b border-white/5">
+                    <p
+                        className="text-[10px] font-semibold uppercase tracking-widest mb-1 mt-2"
+                        style={{ color: "var(--text-muted)" }}
+                    >
+                        Price
+                    </p>
+                    <div
+                        className="rounded-xl px-4 mb-5"
+                        style={{
+                            background: "var(--bg-card-subtle)",
+                            border: "1px solid var(--border-default)",
+                        }}
+                    >
+                        <div
+                            className="flex items-center justify-between py-4"
+                            style={{ borderBottom: "1px solid var(--border-default)" }}
+                        >
                             <div className="flex flex-col">
-                                <span className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Entry</span>
-                                <span className="text-lg font-bold text-white tabular-nums">
+                                <span
+                                    className="text-[10px] uppercase tracking-wider mb-1"
+                                    style={{ color: "var(--text-tertiary)" }}
+                                >
+                                    Entry
+                                </span>
+                                <span
+                                    className="text-lg font-bold tabular-nums"
+                                    style={{ color: "var(--text-primary)" }}
+                                >
                                     ${trade.entry_price?.toFixed(2) ?? "—"}
                                 </span>
                             </div>
                             <div className="flex items-center gap-2 px-3">
-                                <div className="w-10 h-px bg-white/10" />
-                                <ArrowRight className="w-4 h-4 text-gray-600" />
-                                <div className="w-10 h-px bg-white/10" />
+                                <div className="w-10 h-px" style={{ background: "var(--border-hover)" }} />
+                                <ArrowRight className="w-4 h-4" style={{ color: "var(--text-tertiary)" }} />
+                                <div className="w-10 h-px" style={{ background: "var(--border-hover)" }} />
                             </div>
                             <div className="flex flex-col items-end">
-                                <span className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Exit</span>
-                                <span className="text-lg font-bold text-white tabular-nums">
+                                <span
+                                    className="text-[10px] uppercase tracking-wider mb-1"
+                                    style={{ color: "var(--text-tertiary)" }}
+                                >
+                                    Exit
+                                </span>
+                                <span
+                                    className="text-lg font-bold tabular-nums"
+                                    style={{ color: "var(--text-primary)" }}
+                                >
                                     ${trade.exit_price?.toFixed(2) ?? "—"}
                                 </span>
                             </div>
                         </div>
                         {(trade.sl != null || trade.tp != null) && (
-                            <div className="flex gap-0 divide-x divide-white/5 py-1">
+                            <div
+                                className="flex gap-0 py-1"
+                                style={{ borderTop: "1px solid var(--border-default)" }}
+                            >
                                 {trade.sl != null && (
                                     <div className="flex-1 flex items-center gap-2 pr-4 py-2.5">
                                         <ShieldAlert className="w-3.5 h-3.5 text-red-400 opacity-70 shrink-0" />
                                         <div>
-                                            <p className="text-[10px] text-gray-600">Stop Loss</p>
+                                            <p className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>Stop Loss</p>
                                             <p className="text-sm font-semibold text-red-400 tabular-nums">${trade.sl.toFixed(2)}</p>
                                         </div>
                                     </div>
                                 )}
                                 {trade.tp != null && (
-                                    <div className="flex-1 flex items-center gap-2 pl-4 py-2.5">
+                                    <div
+                                        className="flex-1 flex items-center gap-2 pl-4 py-2.5"
+                                        style={trade.sl != null ? { borderLeft: "1px solid var(--border-default)" } : {}}
+                                    >
                                         <Target className="w-3.5 h-3.5 text-emerald-400 opacity-70 shrink-0" />
                                         <div>
-                                            <p className="text-[10px] text-gray-600">Take Profit</p>
+                                            <p className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>Take Profit</p>
                                             <p className="text-sm font-semibold text-emerald-400 tabular-nums">${trade.tp.toFixed(2)}</p>
                                         </div>
                                     </div>
@@ -233,62 +323,28 @@ export const TradeDetailPanel: React.FC<TradeDetailPanelProps> = ({ trade, onClo
                     </div>
 
                     {/* Execution Section */}
-                    <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-widest mb-1">Execution</p>
-                    <div className="bg-white/[0.03] border border-white/5 rounded-xl px-4 mb-5">
-                        <InfoRow
-                            icon={<Calendar className="w-3.5 h-3.5" />}
-                            label="Entry Date"
-                            value={<span className="font-mono text-xs">{formatDate(trade.entry_date)}</span>}
-                        />
-                        <InfoRow
-                            icon={<Calendar className="w-3.5 h-3.5" />}
-                            label="Exit Date"
-                            value={<span className="font-mono text-xs">{formatDate(trade.exit_date)}</span>}
-                        />
-                        <InfoRow
-                            icon={<Clock className="w-3.5 h-3.5" />}
-                            label="Duration"
-                            value={formatDuration(trade.entry_date, trade.exit_date)}
-                        />
+                    <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--text-muted)" }}>Execution</p>
+                    <div className="rounded-xl px-4 mb-5" style={{ background: "var(--bg-card-subtle)", border: "1px solid var(--border-default)" }}>
+                        <InfoRow icon={<Calendar className="w-3.5 h-3.5" />} label="Entry Date" value={<span className="font-mono text-xs">{formatDate(trade.entry_date)}</span>} />
+                        <InfoRow icon={<Calendar className="w-3.5 h-3.5" />} label="Exit Date" value={<span className="font-mono text-xs">{formatDate(trade.exit_date)}</span>} />
+                        <InfoRow icon={<Clock className="w-3.5 h-3.5" />} label="Duration" value={formatDuration(trade.entry_date, trade.exit_date)} />
                     </div>
 
                     {/* Position Section */}
-                    <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-widest mb-1">Position</p>
-                    <div className="bg-white/[0.03] border border-white/5 rounded-xl px-4 mb-5">
-                        {trade.size_usd != null && (
-                            <InfoRow
-                                icon={<DollarSign className="w-3.5 h-3.5" />}
-                                label="Size (USD)"
-                                value={`$${trade.size_usd.toLocaleString()}`}
-                            />
-                        )}
-                        {trade.leverage != null && (
-                            <InfoRow
-                                icon={<Layers className="w-3.5 h-3.5" />}
-                                label="Leverage"
-                                value={`${trade.leverage}×`}
-                            />
-                        )}
-                        {trade.timeout != null && (
-                            <InfoRow
-                                icon={<Activity className="w-3.5 h-3.5" />}
-                                label="Timeout"
-                                value={String(trade.timeout)}
-                            />
-                        )}
+                    <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--text-muted)" }}>Position</p>
+                    <div className="rounded-xl px-4 mb-5" style={{ background: "var(--bg-card-subtle)", border: "1px solid var(--border-default)" }}>
+                        {trade.size_usd != null && <InfoRow icon={<DollarSign className="w-3.5 h-3.5" />} label="Size (USD)" value={`$${trade.size_usd.toLocaleString()}`} />}
+                        {trade.leverage != null && <InfoRow icon={<Layers className="w-3.5 h-3.5" />} label="Leverage" value={`${trade.leverage}×`} />}
+                        {trade.timeout != null && <InfoRow icon={<Activity className="w-3.5 h-3.5" />} label="Timeout" value={String(trade.timeout)} />}
                     </div>
 
                     {/* Performance Section */}
-                    <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-widest mb-1">Performance</p>
-                    <div className="bg-white/[0.03] border border-white/5 rounded-xl px-4 mb-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--text-muted)" }}>Performance</p>
+                    <div className="rounded-xl px-4 mb-2" style={{ background: "var(--bg-card-subtle)", border: "1px solid var(--border-default)" }}>
                         <InfoRow
                             icon={<BarChart2 className="w-3.5 h-3.5" />}
                             label="P&L (USD)"
-                            value={
-                                <span>
-                                    {isPositive ? "+" : ""}${(trade.pnl_usd ?? 0).toFixed(2)}
-                                </span>
-                            }
+                            value={<span>{isPositive ? "+" : ""}${(trade.pnl_usd ?? 0).toFixed(2)}</span>}
                             valueClass={pnlColor}
                         />
                         {pnlPercent && (
@@ -303,17 +359,33 @@ export const TradeDetailPanel: React.FC<TradeDetailPanelProps> = ({ trade, onClo
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 border-t border-white/5 shrink-0">
+                <div
+                    className="px-6 py-4 shrink-0"
+                    style={{ borderTop: "1px solid var(--border-default)" }}
+                >
                     <button
                         onClick={onClose}
-                        className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-sm font-medium transition-all border border-white/5"
+                        className="w-full py-2.5 rounded-xl text-sm font-medium transition-all"
+                        style={{
+                            background: "var(--interactive-hover-bg)",
+                            border: "1px solid var(--border-default)",
+                            color: "var(--text-secondary)",
+                        }}
+                        onMouseEnter={e => {
+                            (e.currentTarget as HTMLElement).style.background = "var(--interactive-active-bg)";
+                            (e.currentTarget as HTMLElement).style.color = "var(--text-primary)";
+                        }}
+                        onMouseLeave={e => {
+                            (e.currentTarget as HTMLElement).style.background = "var(--interactive-hover-bg)";
+                            (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
+                        }}
                     >
                         Close
                     </button>
                 </div>
             </div>
 
-            <style jsx global>{`
+            <style>{`
                 @keyframes fadeIn {
                     from { opacity: 0; }
                     to { opacity: 1; }

@@ -10,6 +10,7 @@ import { calculateProgress } from "../../utils/metrics";
 import { TradingViewChart } from "../../components/widgets/TradingViewChart";
 import { TradeHistoryWidget } from "../../components/widgets/TradeHistoryWidget";
 import { loadBacktestResult } from "../../hooks/useBacktestPersistence";
+import { useTheme } from "../../hooks/useTheme";
 
 import type { Layout, ResponsiveLayouts } from "react-grid-layout";
 import { Responsive, WidthProvider } from "react-grid-layout/legacy";
@@ -136,7 +137,12 @@ const fetchChartData = async (symbol: string) => {
 function DragHandle() {
     return (
         <div
-            className="drag-handle absolute top-3 right-3 z-50 flex items-center justify-center w-6 h-6 rounded-lg bg-black/40 border border-white/8 text-gray-600 hover:text-gray-400 hover:border-white/15 hover:bg-black/60 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-all duration-150 backdrop-blur-sm"
+            className="drag-handle absolute top-3 right-3 z-50 flex items-center justify-center w-6 h-6 rounded-lg opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-all duration-150 backdrop-blur-sm"
+            style={{
+                background: "var(--interactive-active-bg)",
+                border: "1px solid var(--border-strong)",
+                color: "var(--text-tertiary)",
+            }}
             role="button" tabIndex={0} aria-label="Drag to reposition widget" title="Drag to reposition"
         >
             <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
@@ -160,23 +166,47 @@ function WidgetPanel({ isOpen, onClose, visibleWidgets, onToggle }: WidgetPanelP
         <>
             {/* Backdrop */}
             <div
-                className={`fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+                className={`fixed inset-0 z-40 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+                style={{ background: "var(--bg-modal-backdrop)" }}
                 onClick={onClose}
             />
 
             {/* Slide-in panel */}
             <div
-                className={`fixed top-0 right-0 h-full w-80 z-50 bg-[#0D0F14] border-l border-white/5 flex flex-col shadow-2xl transition-transform duration-300 ease-out ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+                className={`fixed top-0 right-0 h-full w-80 z-50 flex flex-col shadow-2xl transition-transform duration-300 ease-out ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+                style={{
+                    background: "var(--bg-panel)",
+                    borderLeft: "1px solid var(--border-default)",
+                }}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+                <div
+                    className="flex items-center justify-between px-5 py-4"
+                    style={{ borderBottom: "1px solid var(--border-default)" }}
+                >
                     <div>
-                        <h2 className="text-sm font-semibold text-white">Manage Widgets</h2>
-                        <p className="text-[11px] text-gray-500 mt-0.5">Show or hide dashboard panels</p>
+                        <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                            Manage Widgets
+                        </h2>
+                        <p className="text-[11px] mt-0.5" style={{ color: "var(--text-tertiary)" }}>
+                            Show or hide dashboard panels
+                        </p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                        style={{
+                            background: "var(--interactive-hover-bg)",
+                            color: "var(--text-secondary)",
+                        }}
+                        onMouseEnter={e => {
+                            (e.currentTarget as HTMLElement).style.background = "var(--interactive-active-bg)";
+                            (e.currentTarget as HTMLElement).style.color = "var(--text-primary)";
+                        }}
+                        onMouseLeave={e => {
+                            (e.currentTarget as HTMLElement).style.background = "var(--interactive-hover-bg)";
+                            (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
+                        }}
                     >
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -185,9 +215,17 @@ function WidgetPanel({ isOpen, onClose, visibleWidgets, onToggle }: WidgetPanelP
                 </div>
 
                 {/* Badge count */}
-                <div className="px-5 py-3 flex items-center gap-2 border-b border-white/5">
-                    <span className="text-[11px] text-gray-500">{visibleWidgets.size} of {WIDGET_REGISTRY.length} visible</span>
-                    <div className="flex-1 bg-white/5 h-1 rounded-full overflow-hidden">
+                <div
+                    className="px-5 py-3 flex items-center gap-2"
+                    style={{ borderBottom: "1px solid var(--border-default)" }}
+                >
+                    <span className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+                        {visibleWidgets.size} of {WIDGET_REGISTRY.length} visible
+                    </span>
+                    <div
+                        className="flex-1 h-1 rounded-full overflow-hidden"
+                        style={{ background: "var(--segment-bg)" }}
+                    >
                         <div
                             className="h-full bg-gradient-to-r from-[#00FFB2]/60 to-[#00FFB2] rounded-full transition-all duration-500"
                             style={{ width: `${(visibleWidgets.size / WIDGET_REGISTRY.length) * 100}%` }}
@@ -203,20 +241,31 @@ function WidgetPanel({ isOpen, onClose, visibleWidgets, onToggle }: WidgetPanelP
                             <button
                                 key={widget.id}
                                 onClick={() => onToggle(widget.id)}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all duration-150 text-left group ${isVisible
-                                    ? "bg-[#00FFB2]/5 border-[#00FFB2]/15 hover:bg-[#00FFB2]/8"
-                                    : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10"
-                                    }`}
+                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 text-left group"
+                                style={{
+                                    background: isVisible ? "rgba(0,255,178,0.05)" : "var(--interactive-hover-bg)",
+                                    border: isVisible ? "1px solid rgba(0,255,178,0.15)" : "1px solid var(--border-default)",
+                                }}
                             >
                                 <span className="text-xl leading-none select-none w-7 text-center">{widget.icon}</span>
                                 <div className="flex-1 min-w-0">
-                                    <div className={`text-sm font-medium leading-none ${isVisible ? "text-white" : "text-gray-500"}`}>
+                                    <div
+                                        className="text-sm font-medium leading-none"
+                                        style={{ color: isVisible ? "var(--text-primary)" : "var(--text-tertiary)" }}
+                                    >
                                         {widget.label}
                                     </div>
-                                    <div className="text-[10px] text-gray-600 mt-0.5 truncate">{widget.description}</div>
+                                    <div
+                                        className="text-[10px] mt-0.5 truncate"
+                                        style={{ color: "var(--text-muted)" }}
+                                    >
+                                        {widget.description}
+                                    </div>
                                 </div>
                                 {/* Toggle */}
-                                <div className={`w-9 h-5 rounded-full transition-all duration-200 flex items-center shrink-0 ${isVisible ? "bg-[#00FFB2]" : "bg-white/10"}`}>
+                                <div className={`w-9 h-5 rounded-full transition-all duration-200 flex items-center shrink-0 ${isVisible ? "bg-[#00FFB2]" : ""}`}
+                                    style={!isVisible ? { background: "var(--segment-bg)" } : undefined}
+                                >
                                     <div className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform duration-200 ${isVisible ? "translate-x-[18px]" : "translate-x-[3px]"}`} />
                                 </div>
                             </button>
@@ -225,10 +274,18 @@ function WidgetPanel({ isOpen, onClose, visibleWidgets, onToggle }: WidgetPanelP
                 </div>
 
                 {/* Footer actions */}
-                <div className="px-4 pb-5 pt-3 border-t border-white/5 flex gap-2">
+                <div
+                    className="px-4 pb-5 pt-3 flex gap-2"
+                    style={{ borderTop: "1px solid var(--border-default)" }}
+                >
                     <button
                         onClick={() => ALL_WIDGET_IDS.forEach(id => !visibleWidgets.has(id) && onToggle(id))}
-                        className="flex-1 text-xs py-2 rounded-lg bg-white/5 hover:bg-white/8 text-gray-400 hover:text-white border border-white/5 transition-all"
+                        className="flex-1 text-xs py-2 rounded-lg transition-all"
+                        style={{
+                            background: "var(--interactive-hover-bg)",
+                            color: "var(--text-secondary)",
+                            border: "1px solid var(--border-default)",
+                        }}
                     >
                         Show all
                     </button>
@@ -237,7 +294,12 @@ function WidgetPanel({ isOpen, onClose, visibleWidgets, onToggle }: WidgetPanelP
                             if (!visibleWidgets.has("chart")) onToggle("chart");
                             ALL_WIDGET_IDS.filter(id => id !== "chart").forEach(id => visibleWidgets.has(id) && onToggle(id));
                         }}
-                        className="flex-1 text-xs py-2 rounded-lg bg-white/5 hover:bg-white/8 text-gray-400 hover:text-white border border-white/5 transition-all"
+                        className="flex-1 text-xs py-2 rounded-lg transition-all"
+                        style={{
+                            background: "var(--interactive-hover-bg)",
+                            color: "var(--text-secondary)",
+                            border: "1px solid var(--border-default)",
+                        }}
                     >
                         Chart only
                     </button>
@@ -250,6 +312,7 @@ function WidgetPanel({ isOpen, onClose, visibleWidgets, onToggle }: WidgetPanelP
 function DashboardContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { theme } = useTheme();
 
     const currentSymbol = searchParams.get("symbol") || "AAPL";
     const currentExchange = searchParams.get("exchange") || "NASDAQ";
@@ -274,14 +337,15 @@ function DashboardContent() {
         if (savedLayouts) {
             try {
                 const parsedLayouts = JSON.parse(savedLayouts);
+                type RawLayout = { i: string; x: number; y: number; w: number; h: number; minW?: number; minH?: number };
                 Object.keys(parsedLayouts).forEach(bp => {
-                    const bpLayout = parsedLayouts[bp];
-                    const tradesItem = bpLayout.find((item: Layout) => item.i === "trades");
+                    const bpLayout = parsedLayouts[bp] as RawLayout[];
+                    const tradesItem = bpLayout.find(item => item.i === "trades");
                     if (tradesItem) tradesItem.minW = 1;
-                    if (!bpLayout.find((item: Layout) => item.i === "netprofit")) {
+                    if (!bpLayout.find(item => item.i === "netprofit")) {
                         bpLayout.push({ i: "netprofit", x: 0, y: 10, w: 6, h: 2, minW: 2, minH: 2 });
                     }
-                    if (!bpLayout.find((item: Layout) => item.i === "winrate")) {
+                    if (!bpLayout.find(item => item.i === "winrate")) {
                         bpLayout.push({ i: "winrate", x: 6, y: 10, w: 6, h: 2, minW: 2, minH: 2 });
                     }
                 });
@@ -366,7 +430,9 @@ function DashboardContent() {
                         <div className="absolute inset-0 rounded-full border-2 border-[#00FFB2]/20 animate-ping" />
                         <div className="absolute inset-1 rounded-full border border-[#00FFB2]/40 animate-pulse" />
                     </div>
-                    <p className="text-sm text-gray-500 animate-pulse">Loading dashboard…</p>
+                    <p className="text-sm animate-pulse" style={{ color: "var(--text-tertiary)" }}>
+                        Loading dashboard…
+                    </p>
                 </div>
             </div>
         );
@@ -375,7 +441,7 @@ function DashboardContent() {
     if (!backtestData) {
         return (
             <div className="flex items-center justify-center h-full min-h-[400px]">
-                <p className="text-gray-500">No data available for {currentSymbol}.</p>
+                <p style={{ color: "var(--text-tertiary)" }}>No data available for {currentSymbol}.</p>
             </div>
         );
     }
@@ -385,7 +451,10 @@ function DashboardContent() {
 
     const filteredLayouts: ResponsiveLayouts = {};
     Object.keys(layouts).forEach(bp => {
-        filteredLayouts[bp] = (layouts[bp] as Layout[]).filter(item => visibleWidgets.has(item.i as WidgetId));
+        const bpItems = layouts[bp];
+        if (Array.isArray(bpItems)) {
+            filteredLayouts[bp] = (bpItems as unknown as { i: string }[]).filter(item => visibleWidgets.has(item.i as WidgetId)) as unknown as Layout[];
+        }
     });
 
     return (
@@ -404,22 +473,42 @@ function DashboardContent() {
             />
 
             {/* ─── Toolbar ─── */}
-            <header className="flex items-center justify-between px-6 h-12 bg-[#050505] border-b border-white/5 shrink-0">
+            <header
+                className="flex items-center justify-between px-6 h-12 shrink-0"
+                style={{
+                    background: "var(--bg-base)",
+                    borderBottom: "1px solid var(--border-default)",
+                }}
+            >
                 {/* Left: Symbol info */}
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => setIsSymbolModalOpen(true)}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/8 hover:bg-white/[0.06] hover:border-white/15 transition-all group"
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all group"
+                        style={{
+                            background: "var(--bg-card-subtle)",
+                            border: "1px solid var(--border-strong)",
+                        }}
+                        onMouseEnter={e => {
+                            (e.currentTarget as HTMLElement).style.background = "var(--interactive-hover-bg)";
+                            (e.currentTarget as HTMLElement).style.borderColor = "var(--border-hover)";
+                        }}
+                        onMouseLeave={e => {
+                            (e.currentTarget as HTMLElement).style.background = "var(--bg-card-subtle)";
+                            (e.currentTarget as HTMLElement).style.borderColor = "var(--border-strong)";
+                        }}
                     >
-                        <span className="text-sm font-bold text-white">{currentSymbol}</span>
-                        <svg className="w-3 h-3 text-gray-600 group-hover:text-gray-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+                            {currentSymbol}
+                        </span>
+                        <svg className="w-3 h-3 transition-colors" style={{ color: "var(--text-tertiary)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
 
                     {backtestData.asset.currentPrice > 0 && (
                         <>
-                            <span className="text-sm font-medium text-white">
+                            <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                                 ${backtestData.asset.currentPrice.toFixed(2)}
                             </span>
                             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${backtestData.asset.changePercent >= 0
@@ -431,14 +520,29 @@ function DashboardContent() {
                         </>
                     )}
 
-                    <span className="text-[11px] text-gray-600 hidden md:block">{currentExchange}</span>
+                    <span className="text-[11px] hidden md:block" style={{ color: "var(--text-muted)" }}>
+                        {currentExchange}
+                    </span>
                 </div>
 
                 {/* Right: Actions */}
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => router.push("/script")}
-                        className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-white bg-white/[0.03] border border-white/8 hover:border-white/15 rounded-lg px-3 py-1.5 transition-all"
+                        className="flex items-center gap-1.5 text-xs rounded-lg px-3 py-1.5 transition-all"
+                        style={{
+                            color: "var(--text-tertiary)",
+                            background: "var(--bg-card-subtle)",
+                            border: "1px solid var(--border-strong)",
+                        }}
+                        onMouseEnter={e => {
+                            (e.currentTarget as HTMLElement).style.color = "var(--text-primary)";
+                            (e.currentTarget as HTMLElement).style.borderColor = "var(--border-hover)";
+                        }}
+                        onMouseLeave={e => {
+                            (e.currentTarget as HTMLElement).style.color = "var(--text-tertiary)";
+                            (e.currentTarget as HTMLElement).style.borderColor = "var(--border-strong)";
+                        }}
                     >
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
@@ -448,7 +552,20 @@ function DashboardContent() {
 
                     <button
                         onClick={() => setIsWidgetPanelOpen(true)}
-                        className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-white/[0.03] border border-white/8 hover:border-white/15 rounded-lg px-3 py-1.5 transition-all group"
+                        className="flex items-center gap-1.5 text-xs rounded-lg px-3 py-1.5 transition-all group"
+                        style={{
+                            color: "var(--text-secondary)",
+                            background: "var(--bg-card-subtle)",
+                            border: "1px solid var(--border-strong)",
+                        }}
+                        onMouseEnter={e => {
+                            (e.currentTarget as HTMLElement).style.color = "var(--text-primary)";
+                            (e.currentTarget as HTMLElement).style.borderColor = "var(--border-hover)";
+                        }}
+                        onMouseLeave={e => {
+                            (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
+                            (e.currentTarget as HTMLElement).style.borderColor = "var(--border-strong)";
+                        }}
                     >
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7" />
@@ -466,7 +583,9 @@ function DashboardContent() {
             {/* ─── Grid ─── */}
             {!mounted ? (
                 <div className="flex-1 flex items-center justify-center">
-                    <p className="text-sm text-gray-500 animate-pulse">Initializing workspace…</p>
+                    <p className="text-sm animate-pulse" style={{ color: "var(--text-tertiary)" }}>
+                        Initializing workspace…
+                    </p>
                 </div>
             ) : (
                 <div className="flex-1 overflow-auto">
@@ -484,9 +603,13 @@ function DashboardContent() {
                     >
                         {/* Chart */}
                         {visibleWidgets.has("chart") && (
-                            <div key="chart" className="relative group rounded-xl overflow-hidden border border-white/5 bg-[#0D0F14] shadow-sm">
+                            <div
+                                key="chart"
+                                className="relative group rounded-xl overflow-hidden shadow-sm"
+                                style={{ border: "1px solid var(--border-default)", background: "var(--bg-card)" }}
+                            >
                                 <DragHandle />
-                                <TradingViewChart symbol={`${currentExchange}:${currentSymbol}`} />
+                                <TradingViewChart symbol={`${currentExchange}:${currentSymbol}`} theme={theme} />
                             </div>
                         )}
 
@@ -642,7 +765,9 @@ export default function LabPage() {
                         <div className="absolute inset-0 rounded-full border-2 border-[#00FFB2]/20 animate-ping" />
                         <div className="absolute inset-1 rounded-full border border-[#00FFB2]/40 animate-pulse" />
                     </div>
-                    <p className="text-sm text-gray-500">Initializing dashboard…</p>
+                    <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
+                        Initializing dashboard…
+                    </p>
                 </div>
             </div>
         }>

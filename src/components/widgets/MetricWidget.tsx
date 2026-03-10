@@ -45,10 +45,14 @@ export const MetricWidget: React.FC<MetricWidgetProps> = ({
 
     return (
         <div
-            className="relative bg-[#0D0F14] border border-white/5 rounded-xl p-4 flex flex-col justify-between h-full w-full overflow-hidden group"
-            style={{ boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04)` }}
+            className="relative rounded-xl p-4 flex flex-col justify-between h-full w-full overflow-hidden group transition-all duration-200"
+            style={{
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-default)",
+                boxShadow: `inset 0 1px 0 var(--card-inset)`,
+            }}
         >
-            {/* Top accent line */}
+            {/* Top accent line on hover */}
             <div
                 className="absolute top-0 left-0 right-0 h-[2px] rounded-t-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 style={{ background: `linear-gradient(90deg, transparent, ${accentColor}60, transparent)` }}
@@ -63,7 +67,10 @@ export const MetricWidget: React.FC<MetricWidgetProps> = ({
             {/* Header */}
             <div className="flex items-start justify-between relative z-10">
                 <div className="flex flex-col gap-0.5">
-                    <span className="text-[11px] font-medium text-gray-500 uppercase tracking-widest leading-none">
+                    <span
+                        className="text-[11px] font-medium uppercase tracking-widest leading-none"
+                        style={{ color: "var(--text-tertiary)" }}
+                    >
                         {title}
                     </span>
                 </div>
@@ -81,11 +88,19 @@ export const MetricWidget: React.FC<MetricWidgetProps> = ({
 
             {/* Value */}
             <div className="flex items-baseline gap-1.5 mt-2 relative z-10">
-                <span className="text-2xl font-bold text-white tracking-tight leading-none">
+                <span
+                    className="text-2xl font-bold tracking-tight leading-none"
+                    style={{ color: "var(--text-primary)" }}
+                >
                     {value}
                 </span>
                 {subValue && (
-                    <span className="text-sm text-gray-600 font-medium">{subValue}</span>
+                    <span
+                        className="text-sm font-medium"
+                        style={{ color: "var(--text-tertiary)" }}
+                    >
+                        {subValue}
+                    </span>
                 )}
                 {trendIcon && (
                     <span className="ml-auto flex items-center">{trendIcon}</span>
@@ -96,7 +111,10 @@ export const MetricWidget: React.FC<MetricWidgetProps> = ({
             {visualType !== 'none' && (
                 <div className="mt-3 relative z-10">
                     {visualType === 'progress' && (
-                        <div className="relative w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                        <div
+                            className="relative w-full h-1 rounded-full overflow-hidden"
+                            style={{ background: "var(--segment-bg)" }}
+                        >
                             <div
                                 className="h-full rounded-full transition-all duration-700 ease-out"
                                 style={{
@@ -109,7 +127,9 @@ export const MetricWidget: React.FC<MetricWidgetProps> = ({
                     )}
 
                     {visualType === 'segmented' && (
-                        <div className="relative w-full h-1 rounded-full flex overflow-hidden">
+                        <div
+                            className="relative w-full h-1 rounded-full flex overflow-hidden"
+                        >
                             <div className="h-full flex-1 bg-[#EF4444]/70" />
                             <div className="h-full flex-1 bg-[#F97316]/70" />
                             <div className="h-full flex-1 bg-[#EAB308]/70" />

@@ -20,11 +20,11 @@ export default function ScrollRevealText({ text }: ScrollRevealTextProps) {
     return (
         <p
             ref={containerRef}
-            className="text-2xl md:text-3xl lg:text-4xl font-medium tracking-tight text-white text-center leading-[1.5] max-w-4xl mx-auto"
+            className="text-2xl md:text-3xl lg:text-4xl font-medium tracking-tight text-center leading-[1.5] max-w-4xl mx-auto"
+            style={{ color: "var(--text-primary)" }}
         >
             {words.map((word, i) => {
                 const start = i * step;
-
                 const end = Math.min(start + step * 1.5, 1);
                 return (
                     <span key={i}>
@@ -49,4 +49,4 @@ const Word = ({ children, progress, range }: WordProps) => {
     const opacity = useTransform(progress, range, [0.1, 1]);
     const blur = useTransform(progress, range, ["blur(8px)", "blur(0px)"]);
     return <motion.span style={{ opacity, filter: blur }}>{children}</motion.span>;
-}
+};
