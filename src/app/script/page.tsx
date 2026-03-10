@@ -8,13 +8,14 @@ import {
     loadScriptState,
     saveBacktestResult,
 } from "@/hooks/useBacktestPersistence";
+import { useTheme } from "@/hooks/useTheme";
 
 const SimpleCodeEditor = dynamic(
     () => import("@/components/widgets/SimpleCodeEditor"),
     {
         ssr: false,
         loading: () => (
-            <div className="flex items-center justify-center w-full h-full text-gray-500 bg-[#0D0F14]">
+            <div className="flex items-center justify-center w-full h-full" style={{ background: "#0D0F14" }}>
                 <div className="flex flex-col items-center gap-3">
                     <svg className="animate-spin w-5 h-5 text-[#00FFB2]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -77,6 +78,8 @@ function formatTimestamp(): string {
 
 export default function ScriptPage() {
     const router = useRouter();
+    const { theme } = useTheme();
+    const isDark = theme === "dark";
 
     const [assets, setAssets] = useState<SearchSymbol[]>([]);
     const [selectedTicker, setSelectedTicker] = useState("");
@@ -272,11 +275,23 @@ export default function ScriptPage() {
     };
 
     return (
-        <div className="flex h-[calc(100vh-64px)] w-full bg-[#050505] overflow-hidden">
+        <div
+            className="flex h-[calc(100vh-64px)] w-full overflow-hidden"
+            style={{ background: "var(--bg-base)" }}
+        >
             {/* ─── Left Sidebar: Config ─── */}
-            <aside className="w-72 shrink-0 flex flex-col bg-[#0D0F14] border-r border-white/5 overflow-y-auto">
+            <aside
+                className="w-72 shrink-0 flex flex-col overflow-y-auto"
+                style={{
+                    background: "var(--bg-card)",
+                    borderRight: "1px solid var(--border-default)",
+                }}
+            >
                 {/* Header */}
-                <div className="px-5 py-4 border-b border-white/5">
+                <div
+                    className="px-5 py-4"
+                    style={{ borderBottom: "1px solid var(--border-default)" }}
+                >
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                             <div className="w-7 h-7 rounded-lg bg-[#00FFB2]/10 border border-[#00FFB2]/20 flex items-center justify-center">
@@ -285,8 +300,18 @@ export default function ScriptPage() {
                                 </svg>
                             </div>
                             <div>
-                                <h2 className="text-sm font-semibold text-white leading-none">Parameters</h2>
-                                <p className="text-[10px] text-gray-500 mt-0.5">Backtest configuration</p>
+                                <h2
+                                    className="text-sm font-semibold leading-none"
+                                    style={{ color: "var(--text-primary)" }}
+                                >
+                                    Parameters
+                                </h2>
+                                <p
+                                    className="text-[10px] mt-0.5"
+                                    style={{ color: "var(--text-muted)" }}
+                                >
+                                    Backtest configuration
+                                </p>
                             </div>
                         </div>
                         {isRestored && (
@@ -301,7 +326,10 @@ export default function ScriptPage() {
                 <div className="flex-1 px-4 py-5 flex flex-col gap-5">
                     {/* Asset */}
                     <div className="flex flex-col gap-2">
-                        <label className="flex items-center gap-1.5 text-xs font-medium text-gray-400 uppercase tracking-widest">
+                        <label
+                            className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-widest"
+                            style={{ color: "var(--text-tertiary)" }}
+                        >
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 8v8m-8-5v5m-3 3h18a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v14a1 1 0 001 1z" />
                             </svg>
@@ -312,7 +340,14 @@ export default function ScriptPage() {
                                 value={selectedTicker}
                                 onChange={(e) => setSelectedTicker(e.target.value)}
                                 disabled={isLoadingAssets}
-                                className="w-full bg-[#161921] border border-white/8 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-[#00FFB2]/50 focus:ring-1 focus:ring-[#00FFB2]/20 transition-all appearance-none disabled:opacity-40 cursor-pointer"
+                                className="w-full rounded-lg px-3 py-2.5 text-sm outline-none appearance-none disabled:opacity-40 cursor-pointer transition-all"
+                                style={{
+                                    background: "var(--bg-base)",
+                                    border: "1px solid var(--border-default)",
+                                    color: "var(--text-primary)",
+                                }}
+                                onFocus={e => (e.target as HTMLSelectElement).style.borderColor = "rgba(0,255,178,0.5)"}
+                                onBlur={e => (e.target as HTMLSelectElement).style.borderColor = "var(--border-default)"}
                             >
                                 {isLoadingAssets && <option value="">Loading assets...</option>}
                                 {!isLoadingAssets && assets.length === 0 && <option value="">No assets available</option>}
@@ -322,12 +357,12 @@ export default function ScriptPage() {
                             </select>
                             <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                                 {isLoadingAssets ? (
-                                    <svg className="animate-spin w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24">
+                                    <svg className="animate-spin w-3.5 h-3.5" style={{ color: "var(--text-tertiary)" }} fill="none" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
                                 ) : (
-                                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <svg className="w-3.5 h-3.5" style={{ color: "var(--text-tertiary)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                                     </svg>
                                 )}
@@ -337,29 +372,49 @@ export default function ScriptPage() {
 
                     {/* Capital */}
                     <div className="flex flex-col gap-2">
-                        <label className="flex items-center gap-1.5 text-xs font-medium text-gray-400 uppercase tracking-widest">
+                        <label
+                            className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-widest"
+                            style={{ color: "var(--text-tertiary)" }}
+                        >
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             Initial Capital
                         </label>
                         <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">$</span>
+                            <span
+                                className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium"
+                                style={{ color: "var(--text-tertiary)" }}
+                            >
+                                $
+                            </span>
                             <input
                                 type="number"
                                 value={capital}
                                 onChange={(e) => setCapital(e.target.value)}
-                                className="w-full bg-[#161921] border border-white/8 rounded-lg pl-7 pr-3 py-2.5 text-sm text-white outline-none focus:border-[#00FFB2]/50 focus:ring-1 focus:ring-[#00FFB2]/20 transition-all"
+                                className="w-full rounded-lg pl-7 pr-3 py-2.5 text-sm outline-none transition-all"
+                                style={{
+                                    background: "var(--bg-base)",
+                                    border: "1px solid var(--border-default)",
+                                    color: "var(--text-primary)",
+                                }}
+                                onFocus={e => (e.target as HTMLInputElement).style.borderColor = "rgba(0,255,178,0.5)"}
+                                onBlur={e => (e.target as HTMLInputElement).style.borderColor = "var(--border-default)"}
                                 step="1000"
                                 min="1"
                             />
                         </div>
-                        <p className="text-[10px] text-gray-600">Starting balance for your simulation</p>
+                        <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                            Starting balance for your simulation
+                        </p>
                     </div>
 
                     {/* Window */}
                     <div className="flex flex-col gap-2">
-                        <label className="flex items-center gap-1.5 text-xs font-medium text-gray-400 uppercase tracking-widest">
+                        <label
+                            className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-widest"
+                            style={{ color: "var(--text-tertiary)" }}
+                        >
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
@@ -369,15 +424,27 @@ export default function ScriptPage() {
                             type="number"
                             value={windowLimit}
                             onChange={(e) => setWindowLimit(e.target.value)}
-                            className="w-full bg-[#161921] border border-white/8 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-[#00FFB2]/50 focus:ring-1 focus:ring-[#00FFB2]/20 transition-all"
+                            className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-all"
+                            style={{
+                                background: "var(--bg-base)",
+                                border: "1px solid var(--border-default)",
+                                color: "var(--text-primary)",
+                            }}
+                            onFocus={e => (e.target as HTMLInputElement).style.borderColor = "rgba(0,255,178,0.5)"}
+                            onBlur={e => (e.target as HTMLInputElement).style.borderColor = "var(--border-default)"}
                             min="1"
                         />
-                        <p className="text-[10px] text-gray-600">Periods of history per decision step</p>
+                        <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                            Periods of history per decision step
+                        </p>
                     </div>
 
                     {/* Indicators */}
                     <div className="flex flex-col gap-2">
-                        <label className="flex items-center gap-1.5 text-xs font-medium text-gray-400 uppercase tracking-widest">
+                        <label
+                            className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-widest"
+                            style={{ color: "var(--text-tertiary)" }}
+                        >
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                             </svg>
@@ -390,17 +457,25 @@ export default function ScriptPage() {
                                     <button
                                         key={ind}
                                         onClick={() => toggleIndicator(ind)}
-                                        className={`text-[11px] font-mono px-2.5 py-1 rounded-md border transition-all ${isActive
-                                            ? "bg-[#00FFB2]/10 border-[#00FFB2]/30 text-[#00FFB2]"
-                                            : "bg-[#161921] border-white/8 text-gray-500 hover:border-white/20 hover:text-gray-300"
-                                            }`}
+                                        className="text-[11px] font-mono px-2.5 py-1 rounded-md border transition-all"
+                                        style={isActive ? {
+                                            background: "rgba(0,255,178,0.08)",
+                                            border: "1px solid rgba(0,255,178,0.30)",
+                                            color: "#00FFB2",
+                                        } : {
+                                            background: "var(--bg-base)",
+                                            border: "1px solid var(--border-default)",
+                                            color: "var(--text-tertiary)",
+                                        }}
                                     >
                                         {ind}
                                     </button>
                                 );
                             })}
                         </div>
-                        <p className="text-[10px] text-gray-600">Available in <span className="font-mono text-gray-500">history.columns</span></p>
+                        <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                            Available in <span className="font-mono" style={{ color: "var(--text-tertiary)" }}>history.columns</span>
+                        </p>
                     </div>
                 </div>
 
@@ -419,7 +494,7 @@ export default function ScriptPage() {
                         id="run-backtest-btn"
                         onClick={handleRunBacktest}
                         disabled={isRunning || !selectedTicker || isLoadingAssets}
-                        className="w-full relative overflow-hidden bg-[#00FFB2] hover:bg-[#00e6a0] disabled:bg-[#161921] disabled:text-gray-600 disabled:border disabled:border-white/5 disabled:cursor-not-allowed text-[#0a0a0a] font-bold text-sm py-3 rounded-xl transition-all duration-200 active:scale-[0.97] flex items-center justify-center gap-2.5 shadow-[0_0_20px_rgba(0,255,178,0.15)] disabled:shadow-none group"
+                        className="w-full relative overflow-hidden bg-[#00FFB2] hover:bg-[#00e6a0] text-[#0a0a0a] font-bold text-sm py-3 rounded-xl transition-all duration-200 active:scale-[0.97] flex items-center justify-center gap-2.5 shadow-[0_0_20px_rgba(0,255,178,0.15)] group disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
                     >
                         {isRunning ? (
                             <>
@@ -439,9 +514,27 @@ export default function ScriptPage() {
                         )}
                     </button>
 
-                    <p className="text-center text-[10px] text-gray-600">
-                        <kbd className="px-1.5 py-0.5 text-[9px] bg-white/5 border border-white/10 rounded text-gray-500 font-mono">⌘</kbd>{" "}
-                        <kbd className="px-1.5 py-0.5 text-[9px] bg-white/5 border border-white/10 rounded text-gray-500 font-mono">↵</kbd>{" "}
+                    <p className="text-center text-[10px]" style={{ color: "var(--text-muted)" }}>
+                        <kbd
+                            className="px-1.5 py-0.5 text-[9px] rounded font-mono"
+                            style={{
+                                background: "var(--interactive-hover-bg)",
+                                border: "1px solid var(--border-default)",
+                                color: "var(--text-tertiary)",
+                            }}
+                        >
+                            ⌘
+                        </kbd>{" "}
+                        <kbd
+                            className="px-1.5 py-0.5 text-[9px] rounded font-mono"
+                            style={{
+                                background: "var(--interactive-hover-bg)",
+                                border: "1px solid var(--border-default)",
+                                color: "var(--text-tertiary)",
+                            }}
+                        >
+                            ↵
+                        </kbd>{" "}
                         to run
                     </p>
                 </div>
@@ -450,23 +543,49 @@ export default function ScriptPage() {
             {/* ─── Main Editor Area ─── */}
             <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Editor Tab Bar */}
-                <div className="flex items-center bg-[#0D0F14] border-b border-white/5 shrink-0">
+                <div
+                    className="flex items-center shrink-0"
+                    style={{
+                        background: isDark ? "#0D0F14" : "var(--bg-card)",
+                        borderBottom: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid var(--border-default)",
+                    }}
+                >
                     {/* File tab */}
-                    <div className="flex items-center gap-0 border-r border-white/5">
-                        <div className="flex items-center gap-2 px-4 py-2.5 bg-[#050505] border-t border-[#00FFB2]/40 relative">
-                            <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#00FFB2] rounded-b" />
+                    <div
+                        className="flex items-center gap-0"
+                        style={{ borderRight: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid var(--border-default)" }}
+                    >
+                        <div
+                            className="flex items-center gap-2 px-4 py-2.5 relative"
+                            style={{
+                                background: isDark ? "#050505" : "var(--bg-base)",
+                                borderTop: "2px solid #00FFB2",
+                            }}
+                        >
                             <svg className="w-3.5 h-3.5 text-[#4B9CD3]" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
                                 <polyline points="14 2 14 8 20 8" fill="none" stroke="currentColor" strokeWidth="2" />
                             </svg>
-                            <span className="text-xs text-gray-300 font-mono">strategy.py</span>
+                            <span
+                                className="text-xs font-mono"
+                                style={{ color: isDark ? "#D1D5DB" : "var(--text-primary)" }}
+                            >
+                                strategy.py
+                            </span>
                             <div className="w-1.5 h-1.5 rounded-full bg-[#00FFB2] opacity-70 ml-0.5" title="Unsaved changes" />
                         </div>
                     </div>
 
                     {/* Right side actions */}
                     <div className="ml-auto flex items-center gap-2 px-4">
-                        <div className="flex items-center gap-1 text-[10px] font-mono text-gray-600 bg-[#161921] border border-white/5 rounded px-2 py-1">
+                        <div
+                            className="flex items-center gap-1 text-[10px] font-mono rounded px-2 py-1"
+                            style={{
+                                background: isDark ? "rgba(255,255,255,0.05)" : "var(--interactive-hover-bg)",
+                                border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid var(--border-default)",
+                                color: isDark ? "#6B7280" : "var(--text-tertiary)",
+                            }}
+                        >
                             <span className="text-[#4B9CD3]">Python</span>
                             <span className="text-gray-700">·</span>
                             <span>UTF-8</span>
@@ -487,6 +606,7 @@ export default function ScriptPage() {
                     <div className="absolute inset-0">
                         <SimpleCodeEditor
                             code={editorContent}
+                            theme={theme}
                             onChange={(value) => {
                                 setEditorContent(value);
                                 setLineCount(value.split("\n").length);
@@ -514,22 +634,32 @@ export default function ScriptPage() {
                 </div>
 
                 {/* ─── Bottom Output Panel ─── */}
-                <div className={`shrink-0 border-t border-white/5 bg-[#0D0F14] flex flex-col transition-all duration-300 ${isOutputOpen ? "h-48" : "h-9"}`}>
+                <div
+                    className={`shrink-0 flex flex-col transition-all duration-300 ${isOutputOpen ? "h-48" : "h-9"}`}
+                    style={{
+                        background: isDark ? "#0D0F14" : "var(--bg-card)",
+                        borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid var(--border-default)",
+                    }}
+                >
                     {/* Panel header */}
                     <div
                         role="button"
                         tabIndex={0}
                         onClick={() => setIsOutputOpen(v => !v)}
                         onKeyDown={(e) => e.key === "Enter" && setIsOutputOpen(v => !v)}
-                        className="flex items-center gap-3 px-4 h-9 w-full text-left hover:bg-white/3 transition-colors group shrink-0 cursor-pointer select-none"
+                        className="flex items-center gap-3 px-4 h-9 w-full text-left transition-colors shrink-0 cursor-pointer select-none"
+                        style={{ color: "var(--text-tertiary)" }}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "var(--interactive-hover-bg)"}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
                     >
                         <svg
-                            className={`w-3 h-3 text-gray-500 transition-transform duration-200 ${isOutputOpen ? "rotate-0" : "-rotate-90"}`}
+                            className={`w-3 h-3 transition-transform duration-200 ${isOutputOpen ? "rotate-0" : "-rotate-90"}`}
+                            style={{ color: "var(--text-muted)" }}
                             fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
                         >
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
-                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Output</span>
+                        <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>Output</span>
                         <div className="flex items-center gap-2 ml-auto">
                             {logs.some(l => l.type === "error") && (
                                 <span className="flex items-center gap-1 text-[10px] text-red-400 bg-red-500/10 border border-red-500/20 rounded-full px-2 py-0.5">
@@ -556,7 +686,13 @@ export default function ScriptPage() {
 
                     {/* Log entries */}
                     {isOutputOpen && (
-                        <div className="flex-1 overflow-y-auto px-4 pb-3 font-mono text-xs">
+                        <div
+                            className="flex-1 overflow-y-auto px-4 pb-3 font-mono text-xs"
+                            style={{
+                                scrollbarWidth: "thin",
+                                scrollbarColor: "rgba(255,255,255,0.08) transparent",
+                            }}
+                        >
                             {logs.length === 0 ? (
                                 <p className="text-gray-600 py-2">No output yet. Run your strategy to see results.</p>
                             ) : (
@@ -573,8 +709,17 @@ export default function ScriptPage() {
                 </div>
 
                 {/* ─── Status Bar ─── */}
-                <div className="flex items-center justify-between px-4 h-6 bg-[#0a0a0f] border-t border-white/5 shrink-0">
-                    <div className="flex items-center gap-4 text-[10px] text-gray-600">
+                <div
+                    className="flex items-center justify-between px-4 h-6 shrink-0"
+                    style={{
+                        background: isDark ? "#0a0a0f" : "var(--bg-card)",
+                        borderTop: isDark ? "1px solid rgba(255,255,255,0.05)" : "1px solid var(--border-default)",
+                    }}
+                >
+                    <div
+                        className="flex items-center gap-4 text-[10px]"
+                        style={{ color: "var(--text-muted)" }}
+                    >
                         <span className="flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#00FFB2] inline-block" />
                             QSlate IDE

@@ -54,10 +54,20 @@ export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData, onCl
         <Container
             onClick={onClick}
             {...(onClick ? { type: 'button' as const } : {})}
-
-            className={`relative bg-[#0D0F14] rounded-xl px-4 py-3 flex items-center justify-between h-full w-full text-left border border-white/5 overflow-hidden transition-all duration-200
-                ${onClick ? 'cursor-pointer hover:border-white/10 hover:bg-[#131720] focus:outline-none focus:ring-2 focus:ring-[#00FFB2]/20' : ''}`}
-            style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
+            className={`relative rounded-xl px-4 py-3 flex items-center justify-between h-full w-full text-left overflow-hidden transition-all duration-200 ${onClick ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#00FFB2]/20' : ''}`}
+            style={{
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-default)",
+                boxShadow: 'inset 0 1px 0 var(--card-inset)',
+            }}
+            onMouseEnter={onClick ? (e) => {
+                (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)";
+                (e.currentTarget as HTMLElement).style.borderColor = "var(--border-hover)";
+            } : undefined}
+            onMouseLeave={onClick ? (e) => {
+                (e.currentTarget as HTMLElement).style.background = "var(--bg-card)";
+                (e.currentTarget as HTMLElement).style.borderColor = "var(--border-default)";
+            } : undefined}
         >
             {/* Ambient glow */}
             <div
@@ -68,20 +78,33 @@ export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData, onCl
             {/* Left */}
             <div className="flex flex-col gap-0.5 z-10">
                 <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-white leading-none tracking-tight">{asset.symbol}</span>
+                    <span
+                        className="text-base font-bold leading-none tracking-tight"
+                        style={{ color: "var(--text-primary)" }}
+                    >
+                        {asset.symbol}
+                    </span>
                     {onClick && (
-                        <svg className="w-3 h-3 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg
+                            className="w-3 h-3"
+                            style={{ color: "var(--text-tertiary)" }}
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                        >
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
                         </svg>
                     )}
                 </div>
-                <span className="text-[11px] text-gray-500 leading-none">{asset.name}</span>
+                <span
+                    className="text-[11px] leading-none"
+                    style={{ color: "var(--text-tertiary)" }}
+                >
+                    {asset.name}
+                </span>
             </div>
 
             {/* Center: Sparkline */}
             <div className="flex-1 flex justify-center items-center px-3 z-10">
                 <svg width="120" height="44" viewBox="0 0 120 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    {/* Area fill */}
                     {areaPath && (
                         <defs>
                             <linearGradient id={`sparkGrad-${asset.symbol}`} x1="0" y1="0" x2="0" y2="1">
@@ -105,7 +128,10 @@ export const AssetWidget: React.FC<AssetWidgetProps> = ({ asset, chartData, onCl
 
             {/* Right */}
             <div className="flex flex-col items-end gap-0.5 z-10">
-                <span className="text-base font-bold text-white leading-none">
+                <span
+                    className="text-base font-bold leading-none"
+                    style={{ color: "var(--text-primary)" }}
+                >
                     ${Number(asset.currentPrice || 0).toFixed(2)}
                 </span>
                 <span

@@ -4,9 +4,10 @@ import React, { useEffect, useRef } from "react";
 
 interface TradingViewChartProps {
     symbol: string;
+    theme?: "dark" | "light";
 }
 
-export const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol }) => {
+export const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol, theme = "dark" }) => {
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -29,21 +30,24 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol }) =>
 
         container.appendChild(widgetContainer);
 
-        let widget: any = null;
+        let widget: { remove?: () => void } | null = null;
+        let cancelled = false;
 
         const loadWidget = () => {
+            if (cancelled) return;
             if (typeof (window as any).TradingView !== "undefined") {
-                widget = new (window as any).TradingView.widget({
+                const TV = (window as unknown as { TradingView: { widget: new (config: Record<string, unknown>) => { remove?: () => void } } }).TradingView;
+                widget = new TV.widget({
                     autosize: true,
                     symbol: symbol,
                     interval: "D",
                     timezone: "Etc/UTC",
-                    theme: "dark",
+                    theme: theme,
                     style: "1",
                     locale: "en",
                     enable_publishing: false,
-                    backgroundColor: "#18171E",
-                    gridColor: "#2B2B43",
+                    backgroundColor: theme === "light" ? "rgba(255,255,255,0)" : "rgba(18,17,30,0)",
+                    gridColor: theme === "light" ? "rgba(0,0,0,0.06)" : "rgba(43,43,67,0.5)",
                     hide_top_toolbar: false,
                     hide_legend: false,
                     save_image: false,
@@ -52,12 +56,15 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol }) =>
             }
         };
 
+        let scriptLoadHandler: (() => void) | null = null;
+
         const existingScript = document.getElementById("tradingview-tv-js-script");
         if (existingScript) {
-            if (typeof (window as any).TradingView !== "undefined") {
+            if (typeof (window as { TradingView?: unknown }).TradingView !== "undefined") {
                 loadWidget();
             } else {
-                existingScript.addEventListener("load", loadWidget);
+                scriptLoadHandler = loadWidget;
+                existingScript.addEventListener("load", scriptLoadHandler, { once: true });
             }
         } else {
             const script = document.createElement("script");
@@ -70,6 +77,11 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol }) =>
         }
 
         return () => {
+            cancelled = true;
+            if (scriptLoadHandler) {
+                document.getElementById("tradingview-tv-js-script")
+                    ?.removeEventListener("load", scriptLoadHandler);
+            }
             if (widget && typeof widget.remove === 'function') {
                 try {
                     widget.remove();
@@ -81,7 +93,7 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol }) =>
                 container.innerHTML = '';
             }
         };
-    }, [symbol]);
+    }, [symbol, theme]);
 
     return (
         <div className="tradingview-widget-container w-full h-full" ref={containerRef} />

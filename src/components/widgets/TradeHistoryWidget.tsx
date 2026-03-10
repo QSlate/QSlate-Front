@@ -29,19 +29,28 @@ export const TradeHistoryWidget: React.FC<TradeHistoryWidgetProps> = ({ trades =
 
     return (
         <>
-            <div className="bg-[#0D0F14] border border-white/5 rounded-xl p-5 w-full h-full flex flex-col">
+            <div
+                className="rounded-xl p-5 w-full h-full flex flex-col"
+                style={{
+                    background: "var(--bg-card)",
+                    border: "1px solid var(--border-default)",
+                }}
+            >
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm text-gray-400">Execution History</h3>
+                    <h3
+                        className="text-sm"
+                        style={{ color: "var(--text-secondary)" }}
+                    >
+                        Execution History
+                    </h3>
                     {showBreakdown && (
                         <div className="flex items-center gap-2">
-                            {/* Long pill */}
                             <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#00E676]/10 border border-[#00E676]/20">
                                 <TrendingUp className="w-3 h-3 text-[#00E676]" />
                                 <span className="text-[11px] font-semibold text-[#00E676]">{longCount}</span>
                                 <span className="text-[10px] text-[#00E676]/60">L</span>
                             </div>
-                            {/* Short pill */}
                             <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#EF4444]/10 border border-[#EF4444]/20">
                                 <TrendingDown className="w-3 h-3 text-[#EF4444]" />
                                 <span className="text-[11px] font-semibold text-[#EF4444]">{shortCount}</span>
@@ -50,10 +59,14 @@ export const TradeHistoryWidget: React.FC<TradeHistoryWidgetProps> = ({ trades =
                         </div>
                     )}
                 </div>
+
                 {/* Long/Short split bar */}
                 {showBreakdown && (
                     <div className="mb-4">
-                        <div className="flex rounded-full overflow-hidden h-1.5 bg-white/5">
+                        <div
+                            className="flex rounded-full overflow-hidden h-1.5"
+                            style={{ background: "var(--segment-bg)" }}
+                        >
                             <div
                                 className="h-full bg-gradient-to-r from-[#00E676]/80 to-[#00E676] transition-all duration-500"
                                 style={{ width: `${longPct}%` }}
@@ -64,15 +77,34 @@ export const TradeHistoryWidget: React.FC<TradeHistoryWidgetProps> = ({ trades =
                             />
                         </div>
                         <div className="flex justify-between mt-1">
-                            <span className="text-[10px] text-gray-500">{longPct}% long</span>
-                            <span className="text-[10px] text-gray-500">{shortPct}% short</span>
+                            <span
+                                className="text-[10px]"
+                                style={{ color: "var(--text-tertiary)" }}
+                            >
+                                {longPct}% long
+                            </span>
+                            <span
+                                className="text-[10px]"
+                                style={{ color: "var(--text-tertiary)" }}
+                            >
+                                {shortPct}% short
+                            </span>
                         </div>
                     </div>
                 )}
 
-                <div className="flex-1 overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#2A2D35] hover:[&::-webkit-scrollbar-thumb]:bg-[#3A3D45] [&::-webkit-scrollbar-thumb]:rounded-full">
+                <div
+                    className="flex-1 overflow-y-auto pr-2"
+                    style={{
+                        scrollbarWidth: "thin",
+                        scrollbarColor: "var(--scrollbar-thumb) transparent",
+                    }}
+                >
                     {!trades || trades.length === 0 ? (
-                        <div className="text-gray-500 text-center py-4 flex items-center justify-center h-full">
+                        <div
+                            className="text-center py-4 flex items-center justify-center h-full"
+                            style={{ color: "var(--text-tertiary)" }}
+                        >
                             No trades executed yet.
                         </div>
                     ) : (
@@ -81,14 +113,21 @@ export const TradeHistoryWidget: React.FC<TradeHistoryWidgetProps> = ({ trades =
                                 const isPositive = (trade.pnl_usd || 0) >= 0;
                                 const pnlSign = isPositive ? '+' : '-';
                                 const pnlValue = Math.abs(trade.pnl_usd || 0).toFixed(2);
-                                const pnlColor = isPositive ? 'text-[#00E676]' : 'text-[#EF4444]';
+                                const pnlColor = isPositive ? '#00E676' : '#EF4444';
                                 const isLong = trade.type === 'LONG' || trade.type === 'long';
 
                                 return (
                                     <div
                                         key={trade.id ?? index}
-                                        className="border-b border-gray-800/50 py-3 flex justify-between items-center last:border-0 cursor-pointer hover:bg-white/[0.03] rounded-lg px-2 -mx-2 transition-colors group/row"
+                                        className="py-3 flex justify-between items-center last:border-0 cursor-pointer rounded-lg px-2 -mx-2 transition-colors group/row"
+                                        style={
+                                            index === trades.length - 1
+                                                ? undefined
+                                                : { borderBottom: "1px solid var(--divider)" }
+                                        }
                                         onClick={() => setSelectedTrade(trade)}
+                                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "var(--row-hover)"}
+                                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
                                         role="button"
                                         tabIndex={0}
                                         onKeyDown={(e) => e.key === 'Enter' && setSelectedTrade(trade)}
@@ -102,16 +141,30 @@ export const TradeHistoryWidget: React.FC<TradeHistoryWidgetProps> = ({ trades =
                                                 }`}>
                                                 {trade.type?.toUpperCase()}
                                             </span>
-                                            <span className="text-xs text-gray-500 whitespace-nowrap">
+                                            <span
+                                                className="text-xs whitespace-nowrap"
+                                                style={{ color: "var(--text-tertiary)" }}
+                                            >
                                                 {formatDate(trade.exit_date || trade.entry_date)}
                                             </span>
                                         </div>
 
                                         {/* Center */}
                                         <div className="flex-1 flex justify-center items-center gap-1.5 min-w-0 px-2 overflow-hidden">
-                                            <span className="text-sm text-white truncate">${trade.entry_price?.toFixed(2)}</span>
-                                            <ArrowRight className="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                                            <span className="text-sm text-white truncate">
+                                            <span
+                                                className="text-sm truncate"
+                                                style={{ color: "var(--text-primary)" }}
+                                            >
+                                                ${trade.entry_price?.toFixed(2)}
+                                            </span>
+                                            <ArrowRight
+                                                className="w-3.5 h-3.5 shrink-0"
+                                                style={{ color: "var(--text-tertiary)" }}
+                                            />
+                                            <span
+                                                className="text-sm truncate"
+                                                style={{ color: "var(--text-primary)" }}
+                                            >
                                                 {trade.exit_price != null ? `$${trade.exit_price.toFixed(2)}` : '—'}
                                             </span>
                                         </div>
@@ -119,16 +172,26 @@ export const TradeHistoryWidget: React.FC<TradeHistoryWidgetProps> = ({ trades =
                                         {/* Right */}
                                         <div className="flex items-center gap-2 min-w-max">
                                             <div className="flex flex-col items-end gap-1">
-                                                <span className={`text-sm font-bold ${pnlColor} whitespace-nowrap`}>
+                                                <span
+                                                    className="text-sm font-bold whitespace-nowrap"
+                                                    style={{ color: pnlColor }}
+                                                >
                                                     {pnlSign} ${pnlValue}
                                                 </span>
                                                 {trade.exit_reason && (
-                                                    <span className="text-[10px] text-gray-500 truncate max-w-[80px]" title={trade.exit_reason}>
+                                                    <span
+                                                        className="text-[10px] truncate max-w-[80px]"
+                                                        style={{ color: "var(--text-tertiary)" }}
+                                                        title={trade.exit_reason}
+                                                    >
                                                         {trade.exit_reason}
                                                     </span>
                                                 )}
                                             </div>
-                                            <ChevronRight className="w-3.5 h-3.5 text-gray-600 opacity-0 group-hover/row:opacity-100 transition-opacity shrink-0" />
+                                            <ChevronRight
+                                                className="w-3.5 h-3.5 opacity-0 group-hover/row:opacity-100 transition-opacity shrink-0"
+                                                style={{ color: "var(--text-tertiary)" }}
+                                            />
                                         </div>
                                     </div>
                                 );

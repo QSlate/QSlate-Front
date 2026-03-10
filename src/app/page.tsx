@@ -10,9 +10,12 @@ export default function Home() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <div className="bg-[#050505] text-white min-h-[calc(100vh-4rem)] relative flex flex-col items-center pt-24 pb-20 overflow-x-hidden font-sans">
+    <div
+      className="min-h-[calc(100vh-4rem)] relative flex flex-col items-center pt-24 pb-20 overflow-x-hidden font-sans"
+      style={{ background: "var(--bg-base)", color: "var(--text-primary)" }}
+    >
 
-      {/* Background glow for the dashboard */}
+      {/* Background glow */}
       <div className="absolute top-[450px] left-1/2 -translate-x-1/2 w-[600px] md:w-[800px] h-[300px] bg-[#00FFB2]/20 blur-[130px] rounded-full pointer-events-none" />
 
       {/* Hero Content */}
@@ -29,15 +32,21 @@ export default function Home() {
           </div>
 
           {/* Main Title */}
-          <h1 className="text-[48px] md:text-[72px] font-semibold tracking-tighter leading-[1.05] text-white mb-6">
+          <h1
+            className="text-[48px] md:text-[72px] font-semibold tracking-tighter leading-[1.05] mb-6"
+            style={{ color: "var(--text-primary)" }}
+          >
             Next-Generation <br className="hidden md:block" />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-[#00FFB2]/70">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[var(--text-primary)] to-[#00FFB2]/70">
               Algo Trading.
             </span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-[#A1A1AA] text-lg max-w-2xl mx-auto mt-2 leading-relaxed font-light">
+          <p
+            className="text-lg max-w-2xl mx-auto mt-2 leading-relaxed font-light"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Build, test, and deploy quantitative strategies in seconds. The ultimate hyper-modular dashboard for modern traders.
           </p>
 
@@ -56,7 +65,11 @@ export default function Home() {
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <Link
                 href="/lab"
-                className="group flex items-center gap-2 bg-transparent border border-white/20 text-white font-medium rounded-full px-8 py-3.5 transition-colors hover:bg-white/10"
+                className="group flex items-center gap-2 bg-transparent font-medium rounded-full px-8 py-3.5 transition-all"
+                style={{
+                  border: "1px solid var(--border-hover)",
+                  color: "var(--text-primary)",
+                }}
               >
                 View Lab
                 <ArrowRight className="w-4 h-4 ml-1 opacity-80 group-hover:translate-x-0.5 transition-transform" />
@@ -66,14 +79,21 @@ export default function Home() {
 
           {/* Trust indicators */}
           <div className="mt-16 flex flex-col items-center gap-2">
-            <p className="text-xs text-[#71717A] tracking-wider uppercase font-semibold">They trust us</p>
+            <p
+              className="text-xs tracking-wider uppercase font-semibold"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              They trust us
+            </p>
             <div className="flex items-center gap-3">
               <div className="flex">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 text-white fill-white" />
+                  <Star key={i} className="w-4 h-4 text-[#00FFB2] fill-[#00FFB2]" />
                 ))}
               </div>
-              <span className="text-sm font-semibold text-white">4.9 / 5</span>
+              <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                4.9 / 5
+              </span>
             </div>
           </div>
         </motion.div>
@@ -89,7 +109,11 @@ export default function Home() {
         <motion.div
           animate={shouldReduceMotion ? { y: 0 } : { y: [0, -20, 0] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          className="relative rounded-2xl md:rounded-[32px] border border-white/10 shadow-[0_0_120px_-20px_rgba(0,255,178,0.25)] overflow-hidden mx-auto before:absolute before:top-0 before:left-1/2 before:-translate-x-1/2 before:w-1/2 before:h-px before:bg-gradient-to-r before:from-transparent before:via-[#00FFB2]/50 before:to-transparent"
+          className="relative rounded-2xl md:rounded-[32px] overflow-hidden mx-auto before:absolute before:top-0 before:left-1/2 before:-translate-x-1/2 before:w-1/2 before:h-px before:bg-gradient-to-r before:from-transparent before:via-[#00FFB2]/50 before:to-transparent"
+          style={{
+            border: "1px solid var(--border-default)",
+            boxShadow: "0 0 120px -20px rgba(0,255,178,0.25)",
+          }}
         >
           <Image
             src="/lab_image.png"
@@ -99,15 +123,21 @@ export default function Home() {
             priority
             className="w-full h-auto object-cover opacity-95"
           />
-          {/* Fading bottom edge to blend into background */}
-          <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#050505] via-[#050505]/80 to-transparent pointer-events-none" />
+          {/* Fading bottom edge */}
+          <div
+            className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none"
+            style={{ background: "linear-gradient(to top, var(--bg-base) 0%, transparent 100%)" }}
+          />
         </motion.div>
       </motion.div>
 
       {/* Partners Marquee */}
       <div className="w-full mt-32 relative z-10 overflow-hidden">
-        <p className="text-xs text-gray-500 tracking-widest text-center mb-8 font-medium">
-          POWERED BY TOP EXCHANGES & DATA PROVIDERS
+        <p
+          className="text-xs tracking-widest text-center mb-8 font-medium"
+          style={{ color: "var(--text-tertiary)" }}
+        >
+          POWERED BY TOP EXCHANGES &amp; DATA PROVIDERS
         </p>
         <div className="flex whitespace-nowrap overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_20%,black_80%,transparent)]">
           <motion.div
@@ -117,13 +147,15 @@ export default function Home() {
           >
             {[...Array(2)].map((_, i) => (
               <div key={i} aria-hidden={i !== 0} className="flex gap-16 items-center min-w-max">
-                <span className="text-white/40 text-xl font-bold tracking-tight">BINANCE</span>
-                <span className="text-white/40 text-xl font-bold tracking-tight">Interactive Brokers</span>
-                <span className="text-white/40 text-xl font-bold tracking-tight">ALPACA</span>
-                <span className="text-white/40 text-xl font-bold tracking-tight">yahoo! finance</span>
-                <span className="text-white/40 text-xl font-bold tracking-tight">TradingView</span>
-                <span className="text-white/40 text-xl font-bold tracking-tight">COINBASE</span>
-                <span className="text-white/40 text-xl font-bold tracking-tight">KRAKEN</span>
+                {["BINANCE", "Interactive Brokers", "ALPACA", "yahoo! finance", "TradingView", "COINBASE", "KRAKEN"].map(name => (
+                  <span
+                    key={name}
+                    className="text-xl font-bold tracking-tight"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {name}
+                  </span>
+                ))}
               </div>
             ))}
           </motion.div>
@@ -141,10 +173,16 @@ export default function Home() {
           <div className="text-[11px] tracking-[0.2em] text-[#00E676] font-semibold uppercase mb-4">
             WHY CHOOSE QSLATE
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+          <h2
+            className="text-4xl md:text-5xl font-bold mb-6"
+            style={{ color: "var(--text-primary)" }}
+          >
             Built for the Modern Trader.
           </h2>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto text-center">
+          <p
+            className="text-lg max-w-2xl mx-auto text-center"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Everything you need to backtest, analyze, and execute your algorithms in one unified, hyper-modular workspace.
           </p>
         </div>
@@ -162,61 +200,66 @@ export default function Home() {
           }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
         >
-          {/* Card 1 */}
-          <motion.div variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { duration: 0.6 } } }} className="lg:col-span-2 bg-[#0D0F14] border border-white/5 rounded-3xl p-8 relative overflow-hidden group flex flex-col justify-between hover:border-white/10 transition-colors duration-500">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#00E676]/0 to-[#00E676]/0 group-hover:from-[#00E676]/5 transition-all duration-500 pointer-events-none" />
-            <div className="bg-white/5 p-3 rounded-lg inline-flex w-fit mb-6 relative z-10">
-              <LayoutDashboard className="w-6 h-6 text-[#00E676]" />
-            </div>
-            <div className="relative z-10">
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Hyper-Modular Workspace</h3>
-              <p className="text-sm text-gray-400">
-                Drag, drop, and resize widgets to create your perfect trading terminal. From charts to metrics, you control the layout.
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Card 2 */}
-          <motion.div variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { duration: 0.6 } } }} className="lg:col-span-2 bg-[#0D0F14] border border-white/5 rounded-3xl p-8 relative overflow-hidden group flex flex-col justify-between hover:border-white/10 transition-colors duration-500">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#00E676]/0 to-[#00E676]/0 group-hover:from-[#00E676]/5 transition-all duration-500 pointer-events-none" />
-            <div className="bg-white/5 p-3 rounded-lg inline-flex w-fit mb-6 relative z-10">
-              <Terminal className="w-6 h-6 text-[#00E676]" />
-            </div>
-            <div className="relative z-10">
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Python-Native Engine</h3>
-              <p className="text-sm text-gray-400">
-                Write your strategies in pure Python. Our cloud infrastructure handles the heavy lifting, delivering lightning-fast backtest results directly to your browser.
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Card 3 */}
-          <motion.div variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { duration: 0.6 } } }} className="lg:col-span-2 bg-[#0D0F14] border border-white/5 rounded-3xl p-8 relative overflow-hidden group flex flex-col justify-between hover:border-white/10 transition-colors duration-500">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#00E676]/0 to-[#00E676]/0 group-hover:from-[#00E676]/5 transition-all duration-500 pointer-events-none" />
-            <div className="bg-white/5 p-3 rounded-lg inline-flex w-fit mb-6 relative z-10">
-              <Activity className="w-6 h-6 text-[#00E676]" />
-            </div>
-            <div className="relative z-10">
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Live Market Data</h3>
-              <p className="text-sm text-gray-400">
-                Connect seamlessly to top exchanges. Watch your algorithms react to real-time tick data with embedded, interactive TradingView charts.
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Card 4 */}
-          <motion.div variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { duration: 0.6 } } }} className="lg:col-span-2 bg-[#0D0F14] border border-white/5 rounded-3xl p-8 relative overflow-hidden group flex flex-col justify-between hover:border-white/10 transition-colors duration-500">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#00E676]/0 to-[#00E676]/0 group-hover:from-[#00E676]/5 transition-all duration-500 pointer-events-none" />
-            <div className="bg-white/5 p-3 rounded-lg inline-flex w-fit mb-6 relative z-10">
-              <Shield className="w-6 h-6 text-[#00E676]" />
-            </div>
-            <div className="relative z-10">
-              <h3 className="text-xl font-semibold text-white mt-6 mb-3">Bank-Grade Execution</h3>
-              <p className="text-sm text-gray-400">
-                Execute trades with confidence. Our routing system ensures minimal slippage and maximum security for your API keys.
-              </p>
-            </div>
-          </motion.div>
+          {[
+            {
+              icon: <LayoutDashboard className="w-6 h-6 text-[#00E676]" />,
+              title: "Hyper-Modular Workspace",
+              desc: "Drag, drop, and resize widgets to create your perfect trading terminal. From charts to metrics, you control the layout.",
+            },
+            {
+              icon: <Terminal className="w-6 h-6 text-[#00E676]" />,
+              title: "Python-Native Engine",
+              desc: "Write your strategies in pure Python. Our cloud infrastructure handles the heavy lifting, delivering lightning-fast backtest results directly to your browser.",
+            },
+            {
+              icon: <Activity className="w-6 h-6 text-[#00E676]" />,
+              title: "Live Market Data",
+              desc: "Connect seamlessly to top exchanges. Watch your algorithms react to real-time tick data with embedded, interactive TradingView charts.",
+            },
+            {
+              icon: <Shield className="w-6 h-6 text-[#00E676]" />,
+              title: "Bank-Grade Execution",
+              desc: "Execute trades with confidence. Our routing system ensures minimal slippage and maximum security for your API keys.",
+            },
+          ].map(({ icon, title, desc }) => (
+            <motion.div
+              key={title}
+              variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { duration: 0.6 } } }}
+              className="lg:col-span-2 rounded-3xl p-8 relative overflow-hidden group flex flex-col justify-between transition-all duration-500"
+              style={{
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-default)",
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.borderColor = "var(--border-hover)";
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.borderColor = "var(--border-default)";
+              }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-b from-[#00E676]/0 to-[#00E676]/0 group-hover:from-[#00E676]/5 transition-all duration-500 pointer-events-none" />
+              <div
+                className="p-3 rounded-lg inline-flex w-fit mb-6 relative z-10"
+                style={{ background: "var(--interactive-hover-bg)" }}
+              >
+                {icon}
+              </div>
+              <div className="relative z-10">
+                <h3
+                  className="text-xl font-semibold mt-6 mb-3"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {title}
+                </h3>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  {desc}
+                </p>
+              </div>
+            </motion.div>
+          ))}
         </motion.div>
       </div>
 
