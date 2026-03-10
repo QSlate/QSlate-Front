@@ -453,7 +453,7 @@ function DashboardContent() {
     Object.keys(layouts).forEach(bp => {
         const bpItems = layouts[bp];
         if (Array.isArray(bpItems)) {
-            filteredLayouts[bp] = (bpItems as unknown as { i: string }[]).filter(item => visibleWidgets.has(item.i as WidgetId)) as unknown as Layout[];
+            filteredLayouts[bp] = (bpItems as unknown as { i: string }[]).filter(item => visibleWidgets.has(item.i as WidgetId)) as unknown as Layout;
         }
     });
 

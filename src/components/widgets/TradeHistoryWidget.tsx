@@ -120,9 +120,11 @@ export const TradeHistoryWidget: React.FC<TradeHistoryWidgetProps> = ({ trades =
                                     <div
                                         key={trade.id ?? index}
                                         className="py-3 flex justify-between items-center last:border-0 cursor-pointer rounded-lg px-2 -mx-2 transition-colors group/row"
-                                        style={{
-                                            borderBottom: "1px solid var(--divider)",
-                                        }}
+                                        style={
+                                            index === trades.length - 1
+                                                ? undefined
+                                                : { borderBottom: "1px solid var(--divider)" }
+                                        }
                                         onClick={() => setSelectedTrade(trade)}
                                         onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "var(--row-hover)"}
                                         onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}

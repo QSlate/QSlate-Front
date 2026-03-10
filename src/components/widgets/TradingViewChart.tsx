@@ -31,10 +31,12 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol, them
         container.appendChild(widgetContainer);
 
         let widget: { remove?: () => void } | null = null;
+        let cancelled = false;
 
         const loadWidget = () => {
-            if (typeof (window as { TradingView?: unknown }).TradingView !== "undefined") {
-                const TV = (window as { TradingView: { widget: new (config: Record<string, unknown>) => { remove?: () => void } } }).TradingView;
+            if (cancelled) return;
+            if (typeof (window as any).TradingView !== "undefined") {
+                const TV = (window as unknown as { TradingView: { widget: new (config: Record<string, unknown>) => { remove?: () => void } } }).TradingView;
                 widget = new TV.widget({
                     autosize: true,
                     symbol: symbol,
@@ -44,7 +46,6 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol, them
                     style: "1",
                     locale: "en",
                     enable_publishing: false,
-                    // Light-mode friendly background — transparent so the CSS bg-card shows through
                     backgroundColor: theme === "light" ? "rgba(255,255,255,0)" : "rgba(18,17,30,0)",
                     gridColor: theme === "light" ? "rgba(0,0,0,0.06)" : "rgba(43,43,67,0.5)",
                     hide_top_toolbar: false,
@@ -55,12 +56,15 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol, them
             }
         };
 
+        let scriptLoadHandler: (() => void) | null = null;
+
         const existingScript = document.getElementById("tradingview-tv-js-script");
         if (existingScript) {
             if (typeof (window as { TradingView?: unknown }).TradingView !== "undefined") {
                 loadWidget();
             } else {
-                existingScript.addEventListener("load", loadWidget);
+                scriptLoadHandler = loadWidget;
+                existingScript.addEventListener("load", scriptLoadHandler, { once: true });
             }
         } else {
             const script = document.createElement("script");
@@ -73,6 +77,11 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol, them
         }
 
         return () => {
+            cancelled = true;
+            if (scriptLoadHandler) {
+                document.getElementById("tradingview-tv-js-script")
+                    ?.removeEventListener("load", scriptLoadHandler);
+            }
             if (widget && typeof widget.remove === 'function') {
                 try {
                     widget.remove();
@@ -84,7 +93,6 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol, them
                 container.innerHTML = '';
             }
         };
-        // Re-run when BOTH symbol and theme change
     }, [symbol, theme]);
 
     return (

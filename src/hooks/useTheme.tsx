@@ -16,15 +16,17 @@ const ThemeContext = createContext<ThemeContextValue>({
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
     const [theme, setTheme] = useState<Theme>("dark");
-    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        const stored = localStorage.getItem("qslate_theme") as Theme | null;
-        if (stored === "light" || stored === "dark") {
-            setTheme(stored);
-            document.documentElement.setAttribute("data-theme", stored);
+        try {
+            const stored = localStorage.getItem("qslate_theme") as Theme | null;
+            if (stored === "light" || stored === "dark") {
+                setTheme(stored);
+                document.documentElement.setAttribute("data-theme", stored);
+            }
+        } catch {
+
         }
-        setMounted(true);
     }, []);
 
     const toggleTheme = () => {
@@ -35,8 +37,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
             return next;
         });
     };
-
-    if (!mounted) return null;
 
     return (
         <ThemeContext.Provider value={{ theme, toggleTheme }}>

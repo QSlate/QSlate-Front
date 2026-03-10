@@ -65,8 +65,7 @@ interface InfoRowProps {
 
 const InfoRow: React.FC<InfoRowProps> = ({ icon, label, value, valueClass }) => (
     <div
-        className="flex items-center justify-between py-3.5 last:border-0 group"
-        style={{ borderBottom: "1px solid var(--divider)" }}
+        className="flex items-center justify-between py-3.5 border-b border-[color:var(--divider)] last:border-0 group"
     >
         <div className="flex items-center gap-3" style={{ color: "var(--text-tertiary)" }}>
             <span className="w-4 h-4 flex items-center justify-center opacity-70">{icon}</span>
