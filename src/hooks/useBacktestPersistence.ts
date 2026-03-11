@@ -9,6 +9,8 @@ export interface PersistedScriptState {
     ticker: string;
     capital: string;
     windowLimit: string;
+    customStatsCode?: string;
+    customStatsNames?: string;
     savedAt: string;
 }
 
