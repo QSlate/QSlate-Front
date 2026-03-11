@@ -69,6 +69,21 @@ const DEFAULT_CODE = `def custom_strategy(history, open_trades, remaining_capita
 
     return instructions`;
 
+const DEFAULT_STATS_CODE = `def calc_avg_win(df, init_cap):
+    if df.empty:
+        return 0.0
+    winning_trades = df[df['pnl_usd'] > 0]
+    if winning_trades.empty:
+        return 0.0
+    return winning_trades['pnl_usd'].mean()
+
+def calc_custom_score(df, init_cap):
+    if df.empty:
+        return 0.0
+    ret = (df['pnl_usd'].sum() / init_cap) * 100
+    return ret * 1.5
+`;
+
 const INDICATORS = ["SMA_20", "RSI_14", "EMA_50", "MACD", "BB_20"];
 
 function formatTimestamp(): string {
@@ -87,6 +102,10 @@ export default function ScriptPage() {
     const [windowLimit, setWindowLimit] = useState("10");
     const [editorContent, setEditorContent] = useState(DEFAULT_CODE);
     const [selectedIndicators, setSelectedIndicators] = useState<string[]>(["SMA_20", "RSI_14"]);
+
+    const [customStatsCode, setCustomStatsCode] = useState(DEFAULT_STATS_CODE);
+    const [customStatsNames, setCustomStatsNames] = useState("calc_avg_win, calc_custom_score");
+    const [activeTab, setActiveTab] = useState<"strategy.py" | "custom_stats.py">("strategy.py");
 
     const [isRunning, setIsRunning] = useState(false);
     const [isLoadingAssets, setIsLoadingAssets] = useState(true);
@@ -116,9 +135,19 @@ export default function ScriptPage() {
             if (saved.code) { setEditorContent(saved.code); setLineCount(saved.code.split("\n").length); }
             if (saved.capital) setCapital(saved.capital);
             if (saved.windowLimit) setWindowLimit(saved.windowLimit);
+            if (saved.customStatsCode) setCustomStatsCode(saved.customStatsCode);
+            if (saved.customStatsNames) setCustomStatsNames(saved.customStatsNames);
             setIsRestored(true);
         }
     }, []);
+
+    useEffect(() => {
+        if (activeTab === "strategy.py") {
+            setLineCount(editorContent.split("\n").length);
+        } else {
+            setLineCount(customStatsCode.split("\n").length);
+        }
+    }, [activeTab, editorContent, customStatsCode]);
 
     useEffect(() => {
         let isMounted = true;
@@ -199,6 +228,8 @@ export default function ScriptPage() {
                 indicators: selectedIndicators,
                 strategy_code: editorContent,
                 strategy_function_name: "custom_strategy",
+                custom_stats_code: customStatsCode,
+                custom_stats_names: customStatsNames.split(",").map(n => n.trim()).filter(Boolean),
             };
 
             addLog("info", "Sending strategy to execution engine...");
@@ -224,7 +255,7 @@ export default function ScriptPage() {
                 window: parseInt(windowLimit, 10) || 10
             };
 
-            saveScriptState({ code: editorContent, ticker: selectedTicker, capital, windowLimit });
+            saveScriptState({ code: editorContent, ticker: selectedTicker, capital, windowLimit, customStatsCode, customStatsNames });
             saveBacktestResult(data);
             sessionStorage.setItem("latest_backtest", JSON.stringify(data));
 
@@ -253,7 +284,7 @@ export default function ScriptPage() {
         } finally {
             setIsRunning(false);
         }
-    }, [selectedTicker, isRunning, capital, windowLimit, selectedIndicators, editorContent, addLog, router]);
+    }, [selectedTicker, isRunning, capital, windowLimit, selectedIndicators, editorContent, customStatsCode, customStatsNames, addLog, router]);
 
     // Keyboard shortcut: Cmd+Enter / Ctrl+Enter
     useEffect(() => {
@@ -477,6 +508,36 @@ export default function ScriptPage() {
                             Available in <span className="font-mono" style={{ color: "var(--text-tertiary)" }}>history.columns</span>
                         </p>
                     </div>
+
+                    {/* Custom Stats Names */}
+                    <div className="flex flex-col gap-2">
+                        <label
+                            className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-widest"
+                            style={{ color: "var(--text-tertiary)" }}
+                        >
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                            </svg>
+                            Custom Stats Names
+                        </label>
+                        <input
+                            type="text"
+                            value={customStatsNames}
+                            onChange={(e) => setCustomStatsNames(e.target.value)}
+                            placeholder="e.g. calc_avg_win, calc_custom_score"
+                            className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-all"
+                            style={{
+                                background: "var(--bg-base)",
+                                border: "1px solid var(--border-default)",
+                                color: "var(--text-primary)",
+                            }}
+                            onFocus={e => (e.target as HTMLInputElement).style.borderColor = "rgba(0,255,178,0.5)"}
+                            onBlur={e => (e.target as HTMLInputElement).style.borderColor = "var(--border-default)"}
+                        />
+                        <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                            Comma-separated list of functions in custom_stats.py
+                        </p>
+                    </div>
                 </div>
 
                 {/* Run Button */}
@@ -556,10 +617,13 @@ export default function ScriptPage() {
                         style={{ borderRight: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid var(--border-default)" }}
                     >
                         <div
-                            className="flex items-center gap-2 px-4 py-2.5 relative"
+                            role="button"
+                            onClick={() => setActiveTab("strategy.py")}
+                            className="flex items-center gap-2 px-4 py-2.5 relative cursor-pointer"
                             style={{
-                                background: isDark ? "#050505" : "var(--bg-base)",
-                                borderTop: "2px solid #00FFB2",
+                                background: activeTab === "strategy.py" ? (isDark ? "#050505" : "var(--bg-base)") : (isDark ? "#0D0F14" : "var(--bg-card)"),
+                                borderTop: activeTab === "strategy.py" ? "2px solid #00FFB2" : "2px solid transparent",
+                                opacity: activeTab === "strategy.py" ? 1 : 0.6,
                             }}
                         >
                             <svg className="w-3.5 h-3.5 text-[#4B9CD3]" viewBox="0 0 24 24" fill="currentColor">
@@ -572,7 +636,29 @@ export default function ScriptPage() {
                             >
                                 strategy.py
                             </span>
-                            <div className="w-1.5 h-1.5 rounded-full bg-[#00FFB2] opacity-70 ml-0.5" title="Unsaved changes" />
+                            {activeTab === "strategy.py" && <div className="w-1.5 h-1.5 rounded-full bg-[#00FFB2] opacity-70 ml-0.5" title="Active" />}
+                        </div>
+                        <div
+                            role="button"
+                            onClick={() => setActiveTab("custom_stats.py")}
+                            className="flex items-center gap-2 px-4 py-2.5 relative cursor-pointer"
+                            style={{
+                                background: activeTab === "custom_stats.py" ? (isDark ? "#050505" : "var(--bg-base)") : (isDark ? "#0D0F14" : "var(--bg-card)"),
+                                borderTop: activeTab === "custom_stats.py" ? "2px solid #EAB308" : "2px solid transparent",
+                                opacity: activeTab === "custom_stats.py" ? 1 : 0.6,
+                            }}
+                        >
+                            <svg className="w-3.5 h-3.5 text-[#EAB308]" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                                <polyline points="14 2 14 8 20 8" fill="none" stroke="currentColor" strokeWidth="2" />
+                            </svg>
+                            <span
+                                className="text-xs font-mono"
+                                style={{ color: isDark ? "#D1D5DB" : "var(--text-primary)" }}
+                            >
+                                custom_stats.py
+                            </span>
+                            {activeTab === "custom_stats.py" && <div className="w-1.5 h-1.5 rounded-full bg-[#EAB308] opacity-70 ml-0.5" title="Active" />}
                         </div>
                     </div>
 
@@ -605,11 +691,14 @@ export default function ScriptPage() {
                 <div className="flex-1 overflow-hidden relative">
                     <div className="absolute inset-0">
                         <SimpleCodeEditor
-                            code={editorContent}
+                            code={activeTab === "strategy.py" ? editorContent : customStatsCode}
                             theme={theme}
                             onChange={(value) => {
-                                setEditorContent(value);
-                                setLineCount(value.split("\n").length);
+                                if (activeTab === "strategy.py") {
+                                    setEditorContent(value);
+                                } else {
+                                    setCustomStatsCode(value);
+                                }
                             }}
                         />
                     </div>
