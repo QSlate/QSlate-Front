@@ -618,7 +618,15 @@ export default function ScriptPage() {
                     >
                         <div
                             role="button"
+                            tabIndex={0}
+                            aria-selected={activeTab === "strategy.py"}
                             onClick={() => setActiveTab("strategy.py")}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    setActiveTab("strategy.py");
+                                }
+                            }}
                             className="flex items-center gap-2 px-4 py-2.5 relative cursor-pointer"
                             style={{
                                 background: activeTab === "strategy.py" ? (isDark ? "#050505" : "var(--bg-base)") : (isDark ? "#0D0F14" : "var(--bg-card)"),
@@ -640,7 +648,15 @@ export default function ScriptPage() {
                         </div>
                         <div
                             role="button"
+                            tabIndex={0}
+                            aria-selected={activeTab === "custom_stats.py"}
                             onClick={() => setActiveTab("custom_stats.py")}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    setActiveTab("custom_stats.py");
+                                }
+                            }}
                             className="flex items-center gap-2 px-4 py-2.5 relative cursor-pointer"
                             style={{
                                 background: activeTab === "custom_stats.py" ? (isDark ? "#050505" : "var(--bg-base)") : (isDark ? "#0D0F14" : "var(--bg-card)"),
