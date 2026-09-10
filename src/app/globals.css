@@ -1,105 +1,104 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
-    /* Backgrounds */
-    --bg-base: #050505;
-    --bg-card: #0D0F14;
-    --bg-card-hover: #131720;
-    --bg-card-subtle: rgba(255, 255, 255, 0.02);
-    --bg-navbar: #050505;
-    --bg-navbar-scrolled: rgba(5, 5, 5, 0.70);
-    --bg-panel: #0D0F14;
-    --bg-input: transparent;
-    --bg-modal-backdrop: rgba(0, 0, 0, 0.60);
+  /* Backgrounds */
+  --bg-base: #050505;
+  --bg-card: #0d0f14;
+  --bg-card-hover: #131720;
+  --bg-card-subtle: rgba(255, 255, 255, 0.02);
+  --bg-navbar: #050505;
+  --bg-navbar-scrolled: rgba(5, 5, 5, 0.7);
+  --bg-panel: #0d0f14;
+  --bg-input: transparent;
+  --bg-modal-backdrop: rgba(0, 0, 0, 0.6);
 
-    /* Borders */
-    --border-default: rgba(255, 255, 255, 0.05);
-    --border-hover: rgba(255, 255, 255, 0.10);
-    --border-strong: rgba(255, 255, 255, 0.08);
-    --border-focus: rgba(0, 255, 178, 0.30);
+  /* Borders */
+  --border-default: rgba(255, 255, 255, 0.05);
+  --border-hover: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.08);
+  --border-focus: rgba(0, 255, 178, 0.3);
 
-    /* Text */
-    --text-primary: #FFFFFF;
-    --text-secondary: #9CA3AF;
-    --text-tertiary: #6B7280;
-    --text-muted: #4B5563;
-    --text-inverse: #050505;
+  /* Text */
+  --text-primary: #ffffff;
+  --text-secondary: #9ca3af;
+  --text-tertiary: #6b7280;
+  --text-muted: #4b5563;
+  --text-inverse: #050505;
 
-    /* Interactive */
-    --interactive-hover-bg: rgba(255, 255, 255, 0.05);
-    --interactive-active-bg: rgba(255, 255, 255, 0.10);
-    --row-hover: rgba(255, 255, 255, 0.03);
+  /* Interactive */
+  --interactive-hover-bg: rgba(255, 255, 255, 0.05);
+  --interactive-active-bg: rgba(255, 255, 255, 0.1);
+  --row-hover: rgba(255, 255, 255, 0.03);
 
-    /* Scrollbar */
-    --scrollbar-thumb: #2A2D35;
-    --scrollbar-thumb-hover: #3A3D45;
+  /* Scrollbar */
+  --scrollbar-thumb: #2a2d35;
+  --scrollbar-thumb-hover: #3a3d45;
 
-    /* App accent (same in both modes) */
-    --accent: #00FFB2;
-    --accent-dim: rgba(0, 255, 178, 0.10);
-    --accent-border: rgba(0, 255, 178, 0.20);
+  /* App accent (same in both modes) */
+  --accent: #00ffb2;
+  --accent-dim: rgba(0, 255, 178, 0.1);
+  --accent-border: rgba(0, 255, 178, 0.2);
 
-    /* Divider inside info rows */
-    --divider: rgba(255, 255, 255, 0.05);
+  /* Divider inside info rows */
+  --divider: rgba(255, 255, 255, 0.05);
 
-    /* Card inset highlight */
-    --card-inset: rgba(255, 255, 255, 0.04);
+  /* Card inset highlight */
+  --card-inset: rgba(255, 255, 255, 0.04);
 
-    /* Segment bar background */
-    --segment-bg: rgba(255, 255, 255, 0.05);
+  /* Segment bar background */
+  --segment-bg: rgba(255, 255, 255, 0.05);
 }
 
-[data-theme="light"] {
-    --bg-base: #F1F3F8;
-    --bg-card: #FFFFFF;
-    --bg-card-hover: #F7F8FC;
-    --bg-card-subtle: rgba(0, 0, 0, 0.03);
-    --bg-navbar: rgba(241, 243, 248, 0.90);
-    --bg-navbar-scrolled: rgba(241, 243, 248, 0.85);
-    --bg-panel: #FFFFFF;
-    --bg-input: #FFFFFF;
-    --bg-modal-backdrop: rgba(0, 0, 0, 0.40);
+[data-theme='light'] {
+  --bg-base: #f1f3f8;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f7f8fc;
+  --bg-card-subtle: rgba(0, 0, 0, 0.03);
+  --bg-navbar: rgba(241, 243, 248, 0.9);
+  --bg-navbar-scrolled: rgba(241, 243, 248, 0.85);
+  --bg-panel: #ffffff;
+  --bg-input: #ffffff;
+  --bg-modal-backdrop: rgba(0, 0, 0, 0.4);
 
-    /* More visible borders on white */
-    --border-default: rgba(0, 0, 0, 0.10);
-    --border-hover: rgba(0, 0, 0, 0.20);
-    --border-strong: rgba(0, 0, 0, 0.12);
-    --border-focus: rgba(0, 200, 140, 0.45);
+  /* More visible borders on white */
+  --border-default: rgba(0, 0, 0, 0.1);
+  --border-hover: rgba(0, 0, 0, 0.2);
+  --border-strong: rgba(0, 0, 0, 0.12);
+  --border-focus: rgba(0, 200, 140, 0.45);
 
-    /* Text — improved contrast hierarchy */
-    --text-primary: #0F172A;
-    --text-secondary: #475569;
-    --text-tertiary: #64748B;
-    --text-muted: #94A3B8;
-    --text-inverse: #FFFFFF;
+  /* Text — improved contrast hierarchy */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #64748b;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
 
-    /* Interactive states — visible on white */
-    --interactive-hover-bg: rgba(0, 0, 0, 0.05);
-    --interactive-active-bg: rgba(0, 0, 0, 0.09);
-    --row-hover: rgba(0, 0, 0, 0.04);
+  /* Interactive states — visible on white */
+  --interactive-hover-bg: rgba(0, 0, 0, 0.05);
+  --interactive-active-bg: rgba(0, 0, 0, 0.09);
+  --row-hover: rgba(0, 0, 0, 0.04);
 
-    --scrollbar-thumb: #CBD5E1;
-    --scrollbar-thumb-hover: #94A3B8;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
 
-    --divider: rgba(0, 0, 0, 0.07);
-    --card-inset: rgba(255, 255, 255, 0.80);
-    --segment-bg: rgba(0, 0, 0, 0.08);
+  --divider: rgba(0, 0, 0, 0.07);
+  --card-inset: rgba(255, 255, 255, 0.8);
+  --segment-bg: rgba(0, 0, 0, 0.08);
 }
-
 
 html {
-    transition:
-        background-color 0.30s ease,
-        color 0.30s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 body {
-    background-color: var(--bg-base);
-    color: var(--text-primary);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
 }
 
 .react-grid-placeholder {
-    background: var(--accent) !important;
-    opacity: 0.08 !important;
-    border-radius: 12px !important;
+  background: var(--accent) !important;
+  opacity: 0.08 !important;
+  border-radius: 12px !important;
 }
