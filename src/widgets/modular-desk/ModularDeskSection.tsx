@@ -18,21 +18,20 @@ export function ModularDeskSection() {
   return (
     <section
       id="features"
-      className="relative w-full max-w-6xl mx-auto px-4 py-20 sm:py-32"
+      className="relative w-full max-w-6xl mx-auto px-4 py-16 sm:py-24"
     >
       {/* Section Header */}
-      <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-14">
-        <span className="text-[11px] uppercase tracking-[0.25em] font-mono font-semibold text-cyan-400 mb-3">
+      <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-12 sm:mb-16">
+        <span className="text-[11px] uppercase tracking-[0.2em] font-sans font-semibold text-zinc-400 [data-theme=light]:text-zinc-500 mb-3">
           The Modular Lab
         </span>
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold font-mono text-white [data-theme=light]:text-zinc-950 tracking-tight leading-tight">
-          Your research desk,{' '}
-          <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
-            composed widget by widget.
-          </span>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold font-sans text-white [data-theme=light]:text-zinc-950 tracking-tight leading-tight">
+          Your research desk,
+          <br />
+          composed widget by widget.
         </h2>
-        <p className="mt-4 text-sm sm:text-base text-zinc-400 [data-theme=light]:text-zinc-600 leading-relaxed max-w-2xl">
-          Snap, dock, and wire together analytics panels. Every widget streams
+        <p className="mt-4 text-sm sm:text-base text-zinc-400 [data-theme=light]:text-zinc-600 leading-relaxed max-w-2xl font-sans">
+          Drag, dock, and wire together analytics panels. Every widget streams
           from the same deterministic simulation, so what you see is exactly
           what the kernel computed.
         </p>
@@ -40,7 +39,7 @@ export function ModularDeskSection() {
 
       {/* Interactive Workspace Showcase Replica */}
       <motion.div
-        initial={{ opacity: 0, y: 40 }}
+        initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-60px' }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
@@ -57,24 +56,24 @@ export function ModularDeskSection() {
             <div className="h-4 w-[1px] bg-white/10 [data-theme=light]:bg-black/10 mx-1" />
             <div className="flex items-center gap-2 font-mono text-xs">
               <span className="font-semibold text-white [data-theme=light]:text-zinc-900">
-                BACKTEST
+                Backtest
               </span>
               <span className="text-zinc-500">/</span>
               <span className="text-zinc-400 [data-theme=light]:text-zinc-600">
-                2021-2024 TICK
+                AAPL-MeanReversion-v2
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3 font-mono text-xs">
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-medium">
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-medium font-sans">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              TICK FEED: 1,420,800 MSG/S
+              1,420,800 MSG/S
             </span>
 
             <button
               type="button"
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 [data-theme=light]:bg-black/5 border border-white/10 [data-theme=light]:border-black/10 text-zinc-300 [data-theme=light]:text-zinc-700 hover:text-white [data-theme=light]:hover:text-black hover:bg-white/10 transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 [data-theme=light]:bg-black/5 border border-white/10 [data-theme=light]:border-black/10 text-zinc-300 [data-theme=light]:text-zinc-700 hover:text-white [data-theme=light]:hover:text-black hover:bg-white/10 transition-colors font-sans text-xs"
             >
               <Plus className="w-3.5 h-3.5 text-cyan-400" />
               <span>Add Widget</span>
@@ -88,7 +87,7 @@ export function ModularDeskSection() {
           <div className="lg:col-span-7 rounded-xl bg-[#0b0d12] [data-theme=light]:bg-white border border-white/10 [data-theme=light]:border-black/5 p-4 sm:p-5 flex flex-col justify-between shadow-lg">
             {/* Widget Titlebar */}
             <div className="flex items-center justify-between pb-3 border-b border-white/5 [data-theme=light]:border-black/5">
-              <div className="flex items-center gap-2 font-mono">
+              <div className="flex items-center gap-2 font-sans">
                 <GripHorizontal className="w-4 h-4 text-zinc-600 cursor-grab" />
                 <span className="text-xs font-semibold text-zinc-300 [data-theme=light]:text-zinc-800 flex items-center gap-1.5">
                   <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
@@ -96,13 +95,13 @@ export function ModularDeskSection() {
                 </span>
               </div>
               <div className="flex items-center gap-3 text-xs font-mono">
-                <span className="text-emerald-400 font-bold">+29.24%</span>
+                <span className="text-emerald-400 font-bold">+29.2%</span>
                 <Maximize2 className="w-3.5 h-3.5 text-zinc-500 hover:text-white transition-colors cursor-pointer" />
               </div>
             </div>
 
             {/* Interactive SVG Chart Canvas */}
-            <div className="relative w-full h-48 sm:h-56 mt-4">
+            <div className="relative w-full h-44 sm:h-52 mt-4">
               <svg
                 viewBox="0 0 400 160"
                 className="w-full h-full overflow-visible"
@@ -120,7 +119,6 @@ export function ModularDeskSection() {
                     <stop offset="100%" stopColor="#00E5FF" stopOpacity="0.0" />
                   </linearGradient>
                 </defs>
-                {/* Horizontal reference lines */}
                 <line
                   x1="0"
                   y1="40"
@@ -148,13 +146,10 @@ export function ModularDeskSection() {
                   strokeDasharray="3 3"
                   className="text-white/5 [data-theme=light]:text-black/5"
                 />
-
-                {/* Filled Gradient Area */}
                 <path
                   d="M0,135 Q50,130 90,110 T180,95 T260,65 T340,35 T400,15 L400,160 L0,160 Z"
                   fill="url(#mainEquityGrad)"
                 />
-                {/* Accent Line */}
                 <path
                   d="M0,135 Q50,130 90,110 T180,95 T260,65 T340,35 T400,15"
                   fill="none"
@@ -168,17 +163,23 @@ export function ModularDeskSection() {
             {/* Quick Summary Pill Row */}
             <div className="mt-4 pt-3 border-t border-white/5 [data-theme=light]:border-black/5 grid grid-cols-3 gap-2 font-mono text-[11px]">
               <div>
-                <span className="text-zinc-500 block">FINAL BALANCE</span>
+                <span className="text-zinc-500 block font-sans text-[10px]">
+                  FINAL BALANCE
+                </span>
                 <span className="text-white [data-theme=light]:text-zinc-900 font-bold">
                   $129,240.00
                 </span>
               </div>
               <div>
-                <span className="text-zinc-500 block">SHARPE RATIO</span>
+                <span className="text-zinc-500 block font-sans text-[10px]">
+                  SHARPE RATIO
+                </span>
                 <span className="text-cyan-400 font-bold">2.41</span>
               </div>
               <div>
-                <span className="text-zinc-500 block">MAX DRAWDOWN</span>
+                <span className="text-zinc-500 block font-sans text-[10px]">
+                  MAX DRAWDOWN
+                </span>
                 <span className="text-rose-400 font-bold">-3.2%</span>
               </div>
             </div>
@@ -187,7 +188,7 @@ export function ModularDeskSection() {
           {/* Widget 2: Drawdown Waterfall (Spans 5 cols on LG) */}
           <div className="lg:col-span-5 rounded-xl bg-[#0b0d12] [data-theme=light]:bg-white border border-white/10 [data-theme=light]:border-black/5 p-4 sm:p-5 flex flex-col justify-between shadow-lg">
             <div className="flex items-center justify-between pb-3 border-b border-white/5 [data-theme=light]:border-black/5">
-              <div className="flex items-center gap-2 font-mono">
+              <div className="flex items-center gap-2 font-sans">
                 <GripHorizontal className="w-4 h-4 text-zinc-600 cursor-grab" />
                 <span className="text-xs font-semibold text-zinc-300 [data-theme=light]:text-zinc-800 flex items-center gap-1.5">
                   <Activity className="w-3.5 h-3.5 text-rose-400" />
@@ -195,12 +196,12 @@ export function ModularDeskSection() {
                 </span>
               </div>
               <span className="text-xs font-mono font-bold text-rose-400">
-                -3.2% MAX
+                -3.2%
               </span>
             </div>
 
             {/* Candlestick & Volume Bars */}
-            <div className="flex items-end justify-between h-48 sm:h-56 pt-6 px-2 gap-1.5">
+            <div className="flex items-end justify-between h-44 sm:h-52 pt-6 px-2 gap-1.5">
               {[25, 45, 30, 60, 55, 80, 40, 70, 90, 65, 85, 100, 75, 95].map(
                 (height, i) => (
                   <div
@@ -221,8 +222,8 @@ export function ModularDeskSection() {
             </div>
 
             <div className="mt-4 pt-3 border-t border-white/5 [data-theme=light]:border-black/5 flex items-center justify-between font-mono text-[11px] text-zinc-500">
-              <span>VOLATILITY REGIME: LOW</span>
-              <span className="text-emerald-400">AUDITED HISTORICAL</span>
+              <span className="font-sans text-[10px]">VOLATILITY: LOW</span>
+              <span className="text-emerald-400">HISTORICAL PASS</span>
             </div>
           </div>
 
@@ -258,8 +259,8 @@ export function ModularDeskSection() {
               </div>
 
               <div className="flex items-center gap-3 font-mono text-[11px] text-zinc-400">
-                <span className="hidden sm:inline">
-                  AST Security Check: PASS
+                <span className="hidden sm:inline font-sans">
+                  AST Security: PASS
                 </span>
                 <span className="text-emerald-400">● Python 3.12 (SIMD)</span>
               </div>

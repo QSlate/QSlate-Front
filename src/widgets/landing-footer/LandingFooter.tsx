@@ -12,7 +12,7 @@ const FOOTER_COLUMNS: FooterColumn[] = [
     links: [
       { label: 'Flight Simulator', href: '/lab' },
       { label: 'Kernel 2.0', href: '#architecture' },
-      { label: 'Marketplace', href: '#marketplace' },
+      { label: 'Marketplace', href: '#personas' },
       { label: 'Pricing', href: '#pricing' },
     ],
   },
@@ -45,31 +45,30 @@ export function LandingFooter() {
           <div className="md:col-span-2 flex flex-col justify-between space-y-6">
             <div>
               <Link href="/" className="flex items-center gap-2.5 group">
-                <div className="relative w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
+                <div className="relative w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center">
                   <Image
                     src="/logo-dark.png"
                     alt="QSlate Logo"
-                    width={32}
-                    height={32}
-                    className="w-8 h-8 object-contain [data-theme=light]:hidden block"
+                    width={28}
+                    height={28}
+                    className="w-7 h-7 object-contain [data-theme=light]:hidden block"
                   />
                   <Image
                     src="/logo-light.png"
                     alt="QSlate Logo"
-                    width={32}
-                    height={32}
-                    className="w-8 h-8 object-contain hidden [data-theme=light]:block"
+                    width={28}
+                    height={28}
+                    className="w-7 h-7 object-contain hidden [data-theme=light]:block"
                   />
                 </div>
-                <span className="text-lg font-bold tracking-tight text-white [data-theme=light]:text-zinc-900 font-mono">
+                <span className="text-base font-semibold tracking-tight text-white [data-theme=light]:text-zinc-950 font-sans">
                   QSlate
                 </span>
               </Link>
 
               <p className="mt-4 text-xs sm:text-sm text-zinc-400 [data-theme=light]:text-zinc-600 leading-relaxed max-w-sm font-sans">
-                The flight simulator for quantitative finance. Modern web
-                accessibility married with SIMD-accelerated low-latency kernel
-                speed.
+                The flight simulator for quantitative finance. Position with
+                rigor before risking capital.
               </p>
             </div>
 
@@ -115,10 +114,10 @@ export function LandingFooter() {
           <div className="md:col-span-3 grid grid-cols-2 sm:grid-cols-3 gap-8">
             {FOOTER_COLUMNS.map((column, idx) => (
               <div key={idx} className="space-y-4">
-                <h4 className="text-[11px] font-mono uppercase tracking-widest font-semibold text-white [data-theme=light]:text-zinc-900">
+                <h4 className="text-[11px] font-sans uppercase tracking-widest font-semibold text-white [data-theme=light]:text-zinc-900">
                   {column.title}
                 </h4>
-                <ul className="space-y-2.5 font-mono text-xs">
+                <ul className="space-y-2.5 font-sans text-xs">
                   {column.links.map((link, linkIdx) => (
                     <li key={linkIdx}>
                       <a
@@ -136,17 +135,13 @@ export function LandingFooter() {
         </div>
 
         {/* Bottom Metadata Bar */}
-        <div className="mt-16 pt-8 border-t border-white/10 [data-theme=light]:border-black/5 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-[11px] text-zinc-500">
+        <div className="mt-16 pt-8 border-t border-white/10 [data-theme=light]:border-black/5 flex flex-col sm:flex-row items-center justify-between gap-4 font-sans text-xs text-zinc-500">
           <div className="flex items-center gap-4">
             <span>&copy; 2026 QSlate Inc. All rights reserved.</span>
-            <span className="hidden sm:inline">&bull;</span>
-            <span className="hidden sm:inline">
-              Technical Service Provider (Hypothetical simulation only)
-            </span>
           </div>
 
           {/* Live Systems Status Pill */}
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span>All systems operational</span>
           </div>

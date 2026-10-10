@@ -24,6 +24,19 @@ const config: Config = {
         },
         'card-inset': 'var(--card-inset)',
       },
+      fontFamily: {
+        sans: [
+          'var(--font-inter)',
+          'ui-sans-serif',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'sans-serif',
+        ],
+        mono: ['var(--font-jetbrains-mono)', 'monospace'],
+      },
       backgroundColor: {
         base: 'var(--bg-base)',
         card: 'var(--bg-card)',

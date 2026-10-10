@@ -10,18 +10,17 @@ export function PersonasBentoSection() {
   return (
     <section
       id="personas"
-      className="relative w-full max-w-6xl mx-auto px-4 py-20 sm:py-32"
+      className="relative w-full max-w-6xl mx-auto px-4 py-16 sm:py-24"
     >
       {/* Section Header */}
-      <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-14">
-        <span className="text-[11px] uppercase tracking-[0.25em] font-mono font-semibold text-cyan-400 mb-3">
-          For Traders • For Quants
+      <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-12 sm:mb-16">
+        <span className="text-[11px] uppercase tracking-[0.2em] font-sans font-semibold text-zinc-400 [data-theme=light]:text-zinc-500 mb-3">
+          For Traders • For Quant Res
         </span>
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold font-mono text-white [data-theme=light]:text-zinc-950 tracking-tight leading-tight">
-          Built for how you{' '}
-          <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
-            think about markets.
-          </span>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold font-sans text-white [data-theme=light]:text-zinc-950 tracking-tight leading-tight">
+          Built for how you
+          <br />
+          think about markets.
         </h2>
       </div>
 
@@ -37,27 +36,27 @@ export function PersonasBentoSection() {
         >
           <SpotlightCard
             spotlightColor="rgba(0, 255, 178, 0.15)"
-            className="p-6 sm:p-8 flex flex-col justify-between h-full"
+            className="p-6 sm:p-8 flex flex-col justify-between h-full bg-[#090b10] [data-theme=light]:bg-[#f8f9fa]"
           >
             <div>
               {/* Badge */}
               <div className="flex items-center justify-between mb-4">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono font-semibold uppercase tracking-wider">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-sans font-semibold uppercase tracking-wider">
                   <Sparkles className="w-3 h-3 text-emerald-400" />
-                  Retail / No-Code
+                  Retail / Pro Traders
                 </span>
               </div>
 
-              <h3 className="text-2xl font-bold font-mono text-white [data-theme=light]:text-zinc-900 tracking-tight">
+              <h3 className="text-2xl font-bold font-sans text-white [data-theme=light]:text-zinc-950 tracking-tight">
                 For Intuitive Traders
               </h3>
               <p className="mt-3 text-sm text-zinc-400 [data-theme=light]:text-zinc-600 leading-relaxed font-sans">
                 Describe an idea in plain English and watch it become a rigorous
-                backtest strategy. No code, no spreadsheets.
+                backtested strategy. No code, no spreadsheets.
               </p>
 
               {/* Feature Checklist */}
-              <ul className="mt-6 space-y-3 font-mono text-xs text-zinc-300 [data-theme=light]:text-zinc-700">
+              <ul className="mt-6 space-y-3 font-sans text-xs text-zinc-300 [data-theme=light]:text-zinc-700">
                 <li className="flex items-center gap-2.5">
                   <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
                     <Check className="w-2.5 h-2.5" />
@@ -68,35 +67,34 @@ export function PersonasBentoSection() {
                   <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
                     <Check className="w-2.5 h-2.5" />
                   </div>
-                  <span>Zero look-ahead bias in simulation</span>
+                  <span>Zero-code backtests in seconds</span>
                 </li>
                 <li className="flex items-center gap-2.5">
                   <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
                     <Check className="w-2.5 h-2.5" />
                   </div>
-                  <span>Visual risk explanation & factor radar</span>
+                  <span>Visual risk explanation on every trade</span>
                 </li>
               </ul>
             </div>
 
             {/* Prompt Window Replica */}
             <div className="mt-8">
-              <div className="rounded-xl bg-[#06070a] [data-theme=light]:bg-[#f4f5f7] border border-white/10 [data-theme=light]:border-black/5 overflow-hidden">
-                <div className="px-3.5 py-2 bg-[#0c0e14] [data-theme=light]:bg-[#e9ecef] border-b border-white/5 [data-theme=light]:border-black/5 flex items-center justify-between font-mono text-[10px] text-zinc-400">
+              <div className="rounded-xl bg-[#06070a] [data-theme=light]:bg-white border border-white/10 [data-theme=light]:border-black/10 overflow-hidden shadow-inner">
+                <div className="px-3.5 py-2 bg-[#0c0e14] [data-theme=light]:bg-[#f1f3f5] border-b border-white/5 [data-theme=light]:border-black/5 flex items-center justify-between font-mono text-[10px] text-zinc-400">
                   <div className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full bg-red-500/80" />
                     <div className="w-2 h-2 rounded-full bg-yellow-500/80" />
                     <div className="w-2 h-2 rounded-full bg-green-500/80" />
-                    <span className="ml-1 font-semibold text-zinc-300 [data-theme=light]:text-zinc-700">
+                    <span className="ml-1 font-semibold text-zinc-300 [data-theme=light]:text-zinc-700 font-sans">
                       PROMPT
                     </span>
                   </div>
-                  <span className="text-emerald-400">AI KERNEL</span>
+                  <span className="text-emerald-400 font-sans">AI KERNEL</span>
                 </div>
                 <div className="p-4 font-mono text-xs text-emerald-400">
                   <span>
-                    &gt; &quot;Buy ETH when 4h RSI falls below 30, with a 2%
-                    trailing stop&quot;
+                    &gt; &quot;Buy SPY when RSI dips below 30, exit at +4%&quot;
                   </span>
                 </div>
               </div>
@@ -105,7 +103,7 @@ export function PersonasBentoSection() {
               <div className="mt-6 flex items-center">
                 <Link
                   href="/lab"
-                  className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-emerald-400 hover:text-emerald-300 transition-colors group"
+                  className="inline-flex items-center gap-1.5 text-xs font-sans font-semibold text-emerald-400 hover:text-emerald-300 transition-colors group"
                 >
                   <span>Start building</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -125,18 +123,18 @@ export function PersonasBentoSection() {
         >
           <SpotlightCard
             spotlightColor="rgba(0, 229, 255, 0.15)"
-            className="p-6 sm:p-8 flex flex-col justify-between h-full"
+            className="p-6 sm:p-8 flex flex-col justify-between h-full bg-[#090b10] [data-theme=light]:bg-[#f8f9fa]"
           >
             <div>
               {/* Badge */}
               <div className="flex items-center justify-between mb-4">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-[10px] font-mono font-semibold uppercase tracking-wider">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-[10px] font-sans font-semibold uppercase tracking-wider">
                   <Code2 className="w-3 h-3 text-cyan-400" />
-                  Quant / Python / Rust
+                  Quant / Hedge Fund
                 </span>
               </div>
 
-              <h3 className="text-2xl font-bold font-mono text-white [data-theme=light]:text-zinc-900 tracking-tight">
+              <h3 className="text-2xl font-bold font-sans text-white [data-theme=light]:text-zinc-950 tracking-tight">
                 For Researchers
               </h3>
               <p className="mt-3 text-sm text-zinc-400 [data-theme=light]:text-zinc-600 leading-relaxed font-sans">
@@ -145,18 +143,18 @@ export function PersonasBentoSection() {
               </p>
 
               {/* Feature Checklist */}
-              <ul className="mt-6 space-y-3 font-mono text-xs text-zinc-300 [data-theme=light]:text-zinc-700">
+              <ul className="mt-6 space-y-3 font-sans text-xs text-zinc-300 [data-theme=light]:text-zinc-700">
                 <li className="flex items-center gap-2.5">
                   <div className="w-4 h-4 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400">
                     <Check className="w-2.5 h-2.5" />
                   </div>
-                  <span>Raw tick-level order flow data</span>
+                  <span>Raw tick-level orderbook data</span>
                 </li>
                 <li className="flex items-center gap-2.5">
                   <div className="w-4 h-4 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400">
                     <Check className="w-2.5 h-2.5" />
                   </div>
-                  <span>Custom Monte Carlo optimization</span>
+                  <span>Custom Numba/Cuda optimization</span>
                 </li>
                 <li className="flex items-center gap-2.5">
                   <div className="w-4 h-4 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400">
@@ -169,17 +167,17 @@ export function PersonasBentoSection() {
 
             {/* Python AST Snippet Window */}
             <div className="mt-8">
-              <div className="rounded-xl bg-[#06070a] [data-theme=light]:bg-[#f4f5f7] border border-white/10 [data-theme=light]:border-black/5 overflow-hidden">
-                <div className="px-3.5 py-2 bg-[#0c0e14] [data-theme=light]:bg-[#e9ecef] border-b border-white/5 [data-theme=light]:border-black/5 flex items-center justify-between font-mono text-[10px] text-zinc-400">
+              <div className="rounded-xl bg-[#06070a] [data-theme=light]:bg-white border border-white/10 [data-theme=light]:border-black/10 overflow-hidden shadow-inner">
+                <div className="px-3.5 py-2 bg-[#0c0e14] [data-theme=light]:bg-[#f1f3f5] border-b border-white/5 [data-theme=light]:border-black/5 flex items-center justify-between font-mono text-[10px] text-zinc-400">
                   <div className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full bg-red-500/80" />
                     <div className="w-2 h-2 rounded-full bg-yellow-500/80" />
                     <div className="w-2 h-2 rounded-full bg-green-500/80" />
-                    <span className="ml-1 font-semibold text-zinc-300 [data-theme=light]:text-zinc-700">
+                    <span className="ml-1 font-semibold text-zinc-300 [data-theme=light]:text-zinc-700 font-sans">
                       PYTHON
                     </span>
                   </div>
-                  <span className="text-cyan-400">RUST ENGINE</span>
+                  <span className="text-cyan-400 font-sans">RUST ENGINE</span>
                 </div>
                 <div className="p-4 font-mono text-xs text-cyan-400">
                   <span>
@@ -192,7 +190,7 @@ export function PersonasBentoSection() {
               <div className="mt-6 flex items-center">
                 <Link
                   href="#docs"
-                  className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-cyan-400 hover:text-cyan-300 transition-colors group"
+                  className="inline-flex items-center gap-1.5 text-xs font-sans font-semibold text-cyan-400 hover:text-cyan-300 transition-colors group"
                 >
                   <span>Read the docs</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
