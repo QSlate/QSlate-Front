@@ -28,15 +28,15 @@ function ControlledMacbook({
     const p = scrollProgressRef.current ?? 0;
 
     // Calculate lid open amount (0 = closed, 1 = fully open)
-    // Starts closed at p <= 0.03, opens progressively between 0.03 and 0.42
-    const targetOpen = THREE.MathUtils.clamp((p - 0.03) / 0.38, 0, 1);
+    // Starts closed at p <= 0.04, opens progressively between 0.04 and 0.48
+    const targetOpen = THREE.MathUtils.clamp((p - 0.04) / 0.44, 0, 1);
     const easedOpen =
       targetOpen < 0.5
         ? 2 * targetOpen * targetOpen
         : -1 + (4 - 2 * targetOpen) * targetOpen;
 
-    // Screen brightness (wakes up between 0.12 and 0.46)
-    const targetBrightness = THREE.MathUtils.clamp((p - 0.12) / 0.34, 0, 1);
+    // Screen brightness (wakes up between 0.12 and 0.50)
+    const targetBrightness = THREE.MathUtils.clamp((p - 0.12) / 0.38, 0, 1);
 
     // Smooth damp values to ensure buttery motion
     stateRef.current.open = THREE.MathUtils.damp(
@@ -53,77 +53,68 @@ function ControlledMacbook({
     );
 
     if (groupRef.current) {
-      // Dynamic scale: start compact, dive forward for high-impact reveal
-      const baseScale = isMobile ? 0.56 : 0.84;
-      const diveScale = isMobile ? 0.72 : 1.08;
-      // Between p=0 and p=0.5, scale up; beyond 0.8, slight recede
-      let targetScale = THREE.MathUtils.lerp(
+      // Balanced scale: fits comfortably inside the viewport with generous margins
+      const baseScale = isMobile ? 0.44 : 0.62;
+      const diveScale = isMobile ? 0.48 : 0.68;
+      const targetScale = THREE.MathUtils.lerp(
         baseScale,
         diveScale,
-        THREE.MathUtils.clamp(p / 0.45, 0, 1)
+        THREE.MathUtils.clamp(p / 0.48, 0, 1)
       );
-      if (p > 0.8) {
-        const recedeAmount = (p - 0.8) / 0.2;
-        targetScale = THREE.MathUtils.lerp(
-          diveScale,
-          diveScale * 0.88,
-          recedeAmount
-        );
-      }
 
       // Vertical position:
-      // At p=0: slightly lowered (-0.26) so headline & CTAs stay prominent
-      // At p>=0.25: centered dead in the middle of the screen (0.0)!
+      // When closed (p=0): lowered (-0.46) so headline & CTAs have breathing room above
+      // When open (p>=0.45): centered perfectly at -0.26, keeping BOTH screen and keyboard visible!
       const targetY = THREE.MathUtils.lerp(
+        -0.46,
         -0.26,
-        0.0,
-        THREE.MathUtils.clamp(p / 0.3, 0, 1)
+        THREE.MathUtils.clamp(p / 0.45, 0, 1)
       );
 
       // Pitch & Yaw:
-      // At p=0: pleasant top-down presentation tilt (pitch: 0.28, yaw: -0.12)
-      // As lid opens: aligns squarely to user (pitch: 0.04, yaw: 0.0)
+      // Closed: isometric showcase tilt (pitch: 0.36, yaw: -0.14)
+      // Open: authentic laptop perspective (pitch: 0.16, yaw: 0.0)
       const targetPitch = THREE.MathUtils.lerp(
-        0.28,
-        0.04,
-        THREE.MathUtils.clamp(p / 0.42, 0, 1)
+        0.36,
+        0.16,
+        THREE.MathUtils.clamp(p / 0.45, 0, 1)
       );
       const targetYaw = THREE.MathUtils.lerp(
-        -0.12,
+        -0.14,
         0.0,
-        THREE.MathUtils.clamp(p / 0.42, 0, 1)
+        THREE.MathUtils.clamp(p / 0.45, 0, 1)
       );
 
       // Mouse interactive parallax (active once opened)
       const mouse = mouseRef.current ?? { x: 0, y: 0 };
       const parallaxFactor = Math.min(p / 0.3, 1);
-      const parallaxYaw = mouse.x * 0.14 * parallaxFactor;
-      const parallaxPitch = -mouse.y * 0.07 * parallaxFactor;
+      const parallaxYaw = mouse.x * 0.1 * parallaxFactor;
+      const parallaxPitch = -mouse.y * 0.05 * parallaxFactor;
 
       // Apply critically damped interpolation to group transforms
       groupRef.current.position.y = THREE.MathUtils.damp(
         groupRef.current.position.y,
         targetY,
-        7,
+        8,
         delta
       );
       groupRef.current.position.x = THREE.MathUtils.damp(
         groupRef.current.position.x,
         0,
-        7,
+        8,
         delta
       );
 
       groupRef.current.rotation.x = THREE.MathUtils.damp(
         groupRef.current.rotation.x,
         targetPitch + parallaxPitch,
-        7,
+        8,
         delta
       );
       groupRef.current.rotation.y = THREE.MathUtils.damp(
         groupRef.current.rotation.y,
         targetYaw + parallaxYaw,
-        7,
+        8,
         delta
       );
 
@@ -131,7 +122,7 @@ function ControlledMacbook({
       const newScale = THREE.MathUtils.damp(
         currentScale,
         targetScale,
-        7,
+        8,
         delta
       );
       groupRef.current.scale.setScalar(newScale);
@@ -201,22 +192,22 @@ export function Macbook3DShowcase({ intro }: Macbook3DShowcaseProps) {
     };
   }, []);
 
-  // Intro fade calculations
-  const introOpacity = Math.max(0, 1 - progress / 0.2);
-  const introY = -60 * Math.min(progress / 0.2, 1);
-  const introPointerEvents = progress > 0.18 ? 'none' : 'auto';
+  // Intro fade calculations (smoothly clears out when scroll begins)
+  const introOpacity = Math.max(0, 1 - progress / 0.16);
+  const introY = -40 * Math.min(progress / 0.16, 1);
+  const introPointerEvents = progress > 0.14 ? 'none' : 'auto';
 
   // Badges opacity calculations
-  const badgesVisible = progress >= 0.42 && progress <= 0.86;
+  const badgesVisible = progress >= 0.42 && progress <= 0.88;
   const badgeOpacity = badgesVisible
     ? Math.min((progress - 0.42) / 0.08, 1) *
-      Math.min((0.86 - progress) / 0.08, 1)
+      Math.min((0.88 - progress) / 0.08, 1)
     : 0;
 
   const lightingPreset = theme === 'light' ? 'studio-light' : 'studio-dark';
 
   return (
-    <div ref={containerRef} className="relative h-[320vh]">
+    <div ref={containerRef} className="relative h-[180vh]">
       <div className="sticky top-0 flex h-screen w-full items-center justify-center overflow-hidden">
         {/* Subtle radial ambient spotlight behind laptop */}
         <div
@@ -253,7 +244,7 @@ export function Macbook3DShowcase({ intro }: Macbook3DShowcaseProps) {
           className="pointer-events-none absolute inset-0 z-20 mx-auto max-w-6xl transition-opacity duration-300"
         >
           {/* Sharpe Ratio Badge - Right */}
-          <div className="absolute right-4 top-[24%] rounded-xl border border-white/10 light:border-black/10 bg-black/60 light:bg-white/80 px-4 py-3 shadow-2xl backdrop-blur-xl sm:right-10 lg:right-12">
+          <div className="absolute right-4 top-[32%] rounded-xl border border-white/10 light:border-black/10 bg-black/60 light:bg-white/80 px-4 py-3 shadow-2xl backdrop-blur-xl sm:right-8 lg:right-12">
             <p className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 light:text-zinc-500">
               Sharpe ratio
             </p>
@@ -264,7 +255,7 @@ export function Macbook3DShowcase({ intro }: Macbook3DShowcaseProps) {
           </div>
 
           {/* Execution Latency Fill Badge - Left */}
-          <div className="absolute bottom-[20%] left-4 rounded-xl border border-white/10 light:border-black/10 bg-black/60 light:bg-white/80 p-3 shadow-2xl backdrop-blur-xl sm:left-10 lg:left-12">
+          <div className="absolute bottom-[16%] left-4 rounded-xl border border-white/10 light:border-black/10 bg-black/60 light:bg-white/80 p-3 shadow-2xl backdrop-blur-xl sm:left-8 lg:left-12">
             <div className="flex items-center gap-3">
               <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30">
                 <Zap className="size-4" aria-hidden="true" />
