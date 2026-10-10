@@ -27,19 +27,21 @@ export function MarketingNavbar() {
       <div className="pointer-events-auto mb-2">
         <Link
           href="#features"
-          className="group inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-sans font-normal bg-white/[0.04] [data-theme=light]:bg-black/[0.04] border border-white/10 [data-theme=light]:border-black/10 text-zinc-300 [data-theme=light]:text-zinc-600 hover:border-white/20 [data-theme=light]:hover:border-black/20 hover:text-white [data-theme=light]:hover:text-black transition-all"
+          className="group inline-flex items-center gap-2.5 px-3.5 py-1 rounded-full text-xs font-sans bg-white/[0.04] [data-theme=light]:bg-black/[0.04] border border-white/10 [data-theme=light]:border-black/10 text-zinc-300 [data-theme=light]:text-zinc-600 hover:border-white/20 [data-theme=light]:hover:border-black/20 hover:text-white [data-theme=light]:hover:text-black transition-all shadow-xs"
         >
-          <span className="text-cyan-400">⚡</span>
-          <span>
-            QSlate Kernel 2.0: Tick-level precision simulation is live
+          <span className="px-1.5 py-0.5 rounded-full bg-white/15 text-[9px] font-bold uppercase tracking-wider text-white">
+            NEW
           </span>
-          <ArrowRight className="w-3.5 h-3.5 text-zinc-500 group-hover:translate-x-0.5 group-hover:text-white transition-all" />
+          <span>
+            QSlate Kernel 2.0: Rust-accelerated tick simulation is live
+          </span>
+          <ArrowRight className="w-3.5 h-3.5 text-zinc-400 group-hover:translate-x-0.5 group-hover:text-white transition-all" />
         </Link>
       </div>
 
       <nav
         aria-label="Main Navigation"
-        className={`pointer-events-auto w-full max-w-6xl rounded-2xl transition-all duration-300 ${
+        className={`pointer-events-auto w-full max-w-5xl rounded-2xl transition-all duration-300 ${
           isScrolled
             ? 'bg-[#050505]/85 [data-theme=light]:bg-white/85 backdrop-blur-xl border border-white/10 [data-theme=light]:border-black/5 shadow-2xl py-3 px-5 sm:px-6'
             : 'bg-transparent py-2.5 px-4 sm:px-6'
@@ -86,7 +88,7 @@ export function MarketingNavbar() {
               Architecture
             </a>
             <a
-              href="#personas"
+              href="#marketplace"
               className="hover:text-white [data-theme=light]:hover:text-zinc-900 transition-colors"
             >
               Marketplace
@@ -126,7 +128,7 @@ export function MarketingNavbar() {
             {/* Launch Dashboard Primary Button */}
             <Link
               href="/lab"
-              className="relative inline-flex items-center justify-center px-4 py-1.5 rounded-full text-xs font-medium font-sans text-black bg-white hover:bg-zinc-200 [data-theme=light]:bg-black [data-theme=light]:text-white [data-theme=light]:hover:bg-zinc-800 shadow-sm transition-all hover:scale-105 active:scale-95"
+              className="relative inline-flex items-center justify-center px-4 py-2 rounded-full text-xs font-semibold font-sans text-black bg-white hover:bg-zinc-200 [data-theme=light]:bg-black [data-theme=light]:text-white [data-theme=light]:hover:bg-zinc-800 shadow-md transition-all hover:scale-105 active:scale-95"
             >
               <span>Launch Dashboard</span>
             </Link>
@@ -154,7 +156,7 @@ export function MarketingNavbar() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden pt-4 pb-2 border-t border-white/10 mt-3 flex flex-col gap-3 font-mono text-sm"
+              className="md:hidden pt-4 pb-2 border-t border-white/10 mt-3 flex flex-col gap-3 font-sans text-sm"
             >
               <a
                 href="#features"
@@ -171,11 +173,11 @@ export function MarketingNavbar() {
                 Architecture
               </a>
               <a
-                href="#personas"
+                href="#marketplace"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-zinc-400 hover:text-white py-1"
               >
-                Personas
+                Marketplace
               </a>
               <a
                 href="#docs"

@@ -39,7 +39,7 @@ const FOOTER_COLUMNS: FooterColumn[] = [
 export function LandingFooter() {
   return (
     <footer className="relative w-full border-t border-white/10 [data-theme=light]:border-black/5 bg-[#050505] [data-theme=light]:bg-white text-zinc-400 [data-theme=light]:text-zinc-600 transition-colors">
-      <div className="max-w-6xl mx-auto px-4 py-16 sm:py-20">
+      <div className="max-w-5xl mx-auto px-4 py-16 sm:py-20">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-12 lg:gap-16">
           {/* Brand Info (2 columns) */}
           <div className="md:col-span-2 flex flex-col justify-between space-y-6">

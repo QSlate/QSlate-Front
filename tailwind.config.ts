@@ -66,20 +66,7 @@ const config: Config = {
         muted: 'var(--text-muted)',
         inverse: 'var(--text-inverse)',
       },
-      spacing: {
-        '4xs': '0.125rem', // 2px
-        '3xs': '0.25rem', // 4px
-        '2xs': '0.375rem', // 6px
-        xs: '0.5rem', // 8px
-        sm: '0.75rem', // 12px
-        md: '1rem', // 16px
-        lg: '1.25rem', // 20px
-        xl: '1.5rem', // 24px
-        '2xl': '2rem', // 32px
-        '3xl': '2.5rem', // 40px
-        '4xl': '3rem', // 48px
-        '5xl': '4rem', // 64px
-      },
+
       screens: {
         sm: '640px',
         md: '768px',
