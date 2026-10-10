@@ -1,5 +1,4 @@
-'use client';
-
+import Image from 'next/image';
 import Link from 'next/link';
 
 interface FooterColumn {
@@ -46,36 +45,21 @@ export function LandingFooter() {
           <div className="md:col-span-2 flex flex-col justify-between space-y-6">
             <div>
               <Link href="/" className="flex items-center gap-2.5 group">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-emerald-400 p-[1px] shadow-[0_0_15px_rgba(0,255,178,0.25)]">
-                  <div className="w-full h-full bg-[#050505] rounded-[7px] flex items-center justify-center">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      className="w-4 h-4 text-cyan-400"
-                    >
-                      <path
-                        d="M12 2L2 7L12 12L22 7L12 2Z"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M2 17L12 22L22 17"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M2 12L12 17L22 12"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
+                <div className="relative w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
+                  <Image
+                    src="/logo-dark.png"
+                    alt="QSlate Logo"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 object-contain [data-theme=light]:hidden block"
+                  />
+                  <Image
+                    src="/logo-light.png"
+                    alt="QSlate Logo"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 object-contain hidden [data-theme=light]:block"
+                  />
                 </div>
                 <span className="text-lg font-bold tracking-tight text-white [data-theme=light]:text-zinc-900 font-mono">
                   QSlate
