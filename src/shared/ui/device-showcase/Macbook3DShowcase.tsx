@@ -14,11 +14,9 @@ interface Macbook3DShowcaseProps {
 
 function ControlledMacbook({
   scrollProgressRef,
-  mouseRef,
   isMobile,
 }: {
   scrollProgressRef: React.RefObject<number>;
-  mouseRef: React.RefObject<{ x: number; y: number }>;
   isMobile: boolean;
 }) {
   const groupRef = useRef<THREE.Group>(null);
@@ -28,15 +26,15 @@ function ControlledMacbook({
     const p = scrollProgressRef.current ?? 0;
 
     // Calculate lid open amount (0 = closed, 1 = fully open)
-    // Starts closed at p <= 0.04, opens progressively between 0.04 and 0.48
-    const targetOpen = THREE.MathUtils.clamp((p - 0.04) / 0.44, 0, 1);
+    // Starts closed at p <= 0.05, opens progressively between 0.05 and 0.50
+    const targetOpen = THREE.MathUtils.clamp((p - 0.05) / 0.45, 0, 1);
     const easedOpen =
       targetOpen < 0.5
         ? 2 * targetOpen * targetOpen
         : -1 + (4 - 2 * targetOpen) * targetOpen;
 
-    // Screen brightness (wakes up between 0.12 and 0.50)
-    const targetBrightness = THREE.MathUtils.clamp((p - 0.12) / 0.38, 0, 1);
+    // Screen brightness (wakes up between 0.15 and 0.52)
+    const targetBrightness = THREE.MathUtils.clamp((p - 0.15) / 0.37, 0, 1);
 
     // Smooth damp values to ensure buttery motion
     stateRef.current.open = THREE.MathUtils.damp(
@@ -53,79 +51,40 @@ function ControlledMacbook({
     );
 
     if (groupRef.current) {
-      // Balanced scale: fits comfortably inside the viewport with generous margins
-      const baseScale = isMobile ? 0.44 : 0.62;
-      const diveScale = isMobile ? 0.48 : 0.68;
-      const targetScale = THREE.MathUtils.lerp(
-        baseScale,
-        diveScale,
-        THREE.MathUtils.clamp(p / 0.48, 0, 1)
-      );
+      // Laptop is straight facing us ("face à nous simplement droit")
+      const currentScale = isMobile ? 0.46 : 0.66;
 
       // Vertical position:
-      // When closed (p=0): lowered (-0.46) so headline & CTAs have breathing room above
-      // When open (p>=0.45): centered perfectly at -0.26, keeping BOTH screen and keyboard visible!
+      // At p=0 (closed): +0.12 so the entire laptop sits right beneath the buttons with zero bottom crop!
+      // At p>=0.45 (open): -0.06 so the open screen & keyboard are perfectly centered in the viewport!
       const targetY = THREE.MathUtils.lerp(
-        -0.46,
-        -0.26,
+        0.12,
+        -0.06,
         THREE.MathUtils.clamp(p / 0.45, 0, 1)
       );
 
-      // Pitch & Yaw:
-      // Closed: isometric showcase tilt (pitch: 0.36, yaw: -0.14)
-      // Open: authentic laptop perspective (pitch: 0.16, yaw: 0.0)
-      const targetPitch = THREE.MathUtils.lerp(
-        0.36,
-        0.16,
-        THREE.MathUtils.clamp(p / 0.45, 0, 1)
-      );
-      const targetYaw = THREE.MathUtils.lerp(
-        -0.14,
-        0.0,
-        THREE.MathUtils.clamp(p / 0.45, 0, 1)
-      );
+      // Pitch is almost straight with a minimal subtle tilt to reveal keyboard keys
+      const targetPitch = 0.06;
 
-      // Mouse interactive parallax (active once opened)
-      const mouse = mouseRef.current ?? { x: 0, y: 0 };
-      const parallaxFactor = Math.min(p / 0.3, 1);
-      const parallaxYaw = mouse.x * 0.1 * parallaxFactor;
-      const parallaxPitch = -mouse.y * 0.05 * parallaxFactor;
-
-      // Apply critically damped interpolation to group transforms
       groupRef.current.position.y = THREE.MathUtils.damp(
         groupRef.current.position.y,
         targetY,
         8,
         delta
       );
-      groupRef.current.position.x = THREE.MathUtils.damp(
-        groupRef.current.position.x,
-        0,
-        8,
-        delta
-      );
+      groupRef.current.position.x = 0;
+      groupRef.current.position.z = 0;
 
       groupRef.current.rotation.x = THREE.MathUtils.damp(
         groupRef.current.rotation.x,
-        targetPitch + parallaxPitch,
+        targetPitch,
         8,
         delta
       );
-      groupRef.current.rotation.y = THREE.MathUtils.damp(
-        groupRef.current.rotation.y,
-        targetYaw + parallaxYaw,
-        8,
-        delta
-      );
+      groupRef.current.rotation.y = 0;
+      groupRef.current.rotation.z = 0;
 
-      const currentScale = groupRef.current.scale.x;
-      const newScale = THREE.MathUtils.damp(
-        currentScale,
-        targetScale,
-        8,
-        delta
-      );
-      groupRef.current.scale.setScalar(newScale);
+      groupRef.current.scale.setScalar(currentScale);
     }
   });
 
@@ -146,7 +105,6 @@ function ControlledMacbook({
 export function Macbook3DShowcase({ intro }: Macbook3DShowcaseProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollProgressRef = useRef<number>(0);
-  const mouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   const [progress, setProgress] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
@@ -175,20 +133,12 @@ export function Macbook3DShowcase({ intro }: Macbook3DShowcaseProps) {
       setProgress(rawProgress);
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      const normalizedX = (e.clientX / window.innerWidth) * 2 - 1;
-      const normalizedY = (e.clientY / window.innerHeight) * 2 - 1;
-      mouseRef.current = { x: normalizedX, y: normalizedY };
-    };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
     handleScroll();
 
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('mousemove', handleMouseMove);
     };
   }, []);
 
@@ -207,7 +157,7 @@ export function Macbook3DShowcase({ intro }: Macbook3DShowcaseProps) {
   const lightingPreset = theme === 'light' ? 'studio-light' : 'studio-dark';
 
   return (
-    <div ref={containerRef} className="relative h-[180vh]">
+    <div ref={containerRef} className="relative h-[155vh]">
       <div className="sticky top-0 flex h-screen w-full items-center justify-center overflow-hidden">
         {/* Subtle radial ambient spotlight behind laptop */}
         <div
@@ -220,7 +170,6 @@ export function Macbook3DShowcase({ intro }: Macbook3DShowcaseProps) {
           <MacbookStage lighting={lightingPreset} lightingIntensity={1.1}>
             <ControlledMacbook
               scrollProgressRef={scrollProgressRef}
-              mouseRef={mouseRef}
               isMobile={isMobile}
             />
           </MacbookStage>
