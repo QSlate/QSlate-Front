@@ -11,6 +11,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        gain: '#00FFB2',
+        loss: '#FF4D6D',
+        signal: '#00E5FF',
+        foreground: '#FFFFFF',
+        'muted-foreground': '#A1A1AA',
         matte: '#050505',
         widget: 'rgba(255, 255, 255, 0.05)',
         accent: {
