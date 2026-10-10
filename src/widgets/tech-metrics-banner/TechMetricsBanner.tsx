@@ -37,18 +37,18 @@ export function TechMetricsBanner() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-40px' }}
         transition={{ duration: 0.6 }}
-        className="relative rounded-2xl bg-[#090b10] [data-theme=light]:bg-[#f8f9fa] border border-white/10 [data-theme=light]:border-black/5 shadow-[0_20px_50px_rgba(0,0,0,0.4)] [data-theme=light]:shadow-[0_15px_30px_rgba(0,0,0,0.04)] overflow-hidden"
+        className="relative rounded-2xl bg-[#090b10] light:bg-[#f8f9fa] border border-white/10 light:border-black/5 shadow-[0_20px_50px_rgba(0,0,0,0.4)] light:shadow-[0_15px_30px_rgba(0,0,0,0.04)] overflow-hidden"
       >
-        <div className="grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-white/5 [data-theme=light]:divide-black/5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-white/5 light:divide-black/5">
           {METRICS.map((metric, index) => (
             <div
               key={index}
-              className="p-6 sm:p-8 flex flex-col items-center sm:items-start text-center sm:text-left group hover:bg-white/[0.02] [data-theme=light]:hover:bg-black/[0.02] transition-colors"
+              className="p-6 sm:p-8 flex flex-col items-center sm:items-start text-center sm:text-left group hover:bg-white/[0.02] light:hover:bg-black/[0.02] transition-colors"
             >
-              <div className="text-3xl sm:text-4xl font-extrabold text-white [data-theme=light]:text-zinc-950 tracking-tight font-sans">
+              <div className="text-3xl sm:text-4xl font-extrabold text-white light:text-zinc-950 tracking-tight font-sans">
                 {metric.value}
               </div>
-              <div className="mt-2 text-[10px] sm:text-[11px] font-mono tracking-wider uppercase text-zinc-400 [data-theme=light]:text-zinc-500 font-medium">
+              <div className="mt-2 text-[10px] sm:text-[11px] font-mono tracking-wider uppercase text-zinc-400 light:text-zinc-500 font-medium">
                 {metric.label}
               </div>
             </div>

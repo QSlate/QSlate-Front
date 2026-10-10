@@ -1,6 +1,19 @@
 @import 'tailwindcss';
 @config "../../tailwind.config.ts";
 
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *, .light, .light *));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *));
+
+html[data-theme='light'],
+html.light {
+  color-scheme: light;
+}
+
+html[data-theme='dark'],
+html.dark {
+  color-scheme: dark;
+}
+
 @layer base {
   *,
   ::before,

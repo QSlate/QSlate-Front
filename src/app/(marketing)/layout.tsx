@@ -25,7 +25,7 @@ export default function MarketingLayout({
 }>) {
   return (
     <ThemeProvider>
-      <div className="relative min-h-screen bg-[#050505] [data-theme=light]:bg-white text-white [data-theme=light]:text-zinc-900 transition-colors duration-300 overflow-x-hidden selection:bg-cyan-500/30 selection:text-cyan-200">
+      <div className="relative min-h-screen bg-[#050505] light:bg-white text-white light:text-zinc-900 transition-colors duration-300 overflow-x-hidden selection:bg-cyan-500/30 selection:text-cyan-200">
         <MarketingNavbar />
         <main className="relative flex flex-col">{children}</main>
         <LandingFooter />

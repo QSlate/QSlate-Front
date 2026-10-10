@@ -31,7 +31,7 @@ export function SpotlightCard({
   return (
     <div
       onMouseMove={handleMouseMove}
-      className={`group relative rounded-2xl border border-white/10 [data-theme=light]:border-black/5 bg-[#090b10] [data-theme=light]:bg-white overflow-hidden shadow-xl ${className}`}
+      className={`group relative rounded-2xl border border-white/10 light:border-black/5 bg-[#090b10] light:bg-white overflow-hidden shadow-xl ${className}`}
     >
       {/* Interactive Radial Spotlight Layer */}
       <motion.div

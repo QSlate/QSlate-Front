@@ -27,7 +27,7 @@ export function MarketingNavbar() {
       <div className="pointer-events-auto mb-2">
         <Link
           href="#features"
-          className="group inline-flex items-center gap-2.5 px-3.5 py-1 rounded-full text-xs font-sans bg-white/[0.04] [data-theme=light]:bg-black/[0.04] border border-white/10 [data-theme=light]:border-black/10 text-zinc-300 [data-theme=light]:text-zinc-600 hover:border-white/20 [data-theme=light]:hover:border-black/20 hover:text-white [data-theme=light]:hover:text-black transition-all shadow-xs"
+          className="group inline-flex items-center gap-2.5 px-3.5 py-1 rounded-full text-xs font-sans bg-white/[0.04] light:bg-black/[0.04] border border-white/10 light:border-black/10 text-zinc-300 light:text-zinc-600 hover:border-white/20 light:hover:border-black/20 hover:text-white light:hover:text-black transition-all shadow-xs"
         >
           <span className="px-1.5 py-0.5 rounded-full bg-white/15 text-[9px] font-bold uppercase tracking-wider text-white">
             NEW
@@ -43,7 +43,7 @@ export function MarketingNavbar() {
         aria-label="Main Navigation"
         className={`pointer-events-auto w-full max-w-5xl rounded-2xl transition-all duration-300 ${
           isScrolled
-            ? 'bg-[#050505]/85 [data-theme=light]:bg-white/85 backdrop-blur-xl border border-white/10 [data-theme=light]:border-black/5 shadow-2xl py-3 px-5 sm:px-6'
+            ? 'bg-[#050505]/85 light:bg-white/85 backdrop-blur-xl border border-white/10 light:border-black/5 shadow-2xl py-3 px-5 sm:px-6'
             : 'bg-transparent py-2.5 px-4 sm:px-6'
         }`}
       >
@@ -56,7 +56,7 @@ export function MarketingNavbar() {
                 alt="QSlate Logo"
                 width={28}
                 height={28}
-                className="w-7 h-7 object-contain [data-theme=light]:hidden block"
+                className="w-7 h-7 object-contain light:hidden block"
                 priority
               />
               <Image
@@ -64,38 +64,38 @@ export function MarketingNavbar() {
                 alt="QSlate Logo"
                 width={28}
                 height={28}
-                className="w-7 h-7 object-contain hidden [data-theme=light]:block"
+                className="w-7 h-7 object-contain hidden light:block"
                 priority
               />
             </div>
-            <span className="text-base font-semibold tracking-tight text-white [data-theme=light]:text-zinc-950 font-sans">
+            <span className="text-base font-semibold tracking-tight text-white light:text-zinc-950 font-sans">
               QSlate
             </span>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center gap-8 text-sm font-normal text-zinc-400 [data-theme=light]:text-zinc-600 font-sans">
+          <div className="hidden md:flex items-center gap-8 text-sm font-normal text-zinc-400 light:text-zinc-600 font-sans">
             <a
               href="#features"
-              className="hover:text-white [data-theme=light]:hover:text-zinc-900 transition-colors"
+              className="hover:text-white light:hover:text-zinc-900 transition-colors"
             >
               Features
             </a>
             <a
               href="#architecture"
-              className="hover:text-white [data-theme=light]:hover:text-zinc-900 transition-colors"
+              className="hover:text-white light:hover:text-zinc-900 transition-colors"
             >
               Architecture
             </a>
             <a
               href="#marketplace"
-              className="hover:text-white [data-theme=light]:hover:text-zinc-900 transition-colors"
+              className="hover:text-white light:hover:text-zinc-900 transition-colors"
             >
               Marketplace
             </a>
             <a
               href="#docs"
-              className="hover:text-white [data-theme=light]:hover:text-zinc-900 transition-colors"
+              className="hover:text-white light:hover:text-zinc-900 transition-colors"
             >
               Docs
             </a>
@@ -108,7 +108,7 @@ export function MarketingNavbar() {
               type="button"
               onClick={toggleTheme}
               aria-label="Toggle visual theme"
-              className="p-2 rounded-full bg-white/5 [data-theme=light]:bg-black/5 border border-white/10 [data-theme=light]:border-black/10 text-zinc-300 [data-theme=light]:text-zinc-700 hover:text-white [data-theme=light]:hover:text-black transition-all hover:scale-105"
+              className="p-2 rounded-full bg-white/5 light:bg-black/5 border border-white/10 light:border-black/10 text-zinc-300 light:text-zinc-700 hover:text-white light:hover:text-black transition-all hover:scale-105"
             >
               {theme === 'dark' ? (
                 <Sun className="w-3.5 h-3.5" />
@@ -120,7 +120,7 @@ export function MarketingNavbar() {
             {/* Sign In */}
             <Link
               href="/auth/signin"
-              className="hidden sm:inline-flex text-xs font-normal text-zinc-300 [data-theme=light]:text-zinc-700 hover:text-white [data-theme=light]:hover:text-black px-3 py-2 transition-colors font-sans"
+              className="hidden sm:inline-flex text-xs font-normal text-zinc-300 light:text-zinc-700 hover:text-white light:hover:text-black px-3 py-2 transition-colors font-sans"
             >
               Sign In
             </Link>
@@ -128,7 +128,7 @@ export function MarketingNavbar() {
             {/* Launch Dashboard Primary Button */}
             <Link
               href="/lab"
-              className="relative inline-flex items-center justify-center px-4 py-2 rounded-full text-xs font-semibold font-sans text-black bg-white hover:bg-zinc-200 [data-theme=light]:bg-black [data-theme=light]:text-white [data-theme=light]:hover:bg-zinc-800 shadow-md transition-all hover:scale-105 active:scale-95"
+              className="relative inline-flex items-center justify-center px-4 py-2 rounded-full text-xs font-semibold font-sans text-black bg-white hover:bg-zinc-200 light:bg-black light:text-white light:hover:bg-zinc-800 shadow-md transition-all hover:scale-105 active:scale-95"
             >
               <span>Launch Dashboard</span>
             </Link>

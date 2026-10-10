@@ -11,17 +11,17 @@ export function ModularDeskSection() {
     >
       {/* Section Header */}
       <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-14">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-mono tracking-widest uppercase text-zinc-400 [data-theme=light]:text-zinc-600 bg-white/[0.04] [data-theme=light]:bg-black/5 border border-white/10 [data-theme=light]:border-black/10 mb-4 select-none">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-mono tracking-widest uppercase text-zinc-400 light:text-zinc-600 bg-white/[0.04] light:bg-black/5 border border-white/10 light:border-black/10 mb-4 select-none">
           THE MODULAR LAB
         </div>
 
-        <h2 className="text-3xl sm:text-5xl lg:text-[54px] font-bold font-sans text-white [data-theme=light]:text-zinc-950 tracking-tight leading-[1.12]">
+        <h2 className="text-3xl sm:text-5xl lg:text-[54px] font-bold font-sans text-white light:text-zinc-950 tracking-tight leading-[1.12]">
           Your research desk,
           <br />
           composed widget by widget.
         </h2>
 
-        <p className="mt-5 text-sm sm:text-base text-zinc-400 [data-theme=light]:text-zinc-600 leading-relaxed max-w-2xl font-sans">
+        <p className="mt-5 text-sm sm:text-base text-zinc-400 light:text-zinc-600 leading-relaxed max-w-2xl font-sans">
           Drag, dock, and wire together analytics panels. Every widget streams
           from the same deterministic simulation, so what you see is exactly
           what the kernel computed.
@@ -34,16 +34,16 @@ export function ModularDeskSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-60px' }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className="relative rounded-2xl bg-[#07090e] [data-theme=light]:bg-[#f8f9fa] border border-white/10 [data-theme=light]:border-black/10 shadow-[0_30px_90px_rgba(0,0,0,0.6)] [data-theme=light]:shadow-[0_20px_50px_rgba(0,0,0,0.08)] overflow-hidden"
+        className="relative rounded-2xl bg-[#07090e] light:bg-[#f8f9fa] border border-white/10 light:border-black/10 shadow-[0_30px_90px_rgba(0,0,0,0.6)] light:shadow-[0_20px_50px_rgba(0,0,0,0.08)] overflow-hidden"
       >
         {/* Workspace Top Toolbar */}
-        <div className="px-4 sm:px-6 py-3.5 bg-[#0a0c12] [data-theme=light]:bg-white border-b border-white/10 [data-theme=light]:border-black/5 flex flex-wrap items-center justify-between gap-3 select-none">
+        <div className="px-4 sm:px-6 py-3.5 bg-[#0a0c12] light:bg-white border-b border-white/10 light:border-black/5 flex flex-wrap items-center justify-between gap-3 select-none">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 text-xs font-mono">
               <GripVertical className="w-4 h-4 text-zinc-600 cursor-grab" />
               <span className="text-zinc-400 font-sans">workspace</span>
               <span className="text-zinc-600">/</span>
-              <span className="font-semibold text-white [data-theme=light]:text-zinc-900 font-mono">
+              <span className="font-semibold text-white light:text-zinc-900 font-mono">
                 mean-reversion-v4
               </span>
             </div>
@@ -56,7 +56,7 @@ export function ModularDeskSection() {
 
             <button
               type="button"
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 [data-theme=light]:bg-black/5 border border-white/10 [data-theme=light]:border-black/10 text-zinc-300 [data-theme=light]:text-zinc-700 hover:text-white [data-theme=light]:hover:text-black hover:bg-white/10 transition-colors font-sans text-xs"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 light:bg-black/5 border border-white/10 light:border-black/10 text-zinc-300 light:text-zinc-700 hover:text-white light:hover:text-black hover:bg-white/10 transition-colors font-sans text-xs"
             >
               <Plus className="w-3.5 h-3.5 text-zinc-400" />
               <span>Add widget</span>
@@ -65,14 +65,14 @@ export function ModularDeskSection() {
         </div>
 
         {/* Workspace Widgets Grid */}
-        <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 bg-[#07090e] [data-theme=light]:bg-[#f4f5f8]">
+        <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 bg-[#07090e] light:bg-[#f4f5f8]">
           {/* Widget 1: Equity Curve (Spans 7 cols on LG) */}
-          <div className="lg:col-span-7 rounded-xl bg-[#090b10] [data-theme=light]:bg-white border border-white/10 [data-theme=light]:border-black/5 p-4 sm:p-5 flex flex-col justify-between shadow-lg">
+          <div className="lg:col-span-7 rounded-xl bg-[#090b10] light:bg-white border border-white/10 light:border-black/5 p-4 sm:p-5 flex flex-col justify-between shadow-lg">
             {/* Widget Titlebar */}
-            <div className="flex items-center justify-between pb-3 border-b border-white/5 [data-theme=light]:border-black/5">
+            <div className="flex items-center justify-between pb-3 border-b border-white/5 light:border-black/5">
               <div className="flex items-center gap-2 font-mono text-xs">
                 <GripVertical className="w-3.5 h-3.5 text-zinc-600 cursor-grab" />
-                <span className="font-medium text-zinc-300 [data-theme=light]:text-zinc-800">
+                <span className="font-medium text-zinc-300 light:text-zinc-800">
                   Equity Curve
                 </span>
               </div>
@@ -84,7 +84,7 @@ export function ModularDeskSection() {
             {/* Metric Header */}
             <div className="flex items-center justify-between mt-3">
               <div>
-                <span className="text-xl sm:text-2xl font-bold text-white [data-theme=light]:text-zinc-950 font-sans">
+                <span className="text-xl sm:text-2xl font-bold text-white light:text-zinc-950 font-sans">
                   +29.2%
                 </span>
                 <span className="text-[10px] text-zinc-500 block uppercase tracking-wider font-mono">
@@ -147,11 +147,11 @@ export function ModularDeskSection() {
           </div>
 
           {/* Widget 2: Drawdown Waterfall (Spans 5 cols on LG) */}
-          <div className="lg:col-span-5 rounded-xl bg-[#090b10] [data-theme=light]:bg-white border border-white/10 [data-theme=light]:border-black/5 p-4 sm:p-5 flex flex-col justify-between shadow-lg">
-            <div className="flex items-center justify-between pb-3 border-b border-white/5 [data-theme=light]:border-black/5">
+          <div className="lg:col-span-5 rounded-xl bg-[#090b10] light:bg-white border border-white/10 light:border-black/5 p-4 sm:p-5 flex flex-col justify-between shadow-lg">
+            <div className="flex items-center justify-between pb-3 border-b border-white/5 light:border-black/5">
               <div className="flex items-center gap-2 font-mono text-xs">
                 <GripVertical className="w-3.5 h-3.5 text-zinc-600 cursor-grab" />
-                <span className="font-medium text-zinc-300 [data-theme=light]:text-zinc-800">
+                <span className="font-medium text-zinc-300 light:text-zinc-800">
                   Drawdown Waterfall
                 </span>
               </div>
@@ -198,8 +198,8 @@ export function ModularDeskSection() {
                     style={{ height: `${bar.height}%` }}
                     className={`w-full rounded-xs transition-transform group-hover:scale-105 ${
                       bar.neg
-                        ? 'bg-rose-500/85 [data-theme=light]:bg-rose-500'
-                        : 'bg-emerald-400/85 [data-theme=light]:bg-emerald-500'
+                        ? 'bg-rose-500/85 light:bg-rose-500'
+                        : 'bg-emerald-400/85 light:bg-emerald-500'
                     }`}
                   />
                   <span className="text-[8px] text-zinc-600 mt-1 select-none font-mono">
@@ -211,20 +211,20 @@ export function ModularDeskSection() {
           </div>
 
           {/* Widget 3: Python Strategy Code & Console (Spans all 12 cols) */}
-          <div className="lg:col-span-12 rounded-xl bg-[#090b10] [data-theme=light]:bg-white border border-white/10 [data-theme=light]:border-black/5 overflow-hidden shadow-lg grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-white/5 [data-theme=light]:divide-black/5">
+          <div className="lg:col-span-12 rounded-xl bg-[#090b10] light:bg-white border border-white/10 light:border-black/5 overflow-hidden shadow-lg grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-white/5 light:divide-black/5">
             {/* Left 8 Cols: Code Editor */}
             <div className="lg:col-span-8 p-4 sm:p-5 font-mono text-xs">
-              <div className="flex items-center justify-between pb-3 border-b border-white/5 [data-theme=light]:border-black/5 text-[11px] text-zinc-500">
+              <div className="flex items-center justify-between pb-3 border-b border-white/5 light:border-black/5 text-[11px] text-zinc-500">
                 <div className="flex items-center gap-2">
                   <GripVertical className="w-3.5 h-3.5 text-zinc-600 cursor-grab" />
-                  <span className="text-zinc-300 [data-theme=light]:text-zinc-800">
+                  <span className="text-zinc-300 light:text-zinc-800">
                     strategy.py
                   </span>
                 </div>
                 <span>PYTHON 3.12</span>
               </div>
 
-              <div className="mt-3 space-y-1 text-zinc-300 [data-theme=light]:text-zinc-800 leading-relaxed text-[11px]">
+              <div className="mt-3 space-y-1 text-zinc-300 light:text-zinc-800 leading-relaxed text-[11px]">
                 <div className="flex gap-4">
                   <span className="text-zinc-600 select-none w-6 text-right">
                     1
@@ -343,19 +343,19 @@ export function ModularDeskSection() {
             {/* Right 4 Cols: Console Telemetry */}
             <div className="lg:col-span-4 p-4 sm:p-5 font-mono text-xs flex flex-col justify-between">
               <div>
-                <div className="text-zinc-500 pb-3 border-b border-white/5 [data-theme=light]:border-black/5 text-[11px]">
+                <div className="text-zinc-500 pb-3 border-b border-white/5 light:border-black/5 text-[11px]">
                   CONSOLE
                 </div>
                 <div className="space-y-2 mt-4 text-[11px]">
-                  <div className="flex items-center gap-2 text-zinc-300 [data-theme=light]:text-zinc-800">
+                  <div className="flex items-center gap-2 text-zinc-300 light:text-zinc-800">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                     <span>AST validation passed</span>
                   </div>
-                  <div className="flex items-center gap-2 text-zinc-300 [data-theme=light]:text-zinc-800">
+                  <div className="flex items-center gap-2 text-zinc-300 light:text-zinc-800">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                     <span>Sandbox: gVisor (runsc)</span>
                   </div>
-                  <div className="flex items-center gap-2 text-zinc-300 [data-theme=light]:text-zinc-800">
+                  <div className="flex items-center gap-2 text-zinc-300 light:text-zinc-800">
                     <Cpu className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
                     <span>1.28B ticks in 4.2s</span>
                   </div>
@@ -366,7 +366,7 @@ export function ModularDeskSection() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-white/5 [data-theme=light]:border-black/5 flex items-center justify-between text-[10px] text-zinc-500">
+              <div className="pt-3 border-t border-white/5 light:border-black/5 flex items-center justify-between text-[10px] text-zinc-500">
                 <span className="flex items-center gap-1.5 text-emerald-400">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   kernel idle

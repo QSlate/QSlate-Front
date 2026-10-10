@@ -21,6 +21,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 const STORAGE_KEY = 'qslate-theme';
 
+let currentTheme: Theme = 'dark';
 let listeners: Array<() => void> = [];
 
 function notifyListeners(): void {
@@ -33,13 +34,7 @@ function getThemeSnapshot(): Theme {
   if (typeof window === 'undefined') {
     return 'dark';
   }
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved === 'dark' || saved === 'light') {
-    return saved;
-  }
-  return window.matchMedia('(prefers-color-scheme: light)').matches
-    ? 'light'
-    : 'dark';
+  return currentTheme;
 }
 
 function getServerSnapshot(): Theme {
@@ -67,12 +62,27 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === 'dark' || saved === 'light') {
+      currentTheme = saved;
+    } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+      currentTheme = 'light';
+    }
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    document.documentElement.classList.toggle('dark', currentTheme === 'dark');
+    document.documentElement.classList.toggle(
+      'light',
+      currentTheme === 'light'
+    );
+    notifyListeners();
+  }, []);
 
   const setTheme = useCallback((nextTheme: Theme) => {
+    currentTheme = nextTheme;
     localStorage.setItem(STORAGE_KEY, nextTheme);
     document.documentElement.setAttribute('data-theme', nextTheme);
+    document.documentElement.classList.toggle('dark', nextTheme === 'dark');
+    document.documentElement.classList.toggle('light', nextTheme === 'light');
     notifyListeners();
   }, []);
 
