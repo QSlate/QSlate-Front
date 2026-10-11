@@ -27,8 +27,8 @@ export function MarketingNavbar() {
         aria-label="Main Navigation"
         className={`pointer-events-auto w-full max-w-5xl rounded-2xl transition-all duration-300 ${
           isScrolled
-            ? 'bg-[#08090d]/82 light:bg-white/85 backdrop-blur-3xl backdrop-saturate-150 border border-white/12 light:border-black/10 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.6),inset_0_1px_1px_0_rgba(255,255,255,0.18)] light:shadow-[0_16px_36px_-10px_rgba(0,0,0,0.08),inset_0_1px_1px_0_rgba(255,255,255,0.95)] py-3 px-5 sm:px-6'
-            : 'bg-[#08090d]/45 light:bg-white/55 backdrop-blur-2xl backdrop-saturate-150 border border-white/10 light:border-black/5 shadow-[0_8px_20px_-6px_rgba(0,0,0,0.25),inset_0_1px_1px_0_rgba(255,255,255,0.12)] light:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.04),inset_0_1px_1px_0_rgba(255,255,255,0.85)] py-2.5 px-4 sm:px-6'
+            ? 'bg-[#08090d]/72 light:bg-white/75 backdrop-blur-3xl backdrop-saturate-150 border border-white/12 light:border-black/10 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.6),inset_0_1px_1px_0_rgba(255,255,255,0.18)] light:shadow-[0_16px_36px_-10px_rgba(0,0,0,0.08),inset_0_1px_1px_0_rgba(255,255,255,0.95)] py-3 px-5 sm:px-6'
+            : 'bg-[#08090d]/35 light:bg-white/45 backdrop-blur-2xl backdrop-saturate-150 border border-white/10 light:border-black/5 shadow-[0_8px_20px_-6px_rgba(0,0,0,0.25),inset_0_1px_1px_0_rgba(255,255,255,0.12)] light:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.04),inset_0_1px_1px_0_rgba(255,255,255,0.85)] py-2.5 px-4 sm:px-6'
         }`}
       >
         <div className="flex items-center justify-between">
