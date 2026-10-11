@@ -11,6 +11,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        gain: '#00FFB2',
+        loss: '#FF4D6D',
+        signal: '#00E5FF',
+        foreground: '#FFFFFF',
+        'muted-foreground': '#A1A1AA',
         matte: '#050505',
         widget: 'rgba(255, 255, 255, 0.05)',
         accent: {
@@ -23,6 +28,19 @@ const config: Config = {
           'thumb-hover': 'var(--scrollbar-thumb-hover)',
         },
         'card-inset': 'var(--card-inset)',
+      },
+      fontFamily: {
+        sans: [
+          'var(--font-inter)',
+          'ui-sans-serif',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'sans-serif',
+        ],
+        mono: ['var(--font-jetbrains-mono)', 'monospace'],
       },
       backgroundColor: {
         base: 'var(--bg-base)',
@@ -53,20 +71,7 @@ const config: Config = {
         muted: 'var(--text-muted)',
         inverse: 'var(--text-inverse)',
       },
-      spacing: {
-        '4xs': '0.125rem', // 2px
-        '3xs': '0.25rem', // 4px
-        '2xs': '0.375rem', // 6px
-        xs: '0.5rem', // 8px
-        sm: '0.75rem', // 12px
-        md: '1rem', // 16px
-        lg: '1.25rem', // 20px
-        xl: '1.5rem', // 24px
-        '2xl': '2rem', // 32px
-        '3xl': '2.5rem', // 40px
-        '4xl': '3rem', // 48px
-        '5xl': '4rem', // 64px
-      },
+
       screens: {
         sm: '640px',
         md: '768px',

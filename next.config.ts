@@ -9,7 +9,8 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "script-src 'self' 'unsafe-inline'; frame-src 'self';",
+            value:
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' ws: wss: data: blob:; img-src 'self' data: blob:; frame-src 'self';",
           },
         ],
       },
