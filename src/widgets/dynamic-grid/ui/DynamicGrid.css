@@ -1,0 +1,28 @@
+.qslate-dynamic-grid .react-grid-item.react-grid-placeholder {
+  background: rgba(0, 255, 178, 0.08) !important;
+  border: 1px dashed rgba(0, 255, 178, 0.4) !important;
+  border-radius: 0.5rem !important;
+  opacity: 0.8 !important;
+  z-index: 2 !important;
+  transition-duration: 150ms !important;
+}
+
+.qslate-dynamic-grid
+  .react-grid-item
+  > .react-resizable-handle.react-resizable-handle-se::after {
+  content: '';
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid rgba(255, 255, 255, 0.3);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.qslate-dynamic-grid
+  .react-grid-item:hover
+  > .react-resizable-handle.react-resizable-handle-se::after {
+  border-right-color: var(--accent);
+  border-bottom-color: var(--accent);
+}
