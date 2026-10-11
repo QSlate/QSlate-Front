@@ -17,13 +17,9 @@ export function LandingHero() {
           </div>
 
           {/* Main Headline */}
-          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-[68px] font-bold tracking-tight max-w-4xl leading-[1.08] font-sans">
-            <span className="text-white light:text-zinc-950 block">
-              The Flight Simulator for
-            </span>
-            <span className="bg-gradient-to-b from-white via-zinc-200 to-zinc-400 light:from-zinc-950 light:to-zinc-600 bg-clip-text text-transparent block">
-              Quantitative Finance.
-            </span>
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-[68px] font-bold tracking-tight max-w-4xl leading-[1.08] font-sans text-white light:text-zinc-950">
+            <span className="block">The Flight Simulator for</span>
+            <span className="block">Quantitative Finance.</span>
           </h1>
 
           {/* Subtitle */}

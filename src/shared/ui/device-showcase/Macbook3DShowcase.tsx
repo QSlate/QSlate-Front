@@ -15,15 +15,80 @@ interface Macbook3DShowcaseProps {
 function ControlledMacbook({
   scrollProgressRef,
   isMobile,
+  theme,
 }: {
   scrollProgressRef: React.RefObject<number>;
   isMobile: boolean;
+  theme: 'dark' | 'light';
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const stateRef = useRef({ open: 0, brightness: 0 });
+  const chassisMaterialsRef = useRef<THREE.MeshStandardMaterial[]>([]);
+  const currentChassisColor = useRef(new THREE.Color(0.05, 0.05, 0.06));
 
   useFrame((_, delta) => {
     const p = scrollProgressRef.current ?? 0;
+
+    // Dynamically adjust chassis anodized finish:
+    // Dark mode: Deep Apple Space Black
+    // Light mode: Authentic Apple Space Gray / Gris Sidéral anodized aluminum
+    const isLight = theme === 'light';
+    const targetColorHex = isLight ? '#a2a7b2' : '#0d0e12';
+    const targetMetalness = isLight ? 0.58 : 1.0;
+    const targetRoughness = isLight ? 0.38 : 0.5;
+    const targetEnvMap = isLight ? 1.25 : 0.85;
+
+    currentChassisColor.current.lerp(new THREE.Color(targetColorHex), 0.12);
+
+    if (groupRef.current) {
+      if (chassisMaterialsRef.current.length === 0) {
+        groupRef.current.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            const mesh = child as THREE.Mesh;
+            const mats = Array.isArray(mesh.material)
+              ? mesh.material
+              : [mesh.material];
+            mats.forEach((m) => {
+              if (m && 'color' in m && m.userData?.spaceBlack) {
+                if (
+                  !chassisMaterialsRef.current.includes(
+                    m as THREE.MeshStandardMaterial
+                  )
+                ) {
+                  chassisMaterialsRef.current.push(
+                    m as THREE.MeshStandardMaterial
+                  );
+                }
+              }
+            });
+          }
+        });
+      }
+
+      for (const mat of chassisMaterialsRef.current) {
+        mat.color.copy(currentChassisColor.current);
+        mat.metalness = THREE.MathUtils.damp(
+          mat.metalness,
+          targetMetalness,
+          8,
+          delta
+        );
+        mat.roughness = THREE.MathUtils.damp(
+          mat.roughness,
+          targetRoughness,
+          8,
+          delta
+        );
+        if ('envMapIntensity' in mat) {
+          mat.envMapIntensity = THREE.MathUtils.damp(
+            mat.envMapIntensity,
+            targetEnvMap,
+            8,
+            delta
+          );
+        }
+      }
+    }
 
     // Calculate lid open amount (0 = closed, 1 = fully open)
     // Opens progressively and luxuriously between p = 0.06 and p = 0.64
@@ -166,6 +231,7 @@ export function Macbook3DShowcase({ intro }: Macbook3DShowcaseProps) {
             <ControlledMacbook
               scrollProgressRef={scrollProgressRef}
               isMobile={isMobile}
+              theme={theme}
             />
           </MacbookStage>
         </div>
