@@ -2,9 +2,9 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import type {
-  EventCallback,
   Layout,
   LayoutItem,
+  ResponsiveGridLayoutProps,
   ResponsiveLayouts,
 } from 'react-grid-layout';
 import { useShallow } from 'zustand/react/shallow';
@@ -33,8 +33,8 @@ export interface UseGridSyncReturn {
   rglLayout: Layout;
   rglLayouts: ResponsiveLayouts;
   handleBreakpointChange: (newBreakpoint: string, newCols: number) => void;
-  handleDragStop: EventCallback;
-  handleResizeStop: EventCallback;
+  handleDragStop: NonNullable<ResponsiveGridLayoutProps['onDragStop']>;
+  handleResizeStop: NonNullable<ResponsiveGridLayoutProps['onResizeStop']>;
 }
 
 export function useGridSync(
@@ -176,14 +176,17 @@ export function useGridSync(
     [batchUpdateLayouts, onLayoutCommit, widgets]
   );
 
-  const handleDragStop: EventCallback = useCallback(
-    (layout) => {
-      commitLayoutChanges(layout);
-    },
-    [commitLayoutChanges]
-  );
+  const handleDragStop: NonNullable<ResponsiveGridLayoutProps['onDragStop']> =
+    useCallback(
+      (layout) => {
+        commitLayoutChanges(layout);
+      },
+      [commitLayoutChanges]
+    );
 
-  const handleResizeStop: EventCallback = useCallback(
+  const handleResizeStop: NonNullable<
+    ResponsiveGridLayoutProps['onResizeStop']
+  > = useCallback(
     (layout) => {
       commitLayoutChanges(layout);
     },
