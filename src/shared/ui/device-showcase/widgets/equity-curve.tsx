@@ -92,13 +92,14 @@ export function EquityCurveWidget() {
       </div>
 
       {/* Interactive TradingView Lightweight Chart */}
-      <div className="flex-1 min-h-[160px] w-full mt-2 overflow-hidden">
+      <div className="flex-1 min-h-0 h-full w-full mt-1 overflow-hidden relative">
         {chartMode === 'candlestick' ? (
           <DynamicLightweightChart
             data={MOCK_CANDLE_DATA}
             seriesType="candlestick"
             ariaLabel="TradingView Candlestick Price Action Chart"
             title="Asset Price Action (OHLC)"
+            height="100%"
           />
         ) : (
           <DynamicLightweightChart
@@ -106,6 +107,7 @@ export function EquityCurveWidget() {
             seriesType="area"
             ariaLabel="TradingView Portfolio Equity Curve"
             title="Portfolio Strategy NAV"
+            height="100%"
           />
         )}
       </div>

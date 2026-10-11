@@ -165,6 +165,7 @@ export function LightweightChart<TData extends ChartDataPoint>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     series.setData(currentData as any);
     seriesRef.current = series;
+    chart.timeScale().fitContent();
 
     let resizeObserver: ResizeObserver | null = null;
     if (isAutoSize && typeof ResizeObserver !== 'undefined') {
@@ -182,6 +183,7 @@ export function LightweightChart<TData extends ChartDataPoint>({
               width: newWidth,
               height: newHeight,
             });
+            chartRef.current.timeScale().fitContent();
           }
         });
       });
@@ -204,9 +206,10 @@ export function LightweightChart<TData extends ChartDataPoint>({
   }, [seriesType]);
 
   useEffect(() => {
-    if (!seriesRef.current) return;
+    if (!seriesRef.current || !chartRef.current) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     seriesRef.current.setData(data as any);
+    chartRef.current.timeScale().fitContent();
   }, [data]);
 
   useEffect(() => {
@@ -259,7 +262,7 @@ export function LightweightChart<TData extends ChartDataPoint>({
   return (
     <div
       ref={containerRef}
-      className={`relative h-full w-full min-h-[150px] overflow-hidden ${className ?? ''}`}
+      className={`relative h-full w-full min-h-[100px] overflow-hidden ${className ?? ''}`}
       data-testid="lightweight-chart-container"
       style={{
         height: typeof height === 'number' ? `${height}px` : (height ?? '100%'),

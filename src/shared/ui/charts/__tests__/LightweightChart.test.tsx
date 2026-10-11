@@ -13,11 +13,16 @@ const mockSeriesInstance = {
   applyOptions: vi.fn(),
 };
 
+const mockTimeScale = {
+  fitContent: vi.fn(),
+};
+
 const mockChartInstance = {
   addSeries: vi.fn(() => mockSeriesInstance),
   applyOptions: vi.fn(),
   remove: vi.fn(),
   resize: vi.fn(),
+  timeScale: vi.fn(() => mockTimeScale),
 };
 
 vi.mock('lightweight-charts', async () => {
