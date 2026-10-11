@@ -102,7 +102,7 @@ export const WidgetContainer = forwardRef<HTMLDivElement, WidgetContainerProps>(
 
         {!layout.isMinimized ? (
           <div
-            className="flex-1 min-h-0 overflow-auto p-3"
+            className="flex-1 min-h-0 overflow-hidden flex flex-col p-2"
             data-testid="widget-content"
           >
             {children}
