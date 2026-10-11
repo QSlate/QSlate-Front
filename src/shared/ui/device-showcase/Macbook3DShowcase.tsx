@@ -26,27 +26,26 @@ function ControlledMacbook({
     const p = scrollProgressRef.current ?? 0;
 
     // Calculate lid open amount (0 = closed, 1 = fully open)
-    // Starts closed at p <= 0.05, opens progressively between 0.05 and 0.50
-    const targetOpen = THREE.MathUtils.clamp((p - 0.05) / 0.45, 0, 1);
-    const easedOpen =
-      targetOpen < 0.5
-        ? 2 * targetOpen * targetOpen
-        : -1 + (4 - 2 * targetOpen) * targetOpen;
+    // Opens progressively and luxuriously between p = 0.06 and p = 0.64
+    const openT = THREE.MathUtils.clamp((p - 0.06) / 0.58, 0, 1);
+    // Quintic smootherstep easing for ultra-buttery acceleration and soft landing
+    const easedOpen = openT * openT * openT * (openT * (openT * 6 - 15) + 10);
 
-    // Screen brightness (wakes up between 0.15 and 0.52)
-    const targetBrightness = THREE.MathUtils.clamp((p - 0.15) / 0.37, 0, 1);
+    // Screen brightness: wakes up progressively between 18% and 90% lid opening
+    const brightT = THREE.MathUtils.clamp((easedOpen - 0.18) / 0.72, 0, 1);
+    const targetBrightness = brightT * brightT * (3 - 2 * brightT);
 
-    // Smooth damp values to ensure buttery motion
+    // Velvety critically damped interpolation (lambda ~ 5.5 for smooth Apple-like inertia)
     stateRef.current.open = THREE.MathUtils.damp(
       stateRef.current.open,
       easedOpen,
-      10,
+      5.5,
       delta
     );
     stateRef.current.brightness = THREE.MathUtils.damp(
       stateRef.current.brightness,
       targetBrightness,
-      10,
+      6.0,
       delta
     );
 
@@ -54,22 +53,18 @@ function ControlledMacbook({
       // Laptop is straight facing us ("face à nous simplement droit")
       const currentScale = isMobile ? 0.46 : 0.66;
 
-      // Vertical position:
-      // At p=0 (closed): +0.12 so the entire laptop sits right beneath the buttons with zero bottom crop!
-      // At p>=0.45 (open): -0.06 so the open screen & keyboard are perfectly centered in the viewport!
-      const targetY = THREE.MathUtils.lerp(
-        0.12,
-        -0.06,
-        THREE.MathUtils.clamp(p / 0.45, 0, 1)
-      );
+      // Vertical position smoothly tied to the lid opening:
+      // At easedOpen = 0 (closed): +0.12 comfortably below hero CTAs
+      // At easedOpen = 1 (open): -0.06 perfectly centered with full screen & keyboard deck visible
+      const targetY = THREE.MathUtils.lerp(0.12, -0.06, easedOpen);
 
-      // Pitch is almost straight with a minimal subtle tilt to reveal keyboard keys
+      // Pitch is straight with a subtle tilt to reveal keyboard keys
       const targetPitch = 0.06;
 
       groupRef.current.position.y = THREE.MathUtils.damp(
         groupRef.current.position.y,
         targetY,
-        8,
+        5.5,
         delta
       );
       groupRef.current.position.x = 0;
@@ -78,7 +73,7 @@ function ControlledMacbook({
       groupRef.current.rotation.x = THREE.MathUtils.damp(
         groupRef.current.rotation.x,
         targetPitch,
-        8,
+        6.0,
         delta
       );
       groupRef.current.rotation.y = 0;
@@ -143,21 +138,21 @@ export function Macbook3DShowcase({ intro }: Macbook3DShowcaseProps) {
   }, []);
 
   // Intro fade calculations (smoothly clears out when scroll begins)
-  const introOpacity = Math.max(0, 1 - progress / 0.16);
-  const introY = -40 * Math.min(progress / 0.16, 1);
-  const introPointerEvents = progress > 0.14 ? 'none' : 'auto';
+  const introOpacity = Math.max(0, 1 - progress / 0.2);
+  const introY = -40 * Math.min(progress / 0.2, 1);
+  const introPointerEvents = progress > 0.16 ? 'none' : 'auto';
 
-  // Badges opacity calculations
-  const badgesVisible = progress >= 0.42 && progress <= 0.88;
+  // Badges opacity calculations (fade in when laptop is open)
+  const badgesVisible = progress >= 0.5 && progress <= 0.88;
   const badgeOpacity = badgesVisible
-    ? Math.min((progress - 0.42) / 0.08, 1) *
+    ? Math.min((progress - 0.5) / 0.1, 1) *
       Math.min((0.88 - progress) / 0.08, 1)
     : 0;
 
   const lightingPreset = theme === 'light' ? 'studio-light' : 'studio-dark';
 
   return (
-    <div ref={containerRef} className="relative h-[155vh]">
+    <div ref={containerRef} className="relative h-[190vh]">
       <div className="sticky top-0 flex h-screen w-full items-center justify-center overflow-hidden">
         {/* Subtle radial ambient spotlight behind laptop */}
         <div

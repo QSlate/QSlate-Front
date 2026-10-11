@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Menu, Moon, Sun, X } from 'lucide-react';
+import { Menu, Moon, Sun, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -23,22 +23,6 @@ export function MarketingNavbar() {
 
   return (
     <header className="sticky top-0 left-0 right-0 z-50 flex flex-col items-center px-4 pt-3 pointer-events-none">
-      {/* Top Announcement Pill */}
-      <div className="pointer-events-auto mb-2">
-        <Link
-          href="#features"
-          className="group inline-flex items-center gap-2.5 px-3.5 py-1 rounded-full text-xs font-sans bg-white/[0.04] light:bg-black/[0.04] border border-white/10 light:border-black/10 text-zinc-300 light:text-zinc-600 hover:border-white/20 light:hover:border-black/20 hover:text-white light:hover:text-black transition-all shadow-xs"
-        >
-          <span className="px-1.5 py-0.5 rounded-full bg-white/15 text-[9px] font-bold uppercase tracking-wider text-white">
-            NEW
-          </span>
-          <span>
-            QSlate Kernel 2.0: Rust-accelerated tick simulation is live
-          </span>
-          <ArrowRight className="w-3.5 h-3.5 text-zinc-400 group-hover:translate-x-0.5 group-hover:text-white transition-all" />
-        </Link>
-      </div>
-
       <nav
         aria-label="Main Navigation"
         className={`pointer-events-auto w-full max-w-5xl rounded-2xl transition-all duration-300 ${
