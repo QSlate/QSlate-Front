@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from 'react';
+import type { ComponentType } from 'react';
 
 import type { WidgetLayout } from '@/entities/layout/model';
 
@@ -34,13 +34,7 @@ export interface WidgetDefinition {
   isLocked?: boolean | undefined;
 }
 
-export interface WidgetContainerProps {
-  id: string;
-  title: string;
-  layout: WidgetLayout;
-  children: ReactNode;
-  onRemove?: ((id: string) => void) | undefined;
-}
+export type { WidgetContainerProps } from '@/entities/layout';
 
 export interface DynamicGridProps {
   widgets?: Record<string, WidgetDefinition> | undefined;
