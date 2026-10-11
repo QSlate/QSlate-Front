@@ -21,6 +21,7 @@ function ControlledMacbook({
   isMobile: boolean;
   theme: 'dark' | 'light';
 }) {
+  const isLight = theme === 'light';
   const groupRef = useRef<THREE.Group>(null);
   const stateRef = useRef({ open: 0, brightness: 0 });
   const chassisMaterialsRef = useRef<THREE.MeshStandardMaterial[]>([]);
@@ -30,13 +31,12 @@ function ControlledMacbook({
     const p = scrollProgressRef.current ?? 0;
 
     // Dynamically adjust chassis anodized finish:
-    // Dark mode: Deep Apple Space Black
-    // Light mode: Authentic Apple Space Gray / Gris Sidéral anodized aluminum
-    const isLight = theme === 'light';
-    const targetColorHex = isLight ? '#a2a7b2' : '#0d0e12';
-    const targetMetalness = isLight ? 0.58 : 1.0;
-    const targetRoughness = isLight ? 0.38 : 0.5;
-    const targetEnvMap = isLight ? 1.25 : 0.85;
+    // Dark mode: Refined Apple Space Black / Graphite (#323846) with visible chamfers & depth
+    // Light mode: Authentic Apple Space Gray / Gris Sidéral (#a2a7b2)
+    const targetColorHex = isLight ? '#a2a7b2' : '#323846';
+    const targetMetalness = isLight ? 0.58 : 0.8;
+    const targetRoughness = isLight ? 0.38 : 0.4;
+    const targetEnvMap = isLight ? 1.25 : 1.4;
 
     currentChassisColor.current.lerp(new THREE.Color(targetColorHex), 0.12);
 
@@ -150,6 +150,23 @@ function ControlledMacbook({
 
   return (
     <group ref={groupRef}>
+      {!isLight && (
+        <>
+          <ambientLight intensity={0.4} />
+          <directionalLight
+            position={[0, -2.5, 4]}
+            intensity={0.55}
+            color="#9cb0d4"
+          />
+          <directionalLight
+            position={[0, 4.5, 3.5]}
+            intensity={0.85}
+            color="#e2ecff"
+          />
+          <pointLight position={[-4, 2, 3]} intensity={0.4} color="#60a5fa" />
+          <pointLight position={[4, 2, 3]} intensity={0.4} color="#a78bfa" />
+        </>
+      )}
       <Macbook
         screen="/lab_image.png"
         modelSrc="/models/macbook-rigged.glb"
@@ -219,15 +236,22 @@ export function Macbook3DShowcase({ intro }: Macbook3DShowcaseProps) {
   return (
     <div ref={containerRef} className="relative h-[190vh]">
       <div className="sticky top-0 flex h-screen w-full items-center justify-center overflow-hidden">
-        {/* Subtle radial ambient spotlight behind laptop */}
+        {/* Luminous multi-depth studio stage aura behind laptop */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[70vh] w-[85vw] max-w-6xl -translate-x-1/2 -translate-y-1/2 rounded-[100%] bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.18),rgba(30,41,59,0.22)_45%,transparent_70%)] blur-3xl opacity-75 dark:opacity-90 transition-opacity"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[75vh] w-[90vw] max-w-6xl -translate-x-1/2 -translate-y-1/2 rounded-[100%] bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.22),rgba(99,102,241,0.16)_38%,rgba(15,23,42,0.4)_65%,transparent_80%)] blur-3xl opacity-80 dark:opacity-100 transition-opacity"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[45vh] w-[60vw] max-w-4xl -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.06),rgba(56,189,248,0.08)_50%,transparent_75%)] blur-2xl dark:block hidden"
         />
 
         {/* Real 3D WebGL MacBook Pro Canvas */}
         <div className="absolute inset-0 z-10">
-          <MacbookStage lighting={lightingPreset} lightingIntensity={1.1}>
+          <MacbookStage
+            lighting={lightingPreset}
+            lightingIntensity={theme === 'light' ? 1.1 : 1.35}
+          >
             <ControlledMacbook
               scrollProgressRef={scrollProgressRef}
               isMobile={isMobile}
