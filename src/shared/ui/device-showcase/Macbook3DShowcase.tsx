@@ -6,7 +6,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Macbook, MacbookStage } from 'rigged-macbook-3d';
 import * as THREE from 'three';
 
-import { useTheme } from '@/shared/theme/theme-provider';
+import {
+  selectTheme,
+  type ThemeMode,
+  type UserStore,
+  useUserStore,
+} from '@/entities/user/model';
+import { useHydratedStore } from '@/shared/lib/store';
 
 interface Macbook3DShowcaseProps {
   intro: React.ReactNode;
@@ -185,7 +191,11 @@ export function Macbook3DShowcase({ intro }: Macbook3DShowcaseProps) {
 
   const [progress, setProgress] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
-  const { theme } = useTheme();
+  const theme = useHydratedStore<UserStore, ThemeMode>(
+    useUserStore,
+    selectTheme,
+    'dark'
+  );
 
   // Scroll tracking loop
   useEffect(() => {

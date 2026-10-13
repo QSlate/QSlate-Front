@@ -3,6 +3,8 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 
+import { ThemeSync } from '@/shared/theme/theme-sync';
+
 const inter = Inter({
   variable: '--font-inter',
   subsets: ['latin'],
@@ -30,6 +32,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased min-h-screen`}
       >
+        <ThemeSync />
         {children}
       </body>
     </html>

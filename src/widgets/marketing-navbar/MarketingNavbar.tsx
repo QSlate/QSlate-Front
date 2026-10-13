@@ -6,10 +6,21 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { useTheme } from '@/shared/theme/theme-provider';
+import {
+  selectTheme,
+  type ThemeMode,
+  type UserStore,
+  useUserStore,
+} from '@/entities/user/model';
+import { useHydratedStore } from '@/shared/lib/store';
 
 export function MarketingNavbar() {
-  const { theme, toggleTheme } = useTheme();
+  const theme = useHydratedStore<UserStore, ThemeMode>(
+    useUserStore,
+    selectTheme,
+    'dark'
+  );
+  const toggleTheme = useUserStore((state) => state.toggleTheme);
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
