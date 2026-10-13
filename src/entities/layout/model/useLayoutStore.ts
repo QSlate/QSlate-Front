@@ -1,65 +1,76 @@
+import type { Layout, LayoutItem } from 'react-grid-layout';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import type { LayoutDictionary, LayoutStore, WidgetLayout } from './types';
-import { DEFAULT_LAYOUTS, LAYOUT_PRESETS } from './types';
+import type { LayoutStore, WidgetLayout, WidgetLayoutUpdate } from './types';
+import { DEFAULT_LAYOUT, LAYOUT_PRESETS } from './types';
+
+function cloneLayout(layout: readonly WidgetLayout[]): WidgetLayout[] {
+  return layout.map((item) => ({ ...item }));
+}
+
+function updateLayoutItem(
+  layout: readonly WidgetLayout[],
+  widgetId: LayoutItem['i'],
+  update: (item: WidgetLayout) => WidgetLayout
+): readonly WidgetLayout[] {
+  if (!layout.some((item) => item.i === widgetId)) {
+    return layout;
+  }
+
+  return layout.map((item) => (item.i === widgetId ? update(item) : item));
+}
 
 export const useLayoutStore = create<LayoutStore>()(
   devtools(
     (set) => ({
-      layouts: { ...DEFAULT_LAYOUTS },
+      layout: cloneLayout(DEFAULT_LAYOUT),
       activePreset: 'default',
 
-      updateWidgetLayout: (id: string, partial: Partial<WidgetLayout>) =>
+      setLayout: (layout: Layout) =>
         set(
           (state) => {
-            const current = state.layouts[id];
-            if (!current) {
-              return state;
-            }
+            const currentById = new Map(
+              state.layout.map((item) => [item.i, item])
+            );
+
             return {
-              layouts: {
-                ...state.layouts,
-                [id]: {
-                  ...current,
-                  ...partial,
-                  id,
-                },
-              },
+              layout: layout.map((item) => ({
+                ...currentById.get(item.i),
+                ...item,
+                i: item.i,
+              })),
             };
           },
           false,
-          'layout/updateWidgetLayout'
+          'layout/setLayout'
         ),
 
-      batchUpdateLayouts: (incomingLayouts: WidgetLayout[]) =>
+      updateWidget: (widgetId: LayoutItem['i'], updates: WidgetLayoutUpdate) =>
         set(
           (state) => {
-            const nextLayouts: LayoutDictionary = { ...state.layouts };
-            for (const item of incomingLayouts) {
-              const current = nextLayouts[item.id];
-              if (current) {
-                nextLayouts[item.id] = {
-                  ...current,
-                  ...item,
-                  id: item.id,
-                };
-              } else {
-                nextLayouts[item.id] = { ...item };
-              }
-            }
-            return { layouts: nextLayouts };
+            const layout = updateLayoutItem(
+              state.layout,
+              widgetId,
+              (current) => ({
+                ...current,
+                ...updates,
+                i: current.i,
+              })
+            );
+
+            return layout === state.layout ? state : { layout };
           },
           false,
-          'layout/batchUpdateLayouts'
+          'layout/updateWidget'
         ),
 
       resetLayout: (presetName: string = 'default') =>
         set(
           () => {
-            const targetPreset = LAYOUT_PRESETS[presetName] ?? DEFAULT_LAYOUTS;
+            const targetPreset = LAYOUT_PRESETS[presetName] ?? DEFAULT_LAYOUT;
             return {
-              layouts: { ...targetPreset },
+              layout: cloneLayout(targetPreset),
               activePreset:
                 presetName in LAYOUT_PRESETS ? presetName : 'default',
             };
@@ -68,43 +79,37 @@ export const useLayoutStore = create<LayoutStore>()(
           'layout/resetLayout'
         ),
 
-      toggleWidgetPin: (id: string) =>
+      toggleWidgetPin: (widgetId: LayoutItem['i']) =>
         set(
           (state) => {
-            const current = state.layouts[id];
-            if (!current) {
-              return state;
-            }
-            return {
-              layouts: {
-                ...state.layouts,
-                [id]: {
-                  ...current,
-                  isPinned: !current.isPinned,
-                },
-              },
-            };
+            const layout = updateLayoutItem(
+              state.layout,
+              widgetId,
+              (current) => ({
+                ...current,
+                isPinned: !current.isPinned,
+              })
+            );
+
+            return layout === state.layout ? state : { layout };
           },
           false,
           'layout/toggleWidgetPin'
         ),
 
-      toggleWidgetMinimize: (id: string) =>
+      toggleWidgetMinimize: (widgetId: LayoutItem['i']) =>
         set(
           (state) => {
-            const current = state.layouts[id];
-            if (!current) {
-              return state;
-            }
-            return {
-              layouts: {
-                ...state.layouts,
-                [id]: {
-                  ...current,
-                  isMinimized: !current.isMinimized,
-                },
-              },
-            };
+            const layout = updateLayoutItem(
+              state.layout,
+              widgetId,
+              (current) => ({
+                ...current,
+                isMinimized: !current.isMinimized,
+              })
+            );
+
+            return layout === state.layout ? state : { layout };
           },
           false,
           'layout/toggleWidgetMinimize'
@@ -114,23 +119,23 @@ export const useLayoutStore = create<LayoutStore>()(
   )
 );
 
-export const selectLayouts = (state: LayoutStore): LayoutDictionary =>
-  state.layouts;
+export const selectLayout = (state: LayoutStore): readonly WidgetLayout[] =>
+  state.layout;
 
 export const selectWidgetLayout =
-  (id: string) =>
+  (widgetId: LayoutItem['i']) =>
   (state: LayoutStore): WidgetLayout | undefined =>
-    state.layouts[id];
+    state.layout.find((item) => item.i === widgetId);
 
 export const selectIsWidgetPinned =
-  (id: string) =>
+  (widgetId: LayoutItem['i']) =>
   (state: LayoutStore): boolean =>
-    Boolean(state.layouts[id]?.isPinned);
+    Boolean(state.layout.find((item) => item.i === widgetId)?.isPinned);
 
 export const selectIsWidgetMinimized =
-  (id: string) =>
+  (widgetId: LayoutItem['i']) =>
   (state: LayoutStore): boolean =>
-    Boolean(state.layouts[id]?.isMinimized);
+    Boolean(state.layout.find((item) => item.i === widgetId)?.isMinimized);
 
 export const selectActivePreset = (state: LayoutStore): string =>
   state.activePreset;
