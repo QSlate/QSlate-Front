@@ -1,11 +1,19 @@
-export type ThemeMode = 'dark' | 'light';
+import type { ThemeMode } from '@/shared/theme/types';
+
+export type { ThemeMode } from '@/shared/theme/types';
 
 export type ColorblindMode = 'none' | 'orange-blue';
+
+export type UserSession = Readonly<Record<string, unknown>>;
 
 export interface UserPreferencesState {
   theme: ThemeMode;
   colorblindMode: ColorblindMode;
   sidebarCollapsed: boolean;
+}
+
+export interface UserSessionState {
+  session: UserSession | null;
 }
 
 export interface UserPreferencesActions {
@@ -18,7 +26,15 @@ export interface UserPreferencesActions {
   resetPreferences: () => void;
 }
 
-export type UserStore = UserPreferencesState & UserPreferencesActions;
+export interface UserSessionActions {
+  setSession: (session: UserSession) => void;
+  clearSession: () => void;
+}
+
+export type UserStore = UserPreferencesState &
+  UserSessionState &
+  UserPreferencesActions &
+  UserSessionActions;
 
 export const DEFAULT_USER_PREFERENCES: UserPreferencesState = {
   theme: 'dark',

@@ -49,7 +49,7 @@ describe('GridSkeleton', () => {
 
 describe('WidgetContainer', () => {
   const mockLayout: WidgetLayout = {
-    id: 'test-widget',
+    i: 'test-widget',
     x: 0,
     y: 0,
     w: 4,
@@ -119,7 +119,10 @@ describe('WidgetContainer', () => {
     const pinBtn = screen.getByTestId('widget-pin-btn');
     fireEvent.click(pinBtn);
 
-    expect(useLayoutStore.getState().layouts['mini-ide']?.isPinned).toBe(true);
+    expect(
+      useLayoutStore.getState().layout.find((item) => item.i === 'mini-ide')
+        ?.isPinned
+    ).toBe(true);
   });
 
   it('invokes toggleWidgetMinimize when minimize button is clicked', () => {
@@ -132,9 +135,10 @@ describe('WidgetContainer', () => {
     const minimizeBtn = screen.getByTestId('widget-minimize-btn');
     fireEvent.click(minimizeBtn);
 
-    expect(useLayoutStore.getState().layouts['mini-ide']?.isMinimized).toBe(
-      true
-    );
+    expect(
+      useLayoutStore.getState().layout.find((item) => item.i === 'mini-ide')
+        ?.isMinimized
+    ).toBe(true);
   });
 
   it('invokes onRemove callback when remove button is clicked', () => {
@@ -204,8 +208,10 @@ describe('useGridSync', () => {
     });
 
     const storeState = useLayoutStore.getState();
-    expect(storeState.layouts['mini-ide']?.x).toBe(3);
-    expect(storeState.layouts['mini-ide']?.y).toBe(4);
+    const miniIde = storeState.layout.find((item) => item.i === 'mini-ide');
+
+    expect(miniIde?.x).toBe(3);
+    expect(miniIde?.y).toBe(4);
     expect(onCommit).toHaveBeenCalled();
   });
 });

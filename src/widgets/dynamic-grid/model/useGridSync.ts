@@ -9,11 +9,7 @@ import type {
 } from 'react-grid-layout';
 import { useShallow } from 'zustand/react/shallow';
 
-import {
-  type LayoutDictionary,
-  useLayoutStore,
-  type WidgetLayout,
-} from '@/entities/layout/model';
+import { useLayoutStore, type WidgetLayout } from '@/entities/layout/model';
 
 import {
   GRID_BREAKPOINTS,
@@ -29,7 +25,7 @@ export interface UseGridSyncOptions {
 
 export interface UseGridSyncReturn {
   currentBreakpoint: GridBreakpoint;
-  layouts: LayoutDictionary;
+  widgetLayouts: Readonly<Record<string, WidgetLayout>>;
   rglLayout: Layout;
   rglLayouts: ResponsiveLayouts;
   handleBreakpointChange: (newBreakpoint: string, newCols: number) => void;
@@ -45,21 +41,27 @@ export function useGridSync(
   const [currentBreakpoint, setCurrentBreakpoint] =
     useState<GridBreakpoint>('lg');
 
-  const { layouts: storeLayouts, batchUpdateLayouts } = useLayoutStore(
+  const { layout: storeLayout, setLayout } = useLayoutStore(
     useShallow((state) => ({
-      layouts: state.layouts,
-      batchUpdateLayouts: state.batchUpdateLayouts,
+      layout: state.layout,
+      setLayout: state.setLayout,
     }))
+  );
+
+  const widgetLayouts = useMemo<Readonly<Record<string, WidgetLayout>>>(
+    () =>
+      Object.fromEntries(storeLayout.map((item) => [item.i, item] as const)),
+    [storeLayout]
   );
 
   const rglLayout: Layout = useMemo(() => {
     const widgetIds = new Set<string>([
-      ...Object.keys(storeLayouts),
+      ...Object.keys(widgetLayouts),
       ...(widgets ? Object.keys(widgets) : []),
     ]);
 
     return Array.from(widgetIds).map((id): LayoutItem => {
-      const layout = storeLayouts[id];
+      const layout = widgetLayouts[id];
       const widgetDef = widgets?.[id];
       const defaultLayout = widgetDef?.defaultLayout;
 
@@ -105,7 +107,7 @@ export function useGridSync(
 
       return item;
     });
-  }, [storeLayouts, widgets, isEditable]);
+  }, [isEditable, widgetLayouts, widgets]);
 
   const rglLayouts: ResponsiveLayouts = useMemo(() => {
     return (Object.keys(GRID_BREAKPOINTS) as GridBreakpoint[]).reduce(
@@ -119,10 +121,13 @@ export function useGridSync(
 
   const commitLayoutChanges = useCallback(
     (updatedLayout: Layout) => {
-      const currentStoreLayouts = useLayoutStore.getState().layouts;
+      const currentById = new Map(
+        useLayoutStore.getState().layout.map((item) => [item.i, item])
+      );
+
       const updatedList: WidgetLayout[] = updatedLayout.map(
         (item: LayoutItem) => {
-          const existing = currentStoreLayouts[item.i];
+          const existing = currentById.get(item.i);
           const widgetDef = widgets?.[item.i];
           const defaultLayout = widgetDef?.defaultLayout;
 
@@ -130,7 +135,7 @@ export function useGridSync(
             existing?.isMinimized ?? defaultLayout?.isMinimized ?? false;
 
           const widgetLayout: WidgetLayout = {
-            id: item.i,
+            i: item.i,
             x: item.x,
             y: item.y,
             w: item.w,
@@ -170,10 +175,10 @@ export function useGridSync(
         }
       );
 
-      batchUpdateLayouts(updatedList);
+      setLayout(updatedList);
       onLayoutCommit?.(updatedList);
     },
-    [batchUpdateLayouts, onLayoutCommit, widgets]
+    [onLayoutCommit, setLayout, widgets]
   );
 
   const handleDragStop: NonNullable<ResponsiveGridLayoutProps['onDragStop']> =
@@ -201,7 +206,7 @@ export function useGridSync(
 
   return {
     currentBreakpoint,
-    layouts: storeLayouts,
+    widgetLayouts,
     rglLayout,
     rglLayouts,
     handleBreakpointChange,

@@ -1,44 +1,34 @@
-export interface GridCoordinates {
-  x: number;
-  y: number;
-}
+import type { Layout, LayoutItem } from 'react-grid-layout';
 
-export interface WidgetDimensions {
-  w: number;
-  h: number;
-  minW?: number | undefined;
-  minH?: number | undefined;
-  maxW?: number | undefined;
-  maxH?: number | undefined;
-}
-
-export interface WidgetLayout extends GridCoordinates, WidgetDimensions {
-  id: string;
+export interface WidgetLayout extends LayoutItem {
   isPinned?: boolean | undefined;
   isMinimized?: boolean | undefined;
   isLocked?: boolean | undefined;
 }
 
-export type LayoutDictionary = Record<string, WidgetLayout>;
+export type WidgetLayoutUpdate = Partial<Omit<WidgetLayout, 'i'>>;
 
 export interface LayoutState {
-  layouts: LayoutDictionary;
-  activePreset: string;
+  layout: readonly WidgetLayout[];
+  activePreset: LayoutPresetName;
 }
 
 export interface LayoutActions {
-  updateWidgetLayout: (id: string, partial: Partial<WidgetLayout>) => void;
-  batchUpdateLayouts: (layouts: WidgetLayout[]) => void;
+  setLayout: (layout: Layout) => void;
+  updateWidget: (
+    widgetId: LayoutItem['i'],
+    updates: WidgetLayoutUpdate
+  ) => void;
   resetLayout: (presetName?: string) => void;
-  toggleWidgetPin: (id: string) => void;
-  toggleWidgetMinimize: (id: string) => void;
+  toggleWidgetPin: (widgetId: LayoutItem['i']) => void;
+  toggleWidgetMinimize: (widgetId: LayoutItem['i']) => void;
 }
 
 export type LayoutStore = LayoutState & LayoutActions;
 
-export const DEFAULT_LAYOUTS: LayoutDictionary = {
-  'mini-ide': {
-    id: 'mini-ide',
+export const DEFAULT_LAYOUT = [
+  {
+    i: 'mini-ide',
     x: 0,
     y: 0,
     w: 7,
@@ -49,8 +39,8 @@ export const DEFAULT_LAYOUTS: LayoutDictionary = {
     isMinimized: false,
     isLocked: false,
   },
-  'equity-curve': {
-    id: 'equity-curve',
+  {
+    i: 'equity-curve',
     x: 7,
     y: 0,
     w: 5,
@@ -61,8 +51,8 @@ export const DEFAULT_LAYOUTS: LayoutDictionary = {
     isMinimized: false,
     isLocked: false,
   },
-  drawdown: {
-    id: 'drawdown',
+  {
+    i: 'drawdown',
     x: 7,
     y: 5,
     w: 5,
@@ -73,8 +63,12 @@ export const DEFAULT_LAYOUTS: LayoutDictionary = {
     isMinimized: false,
     isLocked: false,
   },
-};
+] satisfies readonly WidgetLayout[];
 
-export const LAYOUT_PRESETS: Record<string, LayoutDictionary> = {
-  default: DEFAULT_LAYOUTS,
-};
+export const LAYOUT_PRESETS = {
+  default: DEFAULT_LAYOUT,
+} as const satisfies Readonly<Record<string, readonly WidgetLayout[]>>;
+
+export type LayoutPresetName = keyof typeof LAYOUT_PRESETS;
+
+export const DEFAULT_LAYOUT_PRESET: LayoutPresetName = 'default';

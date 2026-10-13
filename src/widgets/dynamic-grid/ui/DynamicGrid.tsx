@@ -52,7 +52,7 @@ export function DynamicGrid({
   });
 
   const {
-    layouts,
+    widgetLayouts,
     rglLayouts,
     handleDragStop,
     handleResizeStop,
@@ -93,8 +93,8 @@ export function DynamicGrid({
           onBreakpointChange={handleBreakpointChange}
         >
           {Object.entries(widgets).map(([id, widget]) => {
-            const layout = layouts[id] ?? {
-              id,
+            const layout = widgetLayouts[id] ?? {
+              i: id,
               x: 0,
               y: 0,
               w: 4,

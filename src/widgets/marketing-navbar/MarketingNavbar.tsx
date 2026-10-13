@@ -6,10 +6,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { useTheme } from '@/shared/theme/theme-provider';
+import { useUserStore, useUserTheme } from '@/entities/user/model';
 
 export function MarketingNavbar() {
-  const { theme, toggleTheme } = useTheme();
+  const theme = useUserTheme();
+  const toggleTheme = useUserStore((state) => state.toggleTheme);
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 

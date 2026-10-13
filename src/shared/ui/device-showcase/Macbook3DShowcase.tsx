@@ -6,10 +6,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Macbook, MacbookStage } from 'rigged-macbook-3d';
 import * as THREE from 'three';
 
-import { useTheme } from '@/shared/theme/theme-provider';
+import type { ThemeMode } from '@/shared/theme/types';
 
 interface Macbook3DShowcaseProps {
   intro: React.ReactNode;
+  theme: ThemeMode;
 }
 
 function ControlledMacbook({
@@ -19,7 +20,7 @@ function ControlledMacbook({
 }: {
   scrollProgressRef: React.RefObject<number>;
   isMobile: boolean;
-  theme: 'dark' | 'light';
+  theme: ThemeMode;
 }) {
   const isLight = theme === 'light';
   const groupRef = useRef<THREE.Group>(null);
@@ -179,13 +180,12 @@ function ControlledMacbook({
   );
 }
 
-export function Macbook3DShowcase({ intro }: Macbook3DShowcaseProps) {
+export function Macbook3DShowcase({ intro, theme }: Macbook3DShowcaseProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollProgressRef = useRef<number>(0);
 
   const [progress, setProgress] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
-  const { theme } = useTheme();
 
   // Scroll tracking loop
   useEffect(() => {
