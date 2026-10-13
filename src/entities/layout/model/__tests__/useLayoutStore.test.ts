@@ -175,6 +175,15 @@ describe('useLayoutStore', () => {
       expect(state.layout).toEqual(DEFAULT_LAYOUT);
       expect(state.activePreset).toBe('default');
     });
+
+    it('rejects inherited object keys as preset names', () => {
+      expect(() =>
+        useLayoutStore.getState().resetLayout('toString')
+      ).not.toThrow();
+
+      expect(useLayoutStore.getState().layout).toEqual(DEFAULT_LAYOUT);
+      expect(useLayoutStore.getState().activePreset).toBe('default');
+    });
   });
 
   describe('selectors', () => {

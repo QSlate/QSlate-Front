@@ -10,7 +10,7 @@ export type WidgetLayoutUpdate = Partial<Omit<WidgetLayout, 'i'>>;
 
 export interface LayoutState {
   layout: readonly WidgetLayout[];
-  activePreset: string;
+  activePreset: LayoutPresetName;
 }
 
 export interface LayoutActions {
@@ -26,7 +26,7 @@ export interface LayoutActions {
 
 export type LayoutStore = LayoutState & LayoutActions;
 
-export const DEFAULT_LAYOUT: readonly WidgetLayout[] = [
+export const DEFAULT_LAYOUT = [
   {
     i: 'mini-ide',
     x: 0,
@@ -63,9 +63,12 @@ export const DEFAULT_LAYOUT: readonly WidgetLayout[] = [
     isMinimized: false,
     isLocked: false,
   },
-];
+] satisfies readonly WidgetLayout[];
 
-export const LAYOUT_PRESETS: Readonly<Record<string, readonly WidgetLayout[]>> =
-  {
-    default: DEFAULT_LAYOUT,
-  };
+export const LAYOUT_PRESETS = {
+  default: DEFAULT_LAYOUT,
+} as const satisfies Readonly<Record<string, readonly WidgetLayout[]>>;
+
+export type LayoutPresetName = keyof typeof LAYOUT_PRESETS;
+
+export const DEFAULT_LAYOUT_PRESET: LayoutPresetName = 'default';

@@ -1,9 +1,18 @@
+'use client';
+
 import type { Layout, LayoutItem } from 'react-grid-layout';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import type { LayoutStore, WidgetLayout, WidgetLayoutUpdate } from './types';
-import { DEFAULT_LAYOUT, LAYOUT_PRESETS } from './types';
+import type {
+  LayoutPresetName,
+  LayoutStore,
+  WidgetLayout,
+  WidgetLayoutUpdate,
+} from './types';
+import { DEFAULT_LAYOUT, DEFAULT_LAYOUT_PRESET, LAYOUT_PRESETS } from './types';
+
+type WidgetBooleanFlag = 'isMinimized' | 'isPinned';
 
 function cloneLayout(layout: readonly WidgetLayout[]): WidgetLayout[] {
   return layout.map((item) => ({ ...item }));
@@ -14,18 +23,57 @@ function updateLayoutItem(
   widgetId: LayoutItem['i'],
   update: (item: WidgetLayout) => WidgetLayout
 ): readonly WidgetLayout[] {
-  if (!layout.some((item) => item.i === widgetId)) {
+  const itemIndex = layout.findIndex((item) => item.i === widgetId);
+
+  if (itemIndex === -1) {
     return layout;
   }
 
-  return layout.map((item) => (item.i === widgetId ? update(item) : item));
+  const nextLayout = [...layout];
+  nextLayout[itemIndex] = update(layout[itemIndex]);
+
+  return nextLayout;
+}
+
+function toggleWidgetFlag(
+  layout: readonly WidgetLayout[],
+  widgetId: LayoutItem['i'],
+  flag: WidgetBooleanFlag
+): readonly WidgetLayout[] {
+  return updateLayoutItem(layout, widgetId, (item) => ({
+    ...item,
+    [flag]: !item[flag],
+  }));
+}
+
+function isLayoutPresetName(name: string): name is LayoutPresetName {
+  return Object.hasOwn(LAYOUT_PRESETS, name);
+}
+
+function resolveLayoutPreset(name: string): {
+  name: LayoutPresetName;
+  layout: readonly WidgetLayout[];
+} {
+  const resolvedName = isLayoutPresetName(name) ? name : DEFAULT_LAYOUT_PRESET;
+
+  return {
+    name: resolvedName,
+    layout: LAYOUT_PRESETS[resolvedName],
+  };
+}
+
+function findWidget(
+  layout: readonly WidgetLayout[],
+  widgetId: LayoutItem['i']
+): WidgetLayout | undefined {
+  return layout.find((item) => item.i === widgetId);
 }
 
 export const useLayoutStore = create<LayoutStore>()(
   devtools(
     (set) => ({
       layout: cloneLayout(DEFAULT_LAYOUT),
-      activePreset: 'default',
+      activePreset: DEFAULT_LAYOUT_PRESET,
 
       setLayout: (layout: Layout) =>
         set(
@@ -65,14 +113,14 @@ export const useLayoutStore = create<LayoutStore>()(
           'layout/updateWidget'
         ),
 
-      resetLayout: (presetName: string = 'default') =>
+      resetLayout: (presetName: string = DEFAULT_LAYOUT_PRESET) =>
         set(
           () => {
-            const targetPreset = LAYOUT_PRESETS[presetName] ?? DEFAULT_LAYOUT;
+            const preset = resolveLayoutPreset(presetName);
+
             return {
-              layout: cloneLayout(targetPreset),
-              activePreset:
-                presetName in LAYOUT_PRESETS ? presetName : 'default',
+              layout: cloneLayout(preset.layout),
+              activePreset: preset.name,
             };
           },
           false,
@@ -82,14 +130,7 @@ export const useLayoutStore = create<LayoutStore>()(
       toggleWidgetPin: (widgetId: LayoutItem['i']) =>
         set(
           (state) => {
-            const layout = updateLayoutItem(
-              state.layout,
-              widgetId,
-              (current) => ({
-                ...current,
-                isPinned: !current.isPinned,
-              })
-            );
+            const layout = toggleWidgetFlag(state.layout, widgetId, 'isPinned');
 
             return layout === state.layout ? state : { layout };
           },
@@ -100,13 +141,10 @@ export const useLayoutStore = create<LayoutStore>()(
       toggleWidgetMinimize: (widgetId: LayoutItem['i']) =>
         set(
           (state) => {
-            const layout = updateLayoutItem(
+            const layout = toggleWidgetFlag(
               state.layout,
               widgetId,
-              (current) => ({
-                ...current,
-                isMinimized: !current.isMinimized,
-              })
+              'isMinimized'
             );
 
             return layout === state.layout ? state : { layout };
@@ -125,17 +163,17 @@ export const selectLayout = (state: LayoutStore): readonly WidgetLayout[] =>
 export const selectWidgetLayout =
   (widgetId: LayoutItem['i']) =>
   (state: LayoutStore): WidgetLayout | undefined =>
-    state.layout.find((item) => item.i === widgetId);
+    findWidget(state.layout, widgetId);
 
-export const selectIsWidgetPinned =
-  (widgetId: LayoutItem['i']) =>
-  (state: LayoutStore): boolean =>
-    Boolean(state.layout.find((item) => item.i === widgetId)?.isPinned);
+function createWidgetFlagSelector(flag: WidgetBooleanFlag) {
+  return (widgetId: LayoutItem['i']): ((state: LayoutStore) => boolean) => {
+    return (state) => Boolean(findWidget(state.layout, widgetId)?.[flag]);
+  };
+}
 
-export const selectIsWidgetMinimized =
-  (widgetId: LayoutItem['i']) =>
-  (state: LayoutStore): boolean =>
-    Boolean(state.layout.find((item) => item.i === widgetId)?.isMinimized);
+export const selectIsWidgetPinned = createWidgetFlagSelector('isPinned');
 
-export const selectActivePreset = (state: LayoutStore): string =>
+export const selectIsWidgetMinimized = createWidgetFlagSelector('isMinimized');
+
+export const selectActivePreset = (state: LayoutStore): LayoutPresetName =>
   state.activePreset;
