@@ -53,9 +53,7 @@ export function DeviceShowcase({ intro, theme }: DeviceShowcaseProps) {
         />
 
         <div className="absolute inset-0 z-10" aria-busy={status === 'loading'}>
-          {status !== 'ready' && (
-            <DeviceFallback loading={status === 'loading'} />
-          )}
+          {isStatic && <DeviceFallback />}
           {!isStatic && (
             <DeviceSceneBoundary onError={handleUnavailable}>
               <Macbook3DShowcase

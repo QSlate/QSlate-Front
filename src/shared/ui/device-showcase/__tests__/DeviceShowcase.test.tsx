@@ -23,10 +23,11 @@ const intro = createElement('h1', null, 'Research with QSlate');
 const showcase = () => createElement(DeviceShowcase, { intro, theme: 'dark' });
 
 describe('DeviceShowcase loading', () => {
-  it('server-renders the title, placeholder and full scroll space before the 3D bundle loads', () => {
+  it('server-renders the title and empty scroll space before the 3D bundle loads', () => {
     const html = renderToString(showcase());
     expect(html).toContain('Research with QSlate');
-    expect(html).toContain('Loading device preview');
+    expect(html).not.toContain('Loading device preview');
+    expect(html).toContain('aria-busy="true"');
     expect(html).toContain('h-[190svh]');
     expect(html).not.toContain('QSlate dashboard preview');
   });
@@ -35,17 +36,19 @@ describe('DeviceShowcase loading', () => {
     const { container } = render(showcase());
     const section = container.firstElementChild;
     const heading = screen.getByRole('heading');
-    expect(screen.queryByRole('status')).not.toBeNull();
+    const sceneSlot = container.querySelector('[aria-busy]');
+    expect(sceneSlot?.getAttribute('aria-busy')).toBe('true');
+    expect(sceneSlot?.childElementCount).toBe(0);
 
     act(() => scene.callbacks.onReady());
 
-    expect(screen.queryByRole('status')).toBeNull();
+    expect(sceneSlot?.getAttribute('aria-busy')).toBe('false');
     expect(container.firstElementChild).toBe(section);
     expect(section?.className).toContain('h-[190svh]');
     expect(screen.getByRole('heading')).toBe(heading);
   });
 
-  it('replaces the placeholder with an image without replacing the section when 3D is unavailable', () => {
+  it('shows an image without replacing the section when 3D is unavailable', () => {
     const { container } = render(showcase());
     const section = container.firstElementChild;
 
