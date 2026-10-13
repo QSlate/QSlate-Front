@@ -1,4 +1,6 @@
-export type ThemeMode = 'dark' | 'light';
+import type { ThemeMode } from '@/shared/theme/types';
+
+export type { ThemeMode } from '@/shared/theme/types';
 
 export type ColorblindMode = 'none' | 'orange-blue';
 

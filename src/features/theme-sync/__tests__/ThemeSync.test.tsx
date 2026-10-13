@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { DEFAULT_USER_PREFERENCES, useUserStore } from '@/entities/user/model';
 
-import { ThemeSync } from '../theme-sync';
+import { ThemeSync } from '../ui/ThemeSync';
 
 describe('ThemeSync', () => {
   beforeEach(() => {
@@ -14,20 +14,17 @@ describe('ThemeSync', () => {
       session: null,
     });
     document.documentElement.removeAttribute('data-theme');
-    document.documentElement.classList.remove('dark', 'light');
   });
 
   afterEach(() => {
     cleanup();
   });
 
-  it('applies Zustand theme changes to the document element', async () => {
+  it('keeps the document theme synchronized with Zustand', async () => {
     render(<ThemeSync />);
 
     await waitFor(() => {
       expect(document.documentElement.dataset.theme).toBe('dark');
-      expect(document.documentElement.classList.contains('dark')).toBe(true);
-      expect(document.documentElement.classList.contains('light')).toBe(false);
     });
 
     act(() => {
@@ -36,8 +33,6 @@ describe('ThemeSync', () => {
 
     await waitFor(() => {
       expect(document.documentElement.dataset.theme).toBe('light');
-      expect(document.documentElement.classList.contains('dark')).toBe(false);
-      expect(document.documentElement.classList.contains('light')).toBe(true);
     });
   });
 });

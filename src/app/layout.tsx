@@ -3,7 +3,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 
-import { ThemeSync } from '@/shared/theme/theme-sync';
+import { ThemeSync } from '@/features/theme-sync';
 
 const inter = Inter({
   variable: '--font-inter',

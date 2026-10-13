@@ -3,6 +3,8 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 
+import { useHydratedStore } from '@/shared/lib/store';
+
 import type {
   ColorblindMode,
   ThemeMode,
@@ -135,3 +137,11 @@ export const selectSidebarCollapsed = (state: UserStore): boolean =>
 
 export const selectSession = (state: UserStore): UserSession | null =>
   state.session;
+
+export function useUserTheme(): ThemeMode {
+  return useHydratedStore(
+    useUserStore,
+    selectTheme,
+    DEFAULT_USER_PREFERENCES.theme
+  );
+}

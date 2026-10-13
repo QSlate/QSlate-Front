@@ -3,6 +3,8 @@
 import dynamic from 'next/dynamic';
 import React from 'react';
 
+import type { ThemeMode } from '@/shared/theme/types';
+
 const Macbook3DShowcase = dynamic(
   () => import('./Macbook3DShowcase').then((mod) => mod.Macbook3DShowcase),
   {
@@ -20,6 +22,11 @@ function DeviceFallback({ intro }: { intro?: React.ReactNode }) {
   );
 }
 
-export function DeviceShowcase({ intro }: { intro: React.ReactNode }) {
-  return <Macbook3DShowcase intro={intro} />;
+interface DeviceShowcaseProps {
+  intro: React.ReactNode;
+  theme: ThemeMode;
+}
+
+export function DeviceShowcase({ intro, theme }: DeviceShowcaseProps) {
+  return <Macbook3DShowcase intro={intro} theme={theme} />;
 }

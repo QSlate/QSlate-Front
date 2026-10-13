@@ -3,11 +3,15 @@
 import { ArrowRight, Play } from 'lucide-react';
 import Link from 'next/link';
 
+import { useUserTheme } from '@/entities/user/model';
 import { DeviceShowcase } from '@/shared/ui/device-showcase/DeviceShowcase';
 
 export function LandingHero() {
+  const theme = useUserTheme();
+
   return (
     <DeviceShowcase
+      theme={theme}
       intro={
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
           {/* Eyebrow Pill */}
