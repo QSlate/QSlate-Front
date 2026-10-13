@@ -134,11 +134,7 @@ function AnimatedShowcase({ intro, theme }: Macbook3DShowcaseProps) {
   const introPointerEvents = useTransform(progress, (p) =>
     p > 0.16 ? 'none' : 'auto'
   );
-  const badgeOpacity = useTransform(
-    progress,
-    [0.5, 0.6, 0.8, 0.88],
-    [0, 1, 1, 0]
-  );
+  const badgeOpacity = useTransform(progress, [0.5, 0.6], [0, 1]);
 
   return (
     <div ref={containerRef} className="relative h-[190svh]">
