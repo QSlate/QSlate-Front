@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   DEFAULT_USER_PREFERENCES,
   selectColorblindMode,
+  selectSession,
   selectSidebarCollapsed,
   selectTheme,
   USER_PREFERENCES_STORAGE_KEY,
@@ -14,11 +15,13 @@ describe('useUserStore', () => {
   beforeEach(() => {
     localStorage.clear();
     useUserStore.getState().resetPreferences();
+    useUserStore.getState().clearSession();
   });
 
   describe('initialization', () => {
-    it('initializes with default preferences', () => {
+    it('initializes with default preferences and no session', () => {
       const state = useUserStore.getState();
+
       expect(state.theme).toBe(DEFAULT_USER_PREFERENCES.theme);
       expect(state.colorblindMode).toBe(
         DEFAULT_USER_PREFERENCES.colorblindMode
@@ -26,6 +29,7 @@ describe('useUserStore', () => {
       expect(state.sidebarCollapsed).toBe(
         DEFAULT_USER_PREFERENCES.sidebarCollapsed
       );
+      expect(state.session).toBeNull();
     });
   });
 
@@ -101,6 +105,35 @@ describe('useUserStore', () => {
     });
   });
 
+  describe('session actions', () => {
+    it('sets and clears an opaque application session', () => {
+      const session = {
+        userId: 'user-123',
+        expiresAt: '2026-10-14T00:00:00.000Z',
+      };
+      const { clearSession, setSession } = useUserStore.getState();
+
+      setSession(session);
+      expect(useUserStore.getState().session).toEqual(session);
+
+      clearSession();
+      expect(useUserStore.getState().session).toBeNull();
+    });
+
+    it('does not clear the session when resetting UI preferences', () => {
+      const { resetPreferences, setSession, setTheme } =
+        useUserStore.getState();
+      const session = { userId: 'user-123' };
+
+      setSession(session);
+      setTheme('light');
+      resetPreferences();
+
+      expect(useUserStore.getState().theme).toBe('dark');
+      expect(useUserStore.getState().session).toEqual(session);
+    });
+  });
+
   describe('resetPreferences', () => {
     it('restores all preferences back to defaults', () => {
       const {
@@ -113,11 +146,6 @@ describe('useUserStore', () => {
       setTheme('light');
       setColorblindMode('orange-blue');
       setSidebarCollapsed(true);
-
-      expect(useUserStore.getState().theme).toBe('light');
-      expect(useUserStore.getState().colorblindMode).toBe('orange-blue');
-      expect(useUserStore.getState().sidebarCollapsed).toBe(true);
-
       resetPreferences();
 
       expect(useUserStore.getState().theme).toBe('dark');
@@ -127,11 +155,13 @@ describe('useUserStore', () => {
   });
 
   describe('persistence', () => {
-    it('persists preferences state changes into localStorage', () => {
-      const { setTheme, setColorblindMode } = useUserStore.getState();
+    it('persists preferences but excludes session data', () => {
+      const { setColorblindMode, setSession, setTheme } =
+        useUserStore.getState();
 
       setTheme('light');
       setColorblindMode('orange-blue');
+      setSession({ accessToken: 'must-not-be-persisted' });
 
       const rawStored = localStorage.getItem(USER_PREFERENCES_STORAGE_KEY);
       expect(rawStored).not.toBeNull();
@@ -140,17 +170,22 @@ describe('useUserStore', () => {
         const parsed = JSON.parse(rawStored);
         expect(parsed.state.theme).toBe('light');
         expect(parsed.state.colorblindMode).toBe('orange-blue');
+        expect(parsed.state.session).toBeUndefined();
+        expect(parsed.state.accessToken).toBeUndefined();
       }
     });
   });
 
   describe('selectors', () => {
     it('extracts state values atomically via selectors', () => {
+      const session = { userId: 'user-123' };
+      useUserStore.getState().setSession(session);
       const state = useUserStore.getState();
 
       expect(selectTheme(state)).toBe('dark');
       expect(selectColorblindMode(state)).toBe('none');
       expect(selectSidebarCollapsed(state)).toBe(false);
+      expect(selectSession(state)).toEqual(session);
     });
   });
 });
