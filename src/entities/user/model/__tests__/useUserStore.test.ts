@@ -174,6 +174,33 @@ describe('useUserStore', () => {
         expect(parsed.state.accessToken).toBeUndefined();
       }
     });
+
+    it('sanitizes malformed persisted preferences during hydration', async () => {
+      localStorage.setItem(
+        USER_PREFERENCES_STORAGE_KEY,
+        JSON.stringify({
+          state: {
+            theme: 'unsupported',
+            colorblindMode: true,
+            sidebarCollapsed: 'yes',
+            session: { accessToken: 'must-not-be-hydrated' },
+          },
+          version: 1,
+        })
+      );
+
+      await useUserStore.persist.rehydrate();
+
+      const state = useUserStore.getState();
+      expect(state.theme).toBe(DEFAULT_USER_PREFERENCES.theme);
+      expect(state.colorblindMode).toBe(
+        DEFAULT_USER_PREFERENCES.colorblindMode
+      );
+      expect(state.sidebarCollapsed).toBe(
+        DEFAULT_USER_PREFERENCES.sidebarCollapsed
+      );
+      expect(state.session).toBeNull();
+    });
   });
 
   describe('selectors', () => {

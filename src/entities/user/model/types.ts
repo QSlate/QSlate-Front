@@ -25,7 +25,7 @@ export interface UserPreferencesActions {
 }
 
 export interface UserSessionActions {
-  setSession: (session: UserSession | null) => void;
+  setSession: (session: UserSession) => void;
   clearSession: () => void;
 }
 
