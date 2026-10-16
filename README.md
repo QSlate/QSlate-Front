@@ -34,10 +34,10 @@ The `src/` directory strictly follows domain-driven Feature-Sliced Design to mai
 ## ⚡️ Rendering Strategy & Core Paradigms
 
 - **Default to Server Components (RSC):** Data fetching, layout orchestration, and SEO metadata happen on the server.
-- **Strict Client Boundaries (`"use client"`):** Interactivity is pushed to the client only when absolutely necessary (e.g., WebSockets, drag-and-drop grid interactions).
+- **Strict Client Boundaries (`"use client"`):** Interactivity is pushed to the client only when absolutely necessary (e.g., progress streams, drag-and-drop grid interactions).
 - **Dynamic Imports:** Heavy client-side libraries (like Monaco Editor) MUST be loaded dynamically (`ssr: false`) to prevent hydration mismatches and server crashes.
 - **Backend Integration:** The frontend does not perform heavy quantitative calculations.
-  - **WebSockets:** Real-time streaming for tick-level data and backtest execution progress.
+  - **Server-Sent Events (SSE):** Live backtest progress is streamed from `GET /api/backtest/runs/{run_id}/events` and consumed with the native `EventSource` API. Progress is strictly server to client, so there is no client-to-server channel on the stream: cancelling a run is a separate `DELETE` request. Agreed with the backend in QSL-7.
   - **gRPC / REST:** Standard CRUD operations routed to the Go orchestration backend.
 
 ## ♿ Accessibility (a11y) & Inclusive Design System
