@@ -143,6 +143,15 @@
   flex: 1;
   justify-content: center;
 }
+.lab-logout-button {
+  width: 28px;
+  justify-content: center;
+  color: var(--lab-muted);
+}
+.lab-logout-button:hover {
+  color: var(--lab-negative);
+  background: rgba(255, 77, 109, 0.1);
+}
 .lab-collapse-button {
   width: 28px;
   justify-content: center;
@@ -170,6 +179,9 @@
   flex-direction: column;
 }
 .lab-sidebar.is-collapsed .lab-collapse-button {
+  width: 100%;
+}
+.lab-sidebar.is-collapsed .lab-logout-button {
   width: 100%;
 }
 .lab-user .sidebar-label {

@@ -6,11 +6,21 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { useUserStore, useUserTheme } from '@/entities/user/model';
+import {
+  useAuthStore,
+  useUserStore,
+  useUserTheme,
+} from '@/entities/user/model';
+import { useHydratedStore } from '@/shared/lib/store';
 
 export function MarketingNavbar() {
   const theme = useUserTheme();
   const toggleTheme = useUserStore((state) => state.toggleTheme);
+  const isAuthenticated = useHydratedStore(
+    useAuthStore,
+    (state) => state.isAuthenticated,
+    false
+  );
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -102,12 +112,12 @@ export function MarketingNavbar() {
               )}
             </button>
 
-            {/* Sign In */}
+            {/* Sign In / My Lab */}
             <Link
-              href="/auth/signin"
+              href={isAuthenticated ? '/lab' : '/login'}
               className="hidden sm:inline-flex text-xs font-medium text-zinc-300 light:text-zinc-700 hover:text-white light:hover:text-black px-3 py-2 transition-colors font-sans"
             >
-              Sign In
+              {isAuthenticated ? 'My Lab' : 'Sign In'}
             </Link>
 
             {/* Launch Dashboard Primary Button */}
