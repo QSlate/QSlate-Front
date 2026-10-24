@@ -12,18 +12,20 @@ import {
   Sun,
 } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 import { useUserStore } from '@/entities/user/model';
 import { useHydratedStore } from '@/shared/lib/store';
 
 const navigation = [
-  { title: 'Mini IDE & Builder', icon: Code2 },
-  { title: 'Widget Marketplace', icon: Store },
-  { title: 'Backtest Runs', icon: History },
-  { title: 'Settings', icon: Settings2 },
+  { title: 'Mini IDE & Builder', icon: Code2, href: '/lab/ide' },
+  { title: 'Widget Marketplace', icon: Store, href: '/lab/marketplace' },
+  { title: 'Backtest Runs', icon: History, href: '/lab/runs' },
+  { title: 'Settings', icon: Settings2, href: '/lab/settings' },
 ];
 
 export function LabSidebar() {
+  const pathname = usePathname();
   const collapsed = useHydratedStore(
     useUserStore,
     (state) => state.sidebarCollapsed,
@@ -60,26 +62,28 @@ export function LabSidebar() {
       <nav>
         <Link
           href="/lab"
-          className="lab-nav-item is-active"
-          aria-current="page"
+          className={`lab-nav-item ${pathname === '/lab' ? 'is-active' : ''}`}
+          aria-current={pathname === '/lab' ? 'page' : undefined}
           title="Lab Workspace"
         >
           <LayoutGrid size={14} />
           <span className="sidebar-label">Lab Workspace</span>
         </Link>
-        {navigation.map(({ title, icon: Icon }) => (
-          <button
-            key={title}
-            type="button"
-            className="lab-nav-item"
-            disabled
-            title={`${title} — coming soon`}
-            aria-label={`${title} — coming soon`}
-          >
-            <Icon size={14} />
-            <span className="sidebar-label">{title}</span>
-          </button>
-        ))}
+        {navigation.map(({ title, icon: Icon, href }) => {
+          const isActive = pathname === href;
+          return (
+            <Link
+              key={title}
+              href={href}
+              className={`lab-nav-item ${isActive ? 'is-active' : ''}`}
+              aria-current={isActive ? 'page' : undefined}
+              title={title}
+            >
+              <Icon size={14} />
+              <span className="sidebar-label">{title}</span>
+            </Link>
+          );
+        })}
       </nav>
       <div className="lab-sidebar-bottom">
         <div className="lab-user-card">
@@ -94,7 +98,7 @@ export function LabSidebar() {
           <div className="lab-cluster sidebar-label">
             <i className="lab-status-dot" />
             <span>gVisor Cluster:</span>
-            <span className="lab-positive">demo</span>
+            <span className="lab-positive">99.98% green</span>
           </div>
           {!session ? (
             <span className="lab-demo-user sidebar-label">
