@@ -18,100 +18,185 @@ export function MarketplaceCardPreview({ moduleId }: { moduleId: string }) {
   switch (moduleId) {
     case 'mod-monte-carlo':
       return (
-        <svg
-          viewBox="0 0 320 120"
-          className="w-full h-full"
-          preserveAspectRatio="none"
-          role="img"
-          aria-label="Monte Carlo fan preview"
-        >
-          <line
-            x1="0"
-            y1="60"
-            x2="320"
-            y2="60"
-            stroke="rgba(255,255,255,0.08)"
-            strokeDasharray="3 3"
-          />
-          {/* Fan Upper Area */}
-          <path
-            d="M 0 60 Q 160 40 320 15 L 320 60 L 0 60 Z"
-            fill={upColor}
-            opacity="0.15"
-          />
-          {/* Fan Lower Area */}
-          <path
-            d="M 0 60 Q 160 70 320 95 L 320 60 L 0 60 Z"
-            fill={downColor}
-            opacity="0.15"
-          />
-          {/* Upper curve */}
-          <path
-            d="M 0 60 Q 160 40 320 15"
-            fill="none"
-            stroke={upColor}
-            strokeWidth="1.8"
-          />
-          {/* Median curve */}
-          <path
-            d="M 0 60 Q 160 52 320 40"
-            fill="none"
-            stroke="#527DFF"
-            strokeWidth="1.5"
-            strokeDasharray="4 2"
-          />
-          {/* Lower curve */}
-          <path
-            d="M 0 60 Q 160 70 320 95"
-            fill="none"
-            stroke={downColor}
-            strokeWidth="1.8"
-          />
-        </svg>
+        <div className="relative w-full h-full">
+          <svg
+            viewBox="0 0 320 120"
+            className="w-full h-full"
+            preserveAspectRatio="none"
+            role="img"
+            aria-label="Monte Carlo fan preview"
+          >
+            <line
+              x1="0"
+              y1="60"
+              x2="320"
+              y2="60"
+              stroke="rgba(255,255,255,0.08)"
+              strokeDasharray="3 3"
+            />
+            {/* Fan Upper Area */}
+            <path
+              d="M 0 60 Q 160 40 320 15 L 320 60 L 0 60 Z"
+              fill={upColor}
+              opacity="0.15"
+            />
+            {/* Fan Lower Area */}
+            <path
+              d="M 0 60 Q 160 70 320 95 L 320 60 L 0 60 Z"
+              fill={downColor}
+              opacity="0.15"
+            />
+            {/* Upper curve */}
+            <path
+              d="M 0 60 Q 160 40 320 15"
+              fill="none"
+              stroke={upColor}
+              strokeWidth="1.8"
+            />
+            {/* Median curve */}
+            <path
+              d="M 0 60 Q 160 52 320 40"
+              fill="none"
+              stroke="#527DFF"
+              strokeWidth="1.5"
+              strokeDasharray="4 2"
+            />
+            {/* Lower curve */}
+            <path
+              d="M 0 60 Q 160 70 320 95"
+              fill="none"
+              stroke={downColor}
+              strokeWidth="1.8"
+            />
+          </svg>
+          <div
+            className="sr-only"
+            role="region"
+            aria-label="Monte Carlo preview percentiles"
+          >
+            <table>
+              <caption>Monte Carlo Projection Preview</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Band</th>
+                  <th scope="col">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Upper 95%</td>
+                  <td>+34%</td>
+                </tr>
+                <tr>
+                  <td>Median</td>
+                  <td>+14%</td>
+                </tr>
+                <tr>
+                  <td>Lower 5%</td>
+                  <td>-12%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       );
 
     case 'mod-order-book':
       return (
-        <div className="w-full h-full grid grid-rows-6 grid-cols-12 gap-1 p-2 bg-[#060709]">
-          {Array.from({ length: 72 }).map((_, i) => {
-            const isAsk = i < 36;
-            const opacity = 0.15 + ((i % 12) / 12) * 0.7;
-            const color = isAsk ? downColor : upColor;
-            return (
-              <div
-                key={i}
-                style={{
-                  backgroundColor: color,
-                  opacity,
-                }}
-                className="rounded-xs transition-opacity hover:opacity-100"
-              />
-            );
-          })}
+        <div className="relative w-full h-full">
+          <div className="w-full h-full grid grid-rows-6 grid-cols-12 gap-1 p-2 bg-[#060709]">
+            {Array.from({ length: 72 }).map((_, i) => {
+              const isAsk = i < 36;
+              const opacity = 0.15 + ((i % 12) / 12) * 0.7;
+              const color = isAsk ? downColor : upColor;
+              return (
+                <div
+                  key={i}
+                  style={{
+                    backgroundColor: color,
+                    opacity,
+                  }}
+                  className="rounded-xs transition-opacity hover:opacity-100"
+                />
+              );
+            })}
+          </div>
+          <div
+            className="sr-only"
+            role="region"
+            aria-label="Order book L2 liquidity preview"
+          >
+            <table>
+              <caption>L2 Order Book Heatmap Levels</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Level</th>
+                  <th scope="col">Liquidity</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Ask Depth</td>
+                  <td>1,240 contracts</td>
+                </tr>
+                <tr>
+                  <td>Bid Depth</td>
+                  <td>1,285 contracts</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       );
 
     case 'mod-volatility-filter':
       return (
-        <div className="w-full h-full flex items-end justify-between gap-1 p-3 bg-[#060709]">
-          {Array.from({ length: 32 }).map((_, i) => {
-            const isSpike = i === 6 || i === 14 || i === 22 || i === 29;
-            const height = isSpike
-              ? 85 + (i % 3) * 5
-              : 20 + Math.sin(i / 4) * 35;
-            return (
-              <div
-                key={i}
-                style={{
-                  height: `${height}%`,
-                  backgroundColor: isSpike
-                    ? spikeColor
-                    : 'rgba(255,255,255,0.2)',
-                }}
-                className="flex-1 rounded-xs"
-              />
-            );
-          })}
+        <div className="relative w-full h-full">
+          <div className="w-full h-full flex items-end justify-between gap-1 p-3 bg-[#060709]">
+            {Array.from({ length: 32 }).map((_, i) => {
+              const isSpike = i === 6 || i === 14 || i === 22 || i === 29;
+              const height = isSpike
+                ? 85 + (i % 3) * 5
+                : 20 + Math.sin(i / 4) * 35;
+              return (
+                <div
+                  key={i}
+                  style={{
+                    height: `${height}%`,
+                    backgroundColor: isSpike
+                      ? spikeColor
+                      : 'rgba(255,255,255,0.2)',
+                  }}
+                  className="flex-1 rounded-xs"
+                />
+              );
+            })}
+          </div>
+          <div
+            className="sr-only"
+            role="region"
+            aria-label="Regime volatility classifier histogram preview"
+          >
+            <table>
+              <caption>Regime Volatility Frequency Distribution</caption>
+              <thead>
+                <tr>
+                  <th scope="col">State</th>
+                  <th scope="col">Density</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Calm</td>
+                  <td>74%</td>
+                </tr>
+                <tr>
+                  <td>Spike Outliers</td>
+                  <td>26%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       );
 

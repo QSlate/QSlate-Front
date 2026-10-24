@@ -121,7 +121,7 @@ export function sanitizeLayout(value: unknown): WidgetLayout[] {
     seen.add(definition.i);
     const width = Math.min(
       12,
-      Math.max(definition.minW, Math.round(candidate.w as number))
+      Math.max(definition.minW ?? 1, Math.round(candidate.w as number))
     );
     return [
       {
@@ -131,7 +131,7 @@ export function sanitizeLayout(value: unknown): WidgetLayout[] {
         w: width,
         h: Math.min(
           30,
-          Math.max(definition.minH, Math.round(candidate.h as number))
+          Math.max(definition.minH ?? 1, Math.round(candidate.h as number))
         ),
         isPinned: candidate.isPinned === true,
         isMinimized: candidate.isMinimized === true,
