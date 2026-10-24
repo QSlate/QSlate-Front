@@ -10,7 +10,12 @@ import type {
   WidgetLayout,
   WidgetLayoutUpdate,
 } from './types';
-import { DEFAULT_LAYOUT, DEFAULT_LAYOUT_PRESET, LAYOUT_PRESETS } from './types';
+import {
+  DEFAULT_LAYOUT,
+  DEFAULT_LAYOUT_PRESET,
+  KNOWN_WIDGET_LAYOUTS,
+  LAYOUT_PRESETS,
+} from './types';
 
 type WidgetBooleanFlag = 'isMinimized' | 'isPinned';
 
@@ -104,7 +109,9 @@ export function sanitizeLayout(value: unknown): WidgetLayout[] {
   const restored = value.flatMap((item: unknown) => {
     if (!item || typeof item !== 'object') return [];
     const candidate = item as Record<string, unknown>;
-    const definition = DEFAULT_LAYOUT.find((entry) => entry.i === candidate.i);
+    const definition = KNOWN_WIDGET_LAYOUTS.find(
+      (entry) => entry.i === candidate.i
+    );
     if (!definition || seen.has(definition.i)) return [];
     const valid = ['x', 'y', 'w', 'h'].every(
       (key) =>
@@ -114,7 +121,7 @@ export function sanitizeLayout(value: unknown): WidgetLayout[] {
     seen.add(definition.i);
     const width = Math.min(
       12,
-      Math.max(definition.minW, Math.round(candidate.w as number))
+      Math.max(definition.minW ?? 1, Math.round(candidate.w as number))
     );
     return [
       {
@@ -124,7 +131,7 @@ export function sanitizeLayout(value: unknown): WidgetLayout[] {
         w: width,
         h: Math.min(
           30,
-          Math.max(definition.minH, Math.round(candidate.h as number))
+          Math.max(definition.minH ?? 1, Math.round(candidate.h as number))
         ),
         isPinned: candidate.isPinned === true,
         isMinimized: candidate.isMinimized === true,
@@ -146,7 +153,7 @@ export const useLayoutStore = create<LayoutStore>()(
         addWidget: (widgetId: string) =>
           set(
             (state) => {
-              const definition = DEFAULT_LAYOUT.find(
+              const definition = KNOWN_WIDGET_LAYOUTS.find(
                 (item) => item.i === widgetId
               );
               if (
