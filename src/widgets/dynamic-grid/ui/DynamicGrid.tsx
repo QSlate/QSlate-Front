@@ -45,6 +45,9 @@ export function DynamicGrid({
   className,
   isEditable = true,
   onLayoutCommit,
+  onRemove,
+  onExpand,
+  rowHeight = GRID_ROW_HEIGHT,
 }: DynamicGridProps) {
   const { width, mounted, containerRef } = useContainerWidth({
     measureBeforeMount: false,
@@ -61,6 +64,7 @@ export function DynamicGrid({
     widgets,
     isEditable,
     onLayoutCommit,
+    rowHeight,
   });
 
   return (
@@ -75,7 +79,7 @@ export function DynamicGrid({
           layouts={rglLayouts}
           breakpoints={GRID_BREAKPOINTS}
           cols={GRID_COLS}
-          rowHeight={GRID_ROW_HEIGHT}
+          rowHeight={rowHeight}
           margin={GRID_MARGIN}
           containerPadding={GRID_CONTAINER_PADDING}
           dragConfig={{
@@ -101,6 +105,7 @@ export function DynamicGrid({
               h: 4,
             };
             const Component = widget.component;
+            const Toolbar = widget.toolbar;
 
             return (
               <WidgetContainer
@@ -108,9 +113,12 @@ export function DynamicGrid({
                 id={id}
                 title={widget.title}
                 layout={layout}
-              >
-                <Component id={id} />
-              </WidgetContainer>
+                icon={widget.icon}
+                toolbar={Toolbar ? <Toolbar /> : null}
+                onRemove={onRemove}
+                onExpand={onExpand}
+                widgetContent={<Component id={id} />}
+              />
             );
           })}
         </Responsive>

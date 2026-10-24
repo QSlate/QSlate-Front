@@ -15,6 +15,8 @@ export interface LayoutState {
 
 export interface LayoutActions {
   setLayout: (layout: Layout) => void;
+  addWidget: (widgetId: string) => void;
+  removeWidget: (widgetId: string) => void;
   updateWidget: (
     widgetId: LayoutItem['i'],
     updates: WidgetLayoutUpdate
@@ -28,37 +30,49 @@ export type LayoutStore = LayoutState & LayoutActions;
 
 export const DEFAULT_LAYOUT = [
   {
-    i: 'mini-ide',
+    i: 'equity-curve',
     x: 0,
     y: 0,
-    w: 7,
-    h: 8,
+    w: 8,
+    h: 7,
     minW: 4,
-    minH: 3,
-    isPinned: false,
-    isMinimized: false,
-    isLocked: false,
-  },
-  {
-    i: 'equity-curve',
-    x: 7,
-    y: 0,
-    w: 5,
-    h: 5,
-    minW: 3,
-    minH: 3,
+    minH: 4,
     isPinned: false,
     isMinimized: false,
     isLocked: false,
   },
   {
     i: 'drawdown',
-    x: 7,
-    y: 5,
-    w: 5,
-    h: 3,
+    x: 8,
+    y: 0,
+    w: 4,
+    h: 7,
     minW: 3,
-    minH: 2,
+    minH: 4,
+    isPinned: false,
+    isMinimized: false,
+    isLocked: false,
+  },
+  {
+    i: 'execution-metrics',
+    x: 0,
+    y: 7,
+    w: 4,
+    h: 7,
+    minW: 3,
+    minH: 5,
+    isPinned: false,
+    isMinimized: false,
+    isLocked: false,
+  },
+  {
+    i: 'trade-log',
+    x: 4,
+    y: 7,
+    w: 8,
+    h: 7,
+    minW: 4,
+    minH: 4,
     isPinned: false,
     isMinimized: false,
     isLocked: false,
