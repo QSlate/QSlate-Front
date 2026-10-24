@@ -1,17 +1,32 @@
 'use client';
 
-import { BarChart3, ChartNoAxesCombined, List, Table2 } from 'lucide-react';
+import {
+  Activity,
+  BarChart3,
+  ChartNoAxesCombined,
+  Cpu,
+  Layers,
+  List,
+  Table2,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { DEFAULT_LAYOUT, useLayoutStore } from '@/entities/layout';
 import { useUserStore } from '@/entities/user/model';
-import { WidgetPicker } from '@/features/customize-lab/WidgetPicker';
+import { useLabStore } from '@/features/lab-state';
 import {
   BacktestProvider,
   useBacktest,
 } from '@/features/run-backtest/BacktestProvider';
 import { useHydratedStore } from '@/shared/lib/store';
 import { Dialog } from '@/shared/ui/dialog/Dialog';
+import { Toast } from '@/shared/ui/toast';
+import { AddWidgetDrawer } from '@/widgets/add-widget-drawer';
+import {
+  MonteCarloWidget,
+  OrderBookWidget,
+  VolatilityFilterWidget,
+} from '@/widgets/additional-widgets';
 import {
   DrawdownWidget,
   EquityToolbar,
@@ -61,6 +76,27 @@ const widgets: Record<string, WidgetDefinition & { description: string }> = {
     icon: <List size={13} />,
     toolbar: TradeToolbar,
   },
+  'monte-carlo': {
+    id: 'monte-carlo',
+    title: 'Monte Carlo 10k Simulator',
+    description: '10,000 randomized path projection with confidence fans.',
+    component: MonteCarloWidget,
+    icon: <Activity size={13} />,
+  },
+  'order-book': {
+    id: 'order-book',
+    title: 'Order Book Heatmap L2',
+    description: 'Market depth liquidity matrix & real-time bid/ask pressure.',
+    component: OrderBookWidget,
+    icon: <Layers size={13} />,
+  },
+  'volatility-filter': {
+    id: 'volatility-filter',
+    title: 'Regime-Aware Volatility Filter',
+    description: 'Gaussian Mixture Model volatility state classification.',
+    component: VolatilityFilterWidget,
+    icon: <Cpu size={13} />,
+  },
 };
 
 function Workspace() {
@@ -75,7 +111,7 @@ function Workspace() {
     'none'
   );
   const removeWidget = useLayoutStore((state) => state.removeWidget);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const openDrawer = useLabStore((state) => state.setAddWidgetDrawerOpen);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [rowHeight, setRowHeight] = useState(32);
   const { error, run, status } = useBacktest();
@@ -107,7 +143,7 @@ function Workspace() {
     <div className="lab-shell" data-colorblind={colorblind}>
       <LabSidebar />
       <main className="lab-main">
-        <LabToolbar onAddWidget={() => setPickerOpen(true)} />
+        <LabToolbar onAddWidget={() => openDrawer(true)} />
         {error ? (
           <div className="lab-error" role="alert">
             <span>{error}</span>
@@ -137,7 +173,7 @@ function Workspace() {
               <button
                 type="button"
                 className="lab-button"
-                onClick={() => setPickerOpen(true)}
+                onClick={() => openDrawer(true)}
               >
                 Add Widget
               </button>
@@ -145,12 +181,8 @@ function Workspace() {
           )}
         </section>
       </main>
-      {pickerOpen ? (
-        <WidgetPicker
-          widgets={Object.values(widgets)}
-          onClose={() => setPickerOpen(false)}
-        />
-      ) : null}
+      <AddWidgetDrawer />
+      <Toast />
       {expandedWidget && ExpandedComponent ? (
         <Dialog
           title={expandedWidget.title}
