@@ -1,21 +1,38 @@
 'use client';
 
 import type { ChartOptions, DeepPartial } from 'lightweight-charts';
-import { useCallback, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
+import { useMemo } from 'react';
 
-import {
-  generateMockCandles,
-  getTechnicalIndicators,
-  MARKET_TICKERS,
-} from '@/entities/market';
+import { generateMockCandles, MARKET_TICKERS } from '@/entities/market';
 import { useBacktest } from '@/features/run-backtest/BacktestProvider';
 import { useAppearance } from '@/shared/theme';
+import { ChartSkeleton } from '@/shared/ui/charts/ChartSkeleton';
 import { DynamicLightweightChart } from '@/shared/ui/charts/DynamicLightweightChart';
 
 import { useResultControls } from '../model/ResultControls';
 import { EmptyState } from './EmptyState';
 
-const QUICK_TICKERS = ['ETH/USDT', 'BTC/USDT', 'NVDA', 'SPY', 'SOL/USDT'];
+const DynamicTradingViewChart = dynamic(
+  () =>
+    import('./TradingViewRealTimeChart').then(
+      (mod) => mod.TradingViewRealTimeChart
+    ),
+  {
+    ssr: false,
+    loading: () => <ChartSkeleton />,
+  }
+);
+
+const QUICK_TICKERS = [
+  'ETH/USDT',
+  'BTC/USDT',
+  'SPX',
+  'SPCX',
+  'NVDA',
+  'SPY',
+  'TSLA',
+];
 
 export function EquityWidget() {
   const { result, status } = useBacktest();
@@ -25,37 +42,35 @@ export function EquityWidget() {
     selectedTicker,
     setSelectedTicker,
     candleInterval,
-    showEMA21,
   } = useResultControls();
   const { theme, colorblindMode } = useAppearance();
   const isLight = theme === 'light';
   const isColorblind = colorblindMode === 'orange-blue';
-
-  const [hoveredCandle, setHoveredCandle] = useState<{
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-    time: number;
-  } | null>(null);
 
   // Candlestick Data for selected ticker & interval
   const candles = useMemo(() => {
     return generateMockCandles(selectedTicker, candleInterval, 90);
   }, [selectedTicker, candleInterval]);
 
-  const indicators = useMemo(() => {
-    return getTechnicalIndicators(candles);
-  }, [candles]);
-
   const currentTickerInfo = useMemo(() => {
     return (
-      MARKET_TICKERS.find((t) => t.symbol === selectedTicker) ??
-      MARKET_TICKERS[0]
+      MARKET_TICKERS.find((t) => t.symbol === selectedTicker) ?? {
+        symbol: selectedTicker,
+        name: `${selectedTicker} Live Asset`,
+        category: 'Equity' as const,
+        exchange: 'TradingView',
+        basePrice: 100.0,
+        change24h: 0.0,
+        change24hPercent: 0.0,
+        volume24h: 'Live Feed',
+        high24h: 100.0,
+        low24h: 100.0,
+        decimals: 2,
+      }
     );
   }, [selectedTicker]);
 
-  const activeCandle = hoveredCandle ?? candles[candles.length - 1];
+  const activeCandle = candles[candles.length - 1];
 
   // Strategy NAV series
   const series = useMemo(
@@ -131,67 +146,6 @@ export function EquityWidget() {
 
   const positiveColor = isColorblind ? '#38BDF8' : '#10B981';
   const negativeColor = isColorblind ? '#F59E0B' : '#F43F5E';
-
-  const candleSeriesOptions = useMemo(
-    () => ({
-      upColor: positiveColor,
-      downColor: negativeColor,
-      borderUpColor: positiveColor,
-      borderDownColor: negativeColor,
-      wickUpColor: positiveColor,
-      wickDownColor: negativeColor,
-    }),
-    [positiveColor, negativeColor]
-  );
-
-  const handleCrosshairMove = useCallback((param: unknown) => {
-    const p = param as {
-      seriesData?: Map<
-        unknown,
-        {
-          open?: number;
-          high?: number;
-          low?: number;
-          close?: number;
-          time?: number;
-        }
-      >;
-    };
-    if (!p?.seriesData) return;
-    for (const val of p.seriesData.values()) {
-      if (
-        val &&
-        typeof val.close === 'number' &&
-        typeof val.open === 'number'
-      ) {
-        const open = val.open;
-        const close = val.close;
-        const high = val.high ?? close;
-        const low = val.low ?? open;
-        const time = val.time ?? 0;
-
-        setHoveredCandle((prev) => {
-          if (
-            prev &&
-            prev.time === time &&
-            prev.close === close &&
-            prev.open === open
-          ) {
-            return prev;
-          }
-          return {
-            open,
-            high,
-            low,
-            close,
-            time,
-          };
-        });
-        return;
-      }
-    }
-    setHoveredCandle((prev) => (prev === null ? null : null));
-  }, []);
 
   const visibleRange = useMemo(() => {
     if (range === 'ALL' || !result.equity.length) return null;
@@ -354,15 +308,10 @@ export function EquityWidget() {
       {/* Primary Chart Area */}
       <div className="lab-chart">
         {chartMode === 'candles' ? (
-          <DynamicLightweightChart
-            data={candles}
-            seriesType="candlestick"
-            comparisonData={showEMA21 ? indicators.ema21 : undefined}
-            comparisonLabel="EMA 21"
-            ariaLabel={`Interactive TradingView Candlestick Chart for ${selectedTicker}`}
-            options={options}
-            seriesOptions={candleSeriesOptions}
-            onCrosshairMove={handleCrosshairMove}
+          <DynamicTradingViewChart
+            symbol={selectedTicker}
+            interval={candleInterval}
+            theme={theme}
           />
         ) : (
           <DynamicLightweightChart

@@ -28,7 +28,7 @@ const nextConfig: NextConfig = {
           {
             key: 'Content-Security-Policy',
             value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdn.jsdelivr.net; connect-src 'self' ws: wss: data: blob: https://cdn.jsdelivr.net; img-src 'self' data: blob: https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' data: https://cdn.jsdelivr.net; frame-src 'self';",
+              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://s3.tradingview.com https://*.tradingview.com https://www.tradingview-widget.com; worker-src 'self' blob: https://cdn.jsdelivr.net https://*.tradingview.com; connect-src 'self' ws: wss: data: blob: https://cdn.jsdelivr.net https://*.tradingview.com wss://*.tradingview.com https://data.tradingview.com; img-src 'self' data: blob: https://cdn.jsdelivr.net https://*.tradingview.com https://s3-symbol-logo.tradingview.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.tradingview.com; font-src 'self' data: https://cdn.jsdelivr.net https://*.tradingview.com; frame-src 'self' https://s.tradingview.com https://www.tradingview.com https://www.tradingview-widget.com https://*.tradingview.com;",
           },
         ],
       },

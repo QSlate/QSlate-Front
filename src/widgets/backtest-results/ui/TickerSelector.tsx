@@ -202,7 +202,7 @@ export function TickerSelector({
           >
             {filteredTickers.length === 0 ? (
               <div className="p-4 text-center text-xs text-zinc-500 font-mono">
-                No matching instruments found.
+                No matching instruments in quick catalog.
               </div>
             ) : (
               filteredTickers.map((ticker) => {
@@ -290,6 +290,43 @@ export function TickerSelector({
                   </button>
                 );
               })
+            )}
+
+            {search.trim().length > 0 && (
+              <div
+                className={`p-1.5 border-t mt-1 ${
+                  isLight
+                    ? 'border-zinc-200 bg-zinc-50/50'
+                    : 'border-white/[0.06] bg-white/[0.01]'
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSelect(search.trim().toUpperCase());
+                    setIsOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between p-2 rounded text-left transition-colors font-mono text-xs ${
+                    isLight
+                      ? 'bg-blue-50/80 hover:bg-blue-100 text-blue-900 border border-blue-200'
+                      : 'bg-blue-600/15 hover:bg-blue-600/25 text-blue-300 border border-blue-500/30'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <Search size={12} className="text-blue-500 shrink-0" />
+                    <span className="truncate">
+                      Load{' '}
+                      <strong>
+                        &ldquo;{search.trim().toUpperCase()}&rdquo;
+                      </strong>{' '}
+                      on Live Feed
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-blue-500 font-semibold shrink-0 ml-1">
+                    Direct TV →
+                  </span>
+                </button>
+              </div>
             )}
           </div>
 

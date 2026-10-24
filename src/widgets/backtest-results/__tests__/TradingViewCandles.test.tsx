@@ -75,6 +75,56 @@ describe('TradingView Candlestick and Ticker Selection in Lab', () => {
       expect(screen.getByText('NVIDIA Corporation')).toBeDefined();
       expect(screen.queryByText('Ethereum')).toBeNull();
     });
+
+    it('finds SPCX and SPX indices when searching', () => {
+      render(<TickerSelector selectedTicker="ETH/USDT" onSelect={vi.fn()} />);
+
+      const triggerBtn = screen.getByTitle('Select instrument / ticker');
+      act(() => {
+        fireEvent.click(triggerBtn);
+      });
+
+      const searchInput = screen.getByPlaceholderText(
+        'Search stocks, crypto, indices...'
+      );
+
+      act(() => {
+        fireEvent.change(searchInput, { target: { value: 'SPCX' } });
+      });
+
+      expect(screen.getByText('SPCX')).toBeDefined();
+      expect(screen.getByText('S&P/TSX Composite Index')).toBeDefined();
+      expect(screen.getByText('TSX')).toBeDefined();
+    });
+
+    it('allows loading any custom ticker on TradingView live feed', () => {
+      const handleSelect = vi.fn();
+      render(
+        <TickerSelector selectedTicker="ETH/USDT" onSelect={handleSelect} />
+      );
+
+      const triggerBtn = screen.getByTitle('Select instrument / ticker');
+      act(() => {
+        fireEvent.click(triggerBtn);
+      });
+
+      const searchInput = screen.getByPlaceholderText(
+        'Search stocks, crypto, indices...'
+      );
+
+      act(() => {
+        fireEvent.change(searchInput, { target: { value: 'BABA' } });
+      });
+
+      const customLoadBtn = screen.getByText(/Load/);
+      expect(customLoadBtn).toBeDefined();
+
+      act(() => {
+        fireEvent.click(customLoadBtn);
+      });
+
+      expect(handleSelect).toHaveBeenCalledWith('BABA');
+    });
   });
 
   describe('EquityToolbar & EquityWidget Integration', () => {
