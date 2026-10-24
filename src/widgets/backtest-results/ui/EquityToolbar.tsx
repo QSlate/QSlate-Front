@@ -3,6 +3,7 @@
 import { CandlestickChart, LineChart } from 'lucide-react';
 
 import { useBacktest } from '@/features/run-backtest/BacktestProvider';
+import { useAppearance } from '@/shared/theme';
 
 import { signed } from '../model/format';
 import {
@@ -14,6 +15,9 @@ import { TickerSelector } from './TickerSelector';
 
 export function EquityToolbar() {
   const { result } = useBacktest();
+  const { theme } = useAppearance();
+  const isLight = theme === 'light';
+
   const {
     range,
     setRange,
@@ -33,7 +37,11 @@ export function EquityToolbar() {
     <div className="lab-equity-toolbar flex items-center gap-2 flex-wrap">
       {/* Mode Switcher: Candlestick (TradingView) vs Strategy NAV */}
       <div
-        className="flex items-center p-0.5 rounded bg-black/40 border border-white/10 text-[10px] font-mono"
+        className={`flex items-center p-0.5 rounded border text-[10px] font-mono ${
+          isLight
+            ? 'bg-zinc-100 border-zinc-200'
+            : 'bg-black/40 border-white/10'
+        }`}
         role="group"
         aria-label="Chart mode"
       >
@@ -44,7 +52,9 @@ export function EquityToolbar() {
           className={`flex items-center gap-1 px-2 py-0.5 rounded transition-all ${
             chartMode === 'candles'
               ? 'bg-blue-600 text-white font-medium shadow-xs'
-              : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+              : isLight
+                ? 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200'
+                : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
           }`}
           title="Switch to TradingView Candlestick chart"
         >
@@ -59,7 +69,9 @@ export function EquityToolbar() {
           className={`flex items-center gap-1 px-2 py-0.5 rounded transition-all ${
             chartMode === 'nav'
               ? 'bg-blue-600 text-white font-medium shadow-xs'
-              : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+              : isLight
+                ? 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200'
+                : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
           }`}
           title="Switch to Strategy NAV equity curve"
         >
@@ -102,8 +114,12 @@ export function EquityToolbar() {
               aria-pressed={showEMA21}
               className={`px-1.5 py-0.5 rounded border transition-colors ${
                 showEMA21
-                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
-                  : 'bg-transparent text-zinc-500 border-transparent hover:text-zinc-300'
+                  ? isLight
+                    ? 'bg-amber-100 text-amber-800 border-amber-300 font-medium'
+                    : 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                  : isLight
+                    ? 'bg-transparent text-zinc-500 border-transparent hover:text-zinc-800'
+                    : 'bg-transparent text-zinc-500 border-transparent hover:text-zinc-300'
               }`}
               title="Toggle 21 EMA"
             >
@@ -115,8 +131,12 @@ export function EquityToolbar() {
               aria-pressed={showEMA55}
               className={`px-1.5 py-0.5 rounded border transition-colors ${
                 showEMA55
-                  ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40'
-                  : 'bg-transparent text-zinc-500 border-transparent hover:text-zinc-300'
+                  ? isLight
+                    ? 'bg-cyan-100 text-cyan-800 border-cyan-300 font-medium'
+                    : 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40'
+                  : isLight
+                    ? 'bg-transparent text-zinc-500 border-transparent hover:text-zinc-800'
+                    : 'bg-transparent text-zinc-500 border-transparent hover:text-zinc-300'
               }`}
               title="Toggle 55 EMA"
             >

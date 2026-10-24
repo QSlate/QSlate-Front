@@ -2,14 +2,18 @@
 
 import { loader } from '@monaco-editor/react';
 import { AlertTriangle, LoaderCircle, RotateCcw } from 'lucide-react';
+import type * as monacoType from 'monaco-editor';
 import dynamic from 'next/dynamic';
 import React, {
   Component,
   type ErrorInfo,
   type ReactNode,
   useEffect,
+  useRef,
   useState,
 } from 'react';
+
+import { useAppearance } from '@/shared/theme';
 
 // Configure CDN path explicitly for the Monaco Loader
 if (typeof window !== 'undefined') {
@@ -25,21 +29,36 @@ interface MonacoEditorProps {
   language: string;
   onChange: (value: string) => void;
   height?: string;
+  theme?: 'dark' | 'light';
 }
 
-function EditorSkeleton() {
+function EditorSkeleton({ isLight }: { isLight?: boolean }) {
   return (
-    <div className="flex flex-col h-full w-full bg-[#07080a] p-4 font-mono text-xs text-zinc-500 animate-pulse">
+    <div
+      className={`flex flex-col h-full w-full p-4 font-mono text-xs animate-pulse ${
+        isLight ? 'bg-white text-zinc-500' : 'bg-[#07080a] text-zinc-500'
+      }`}
+    >
       <div className="flex items-center gap-2 mb-4 text-zinc-400">
-        <LoaderCircle size={14} className="animate-spin text-blue-400" />
-        <span>Initializing Monaco Runtime…</span>
+        <LoaderCircle size={14} className="animate-spin text-blue-500" />
+        <span>Initializing Monaco Sandbox Runtime…</span>
       </div>
       <div className="space-y-2">
-        <div className="h-3 w-48 bg-white/[0.05] rounded" />
-        <div className="h-3 w-72 bg-white/[0.05] rounded" />
-        <div className="h-3 w-64 bg-white/[0.05] rounded" />
-        <div className="h-3 w-80 bg-white/[0.05] rounded" />
-        <div className="h-3 w-56 bg-white/[0.05] rounded" />
+        <div
+          className={`h-3 w-48 rounded ${isLight ? 'bg-zinc-200' : 'bg-white/[0.05]'}`}
+        />
+        <div
+          className={`h-3 w-72 rounded ${isLight ? 'bg-zinc-200' : 'bg-white/[0.05]'}`}
+        />
+        <div
+          className={`h-3 w-64 rounded ${isLight ? 'bg-zinc-200' : 'bg-white/[0.05]'}`}
+        />
+        <div
+          className={`h-3 w-80 rounded ${isLight ? 'bg-zinc-200' : 'bg-white/[0.05]'}`}
+        />
+        <div
+          className={`h-3 w-56 rounded ${isLight ? 'bg-zinc-200' : 'bg-white/[0.05]'}`}
+        />
       </div>
     </div>
   );
@@ -54,7 +73,9 @@ function FallbackCodeEditor({
   language,
   onChange,
   onRetry,
+  theme = 'dark',
 }: MonacoEditorProps & { onRetry?: () => void }) {
+  const isLight = theme === 'light';
   const lines = value.split('\n');
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -73,10 +94,20 @@ function FallbackCodeEditor({
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#07080a] text-zinc-200 font-mono text-xs overflow-hidden select-text">
+    <div
+      className={`flex flex-col h-full w-full font-mono text-xs overflow-hidden select-text ${
+        isLight ? 'bg-white text-zinc-900' : 'bg-[#07080a] text-zinc-200'
+      }`}
+    >
       {/* Notice bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#0e1014] border-b border-[#242528] text-[11px] text-zinc-400">
-        <div className="flex items-center gap-1.5 text-amber-400">
+      <div
+        className={`flex items-center justify-between px-3 py-1.5 border-b text-[11px] ${
+          isLight
+            ? 'bg-zinc-100 border-zinc-200 text-zinc-700'
+            : 'bg-[#0e1014] border-[#242528] text-zinc-400'
+        }`}
+      >
+        <div className="flex items-center gap-1.5 text-amber-500">
           <AlertTriangle size={12} />
           <span>Lightweight Sandbox Editor ({language})</span>
         </div>
@@ -84,7 +115,11 @@ function FallbackCodeEditor({
           <button
             type="button"
             onClick={onRetry}
-            className="flex items-center gap-1 px-2 py-0.5 rounded bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white transition-colors"
+            className={`flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${
+              isLight
+                ? 'bg-zinc-200 hover:bg-zinc-300 text-zinc-800'
+                : 'bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white'
+            }`}
           >
             <RotateCcw size={10} />
             <span>Retry Monaco</span>
@@ -95,7 +130,13 @@ function FallbackCodeEditor({
       {/* Editor Body with Line Numbers */}
       <div className="flex-1 flex overflow-hidden">
         {/* Line Numbers Gutter */}
-        <div className="w-12 py-3 bg-[#07080a] text-zinc-600 text-right pr-3 select-none font-mono text-xs border-r border-white/[0.04] leading-5 shrink-0 overflow-hidden">
+        <div
+          className={`w-12 py-3 text-right pr-3 select-none font-mono text-xs border-r leading-5 shrink-0 overflow-hidden ${
+            isLight
+              ? 'bg-zinc-50 text-zinc-400 border-zinc-200'
+              : 'bg-[#07080a] text-zinc-600 border-white/[0.04]'
+          }`}
+        >
           {lines.map((_, i) => (
             <div key={i}>{i + 1}</div>
           ))}
@@ -107,7 +148,9 @@ function FallbackCodeEditor({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           spellCheck={false}
-          className="flex-1 h-full w-full bg-transparent p-3 text-zinc-200 font-mono text-xs leading-5 resize-none focus:outline-hidden whitespace-pre overflow-auto"
+          className={`flex-1 h-full w-full p-3 font-mono text-xs leading-5 resize-none focus:outline-hidden whitespace-pre overflow-auto ${
+            isLight ? 'bg-white text-zinc-900' : 'bg-transparent text-zinc-200'
+          }`}
         />
       </div>
     </div>
@@ -170,23 +213,35 @@ const DynamicEditor = dynamic(
         language,
         onChange,
         height = '100%',
+        theme = 'dark',
         onErrorFallback,
       }: MonacoEditorProps & { onErrorFallback: () => void }) {
+        const monacoRef = useRef<typeof monacoType | null>(null);
+
         useEffect(() => {
           loader.init().catch(() => {
             onErrorFallback();
           });
         }, [onErrorFallback]);
 
+        useEffect(() => {
+          if (monacoRef.current) {
+            monacoRef.current.editor.setTheme(
+              theme === 'light' ? 'qslate-light' : 'qslate-dark'
+            );
+          }
+        }, [theme]);
+
         return (
           <EditorComponent
             height={height}
             language={language}
             value={value}
-            theme="vs-dark"
-            loading={<EditorSkeleton />}
+            theme={theme === 'light' ? 'qslate-light' : 'qslate-dark'}
+            loading={<EditorSkeleton isLight={theme === 'light'} />}
             beforeMount={(monaco) => {
               try {
+                // Dark theme
                 monaco.editor.defineTheme('qslate-dark', {
                   base: 'vs-dark',
                   inherit: true,
@@ -212,13 +267,44 @@ const DynamicEditor = dynamic(
                     'editorIndentGuide.background': '#1b1c20',
                   },
                 });
+
+                // Light theme
+                monaco.editor.defineTheme('qslate-light', {
+                  base: 'vs',
+                  inherit: true,
+                  rules: [
+                    { token: 'keyword', foreground: '7C3AED' },
+                    { token: 'string', foreground: '059669' },
+                    { token: 'number', foreground: '0284C7' },
+                    {
+                      token: 'comment',
+                      foreground: '64748B',
+                      fontStyle: 'italic',
+                    },
+                    { token: 'type', foreground: 'D97706' },
+                    { token: 'function', foreground: '2563EB' },
+                  ],
+                  colors: {
+                    'editor.background': '#ffffff',
+                    'editor.foreground': '#0f172a',
+                    'editorLineNumber.foreground': '#94a3b8',
+                    'editorLineNumber.activeForeground': '#1e293b',
+                    'editor.lineHighlightBackground': '#f8fafc',
+                    'editorCursor.foreground': '#2563eb',
+                    'editorIndentGuide.background': '#e2e8f0',
+                    'editor.selectionBackground': '#bfdbfe',
+                  },
+                });
               } catch {
                 // Catch any theme definition error
               }
             }}
             onMount={(_, monaco) => {
               try {
-                monaco.editor.setTheme('qslate-dark');
+                monacoRef.current = monaco as unknown as typeof monacoType;
+                monaco.editor.setTheme(
+                  theme === 'light' ? 'qslate-light' : 'qslate-dark'
+                );
               } catch {
                 // Ignore
               }
@@ -249,11 +335,17 @@ const DynamicEditor = dynamic(
 );
 
 export function MonacoEditorWrapper(props: MonacoEditorProps) {
+  const { theme } = useAppearance();
   const [forceFallback, setForceFallback] = useState(false);
+  const activeTheme = props.theme ?? theme;
 
   if (forceFallback) {
     return (
-      <FallbackCodeEditor {...props} onRetry={() => setForceFallback(false)} />
+      <FallbackCodeEditor
+        {...props}
+        theme={activeTheme}
+        onRetry={() => setForceFallback(false)}
+      />
     );
   }
 
@@ -262,12 +354,14 @@ export function MonacoEditorWrapper(props: MonacoEditorProps) {
       fallback={() => (
         <FallbackCodeEditor
           {...props}
+          theme={activeTheme}
           onRetry={() => setForceFallback(false)}
         />
       )}
     >
       <DynamicEditor
         {...props}
+        theme={activeTheme}
         onErrorFallback={() => setForceFallback(true)}
       />
     </MonacoErrorBoundary>
