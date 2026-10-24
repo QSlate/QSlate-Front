@@ -79,6 +79,46 @@ export const DEFAULT_LAYOUT = [
   },
 ] satisfies readonly WidgetLayout[];
 
+export const KNOWN_WIDGET_LAYOUTS: readonly WidgetLayout[] = [
+  ...DEFAULT_LAYOUT,
+  {
+    i: 'monte-carlo',
+    x: 0,
+    y: 14,
+    w: 6,
+    h: 7,
+    minW: 4,
+    minH: 4,
+    isPinned: false,
+    isMinimized: false,
+    isLocked: false,
+  },
+  {
+    i: 'order-book',
+    x: 6,
+    y: 14,
+    w: 6,
+    h: 7,
+    minW: 4,
+    minH: 4,
+    isPinned: false,
+    isMinimized: false,
+    isLocked: false,
+  },
+  {
+    i: 'volatility-filter',
+    x: 0,
+    y: 21,
+    w: 12,
+    h: 6,
+    minW: 4,
+    minH: 3,
+    isPinned: false,
+    isMinimized: false,
+    isLocked: false,
+  },
+];
+
 export const LAYOUT_PRESETS = {
   default: DEFAULT_LAYOUT,
 } as const satisfies Readonly<Record<string, readonly WidgetLayout[]>>;

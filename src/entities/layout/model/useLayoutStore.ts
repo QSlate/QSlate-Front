@@ -10,7 +10,12 @@ import type {
   WidgetLayout,
   WidgetLayoutUpdate,
 } from './types';
-import { DEFAULT_LAYOUT, DEFAULT_LAYOUT_PRESET, LAYOUT_PRESETS } from './types';
+import {
+  DEFAULT_LAYOUT,
+  DEFAULT_LAYOUT_PRESET,
+  KNOWN_WIDGET_LAYOUTS,
+  LAYOUT_PRESETS,
+} from './types';
 
 type WidgetBooleanFlag = 'isMinimized' | 'isPinned';
 
@@ -104,7 +109,9 @@ export function sanitizeLayout(value: unknown): WidgetLayout[] {
   const restored = value.flatMap((item: unknown) => {
     if (!item || typeof item !== 'object') return [];
     const candidate = item as Record<string, unknown>;
-    const definition = DEFAULT_LAYOUT.find((entry) => entry.i === candidate.i);
+    const definition = KNOWN_WIDGET_LAYOUTS.find(
+      (entry) => entry.i === candidate.i
+    );
     if (!definition || seen.has(definition.i)) return [];
     const valid = ['x', 'y', 'w', 'h'].every(
       (key) =>
@@ -146,7 +153,7 @@ export const useLayoutStore = create<LayoutStore>()(
         addWidget: (widgetId: string) =>
           set(
             (state) => {
-              const definition = DEFAULT_LAYOUT.find(
+              const definition = KNOWN_WIDGET_LAYOUTS.find(
                 (item) => item.i === widgetId
               );
               if (
