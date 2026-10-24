@@ -1,8 +1,18 @@
 // @vitest-environment jsdom
-import { act, cleanup, render, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render as renderUI,
+  screen,
+} from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useUserStore } from '@/entities/user/model';
+import { ThemeSync } from '@/features/theme-sync';
+
+const render = (ui: ReactElement) => renderUI(ui, { wrapper: ThemeSync });
 
 import { ChartSkeleton } from '../ChartSkeleton';
 import { LightweightChart } from '../LightweightChart';
@@ -15,10 +25,16 @@ const mockSeriesInstance = {
 
 const mockTimeScale = {
   fitContent: vi.fn(),
+  setVisibleRange: vi.fn(),
+  subscribeVisibleTimeRangeChange: vi.fn(),
+  unsubscribeVisibleTimeRangeChange: vi.fn(),
 };
 
 const mockChartInstance = {
   addSeries: vi.fn(() => mockSeriesInstance),
+  subscribeCrosshairMove: vi.fn(),
+  unsubscribeCrosshairMove: vi.fn(),
+  removeSeries: vi.fn(),
   applyOptions: vi.fn(),
   remove: vi.fn(),
   resize: vi.fn(),
@@ -236,5 +252,145 @@ describe('LightweightChart Colorblind & Theme Integration', () => {
         color: '#38BDF8',
       })
     );
+  });
+});
+
+describe('Lab comparison and range controls', () => {
+  it('adds and removes a benchmark without recreating the primary chart', () => {
+    const data = [
+      { time: 100, value: 100 },
+      { time: 200, value: 110 },
+    ];
+    const benchmark = [
+      { time: 100, value: 100 },
+      { time: 200, value: 103 },
+    ];
+    const { rerender } = render(
+      <LightweightChart
+        data={data}
+        comparisonData={benchmark}
+        seriesType="line"
+        ariaLabel="Portfolio"
+      />
+    );
+    expect(mockChartInstance.addSeries).toHaveBeenCalledTimes(2);
+    expect(mockSeriesInstance.setData).toHaveBeenCalledWith(benchmark);
+    rerender(
+      <LightweightChart data={data} seriesType="line" ariaLabel="Portfolio" />
+    );
+    expect(mockChartInstance.removeSeries).toHaveBeenCalledTimes(1);
+    expect(mockChartInstance.remove).not.toHaveBeenCalled();
+  });
+
+  it('preserves a selected range when the container resizes', async () => {
+    const range = { from: 100, to: 200 };
+    render(
+      <LightweightChart
+        data={[
+          { time: 100, value: 1 },
+          { time: 200, value: 2 },
+        ]}
+        visibleRange={range}
+        seriesType="line"
+        ariaLabel="Portfolio"
+        options={{ layout: { fontSize: 10 } }}
+      />
+    );
+    expect(mockTimeScale.setVisibleRange).toHaveBeenLastCalledWith(range);
+    expect(mockChartInstance.applyOptions).toHaveBeenCalledWith(
+      expect.objectContaining({
+        layout: expect.objectContaining({
+          background: { type: 'solid', color: 'transparent' },
+        }),
+      })
+    );
+    mockResizeCallback!([
+      { contentRect: { width: 500, height: 250 } } as ResizeObserverEntry,
+    ]);
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(mockTimeScale.setVisibleRange).toHaveBeenLastCalledWith(range);
+  });
+});
+
+describe('chart interaction lifecycle', () => {
+  it('forwards time range updates and removes subscriptions on unmount', () => {
+    const onTimeRangeChange = vi.fn();
+    const { unmount } = render(
+      <LightweightChart
+        data={[{ time: 100, value: 1 }]}
+        seriesType="line"
+        ariaLabel="Portfolio"
+        onTimeRangeChange={onTimeRangeChange}
+      />
+    );
+    const handler =
+      mockTimeScale.subscribeVisibleTimeRangeChange.mock.calls[0][0];
+    const range = { from: 100, to: 200 };
+    act(() => handler(range));
+    expect(onTimeRangeChange).toHaveBeenCalledWith(range);
+    unmount();
+    expect(
+      mockTimeScale.unsubscribeVisibleTimeRangeChange
+    ).toHaveBeenCalledWith(handler);
+    expect(mockChartInstance.unsubscribeCrosshairMove).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides stale tooltip values after results change or pointer leaves the chart', () => {
+    const initial = [{ time: '2026-01-01', value: 100 }];
+    const { rerender } = render(
+      <LightweightChart
+        data={initial}
+        seriesType="line"
+        ariaLabel="Portfolio"
+      />
+    );
+    const container = screen.getByTestId('lightweight-chart-container');
+    Object.defineProperty(container, 'clientWidth', { value: 500 });
+    Object.defineProperty(container, 'clientHeight', { value: 250 });
+    const handler = mockChartInstance.subscribeCrosshairMove.mock.calls[0][0];
+    const point = {
+      time: '2026-01-01',
+      point: { x: 20, y: 20 },
+      seriesData: new Map([[mockSeriesInstance, { value: 100 }]]),
+    };
+    act(() => handler(point));
+    expect(container.querySelector('[aria-hidden="true"]')).not.toBeNull();
+    act(() => handler({ ...point, point: { x: 501, y: 20 } }));
+    expect(container.querySelector('[aria-hidden="true"]')).toBeNull();
+    act(() => handler(point));
+    fireEvent.pointerLeave(container);
+    expect(container.querySelector('[aria-hidden="true"]')).toBeNull();
+    act(() => handler(point));
+    rerender(
+      <LightweightChart
+        data={[{ time: '2026-01-01', value: 200 }]}
+        seriesType="line"
+        ariaLabel="Portfolio"
+      />
+    );
+    expect(container.querySelector('[aria-hidden="true"]')).toBeNull();
+  });
+
+  it('reconfigures the resize observer when auto sizing changes', () => {
+    const data = [{ time: 100, value: 1 }];
+    const { rerender } = render(
+      <LightweightChart
+        data={data}
+        autoSize={false}
+        seriesType="line"
+        ariaLabel="Portfolio"
+      />
+    );
+    expect(mockObserve).not.toHaveBeenCalled();
+    rerender(
+      <LightweightChart
+        data={data}
+        autoSize
+        seriesType="line"
+        ariaLabel="Portfolio"
+      />
+    );
+    expect(mockObserve).toHaveBeenCalledTimes(1);
+    expect(mockChartInstance.remove).toHaveBeenCalledTimes(1);
   });
 });
