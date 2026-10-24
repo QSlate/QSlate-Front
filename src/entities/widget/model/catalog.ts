@@ -63,6 +63,15 @@ export const LAB_WIDGET_INVENTORY: WidgetMetadata[] = [
     iconName: 'Cpu',
     isCore: false,
   },
+  {
+    id: 'tradingview-candles',
+    title: 'TradingView Market Terminal',
+    category: 'Core Analytics',
+    subtitle:
+      'Institutional OHLC candlesticks with multi-asset ticker selector',
+    iconName: 'CandlestickChart',
+    isCore: false,
+  },
 ];
 
 export const MARKETPLACE_MODULES: MarketplaceModule[] = [

@@ -117,6 +117,18 @@ export const KNOWN_WIDGET_LAYOUTS: readonly WidgetLayout[] = [
     isMinimized: false,
     isLocked: false,
   },
+  {
+    i: 'tradingview-candles',
+    x: 0,
+    y: 27,
+    w: 12,
+    h: 7,
+    minW: 4,
+    minH: 4,
+    isPinned: false,
+    isMinimized: false,
+    isLocked: false,
+  },
 ];
 
 export const LAYOUT_PRESETS = {

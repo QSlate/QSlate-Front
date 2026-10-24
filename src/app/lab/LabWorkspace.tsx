@@ -3,6 +3,7 @@
 import {
   Activity,
   BarChart3,
+  CandlestickChart,
   ChartNoAxesCombined,
   Cpu,
   Layers,
@@ -96,6 +97,15 @@ const widgets: Record<string, WidgetDefinition & { description: string }> = {
     description: 'Gaussian Mixture Model volatility state classification.',
     component: VolatilityFilterWidget,
     icon: <Cpu size={13} />,
+  },
+  'tradingview-candles': {
+    id: 'tradingview-candles',
+    title: 'TradingView Market Terminal',
+    description:
+      'Institutional OHLC candlesticks with multi-asset ticker selector.',
+    component: EquityWidget,
+    icon: <CandlestickChart size={13} />,
+    toolbar: EquityToolbar,
   },
 };
 

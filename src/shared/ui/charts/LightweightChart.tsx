@@ -105,6 +105,8 @@ export function LightweightChart<TData extends ChartDataPoint>({
     comparison?: number;
     data: ChartDataPoint[];
     seriesType: ChartSeriesType;
+    ohlc?:
+      { open: number; high: number; low: number; close: number } | undefined;
   } | null>(null);
   const crosshairCallback = useRef(onCrosshairMove);
   const rangeCallback = useRef(onTimeRangeChange);
@@ -196,6 +198,15 @@ export function LightweightChart<TData extends ChartDataPoint>({
     >[0] = (param) => {
       crosshairCallback.current?.(param);
       const point = param.seriesData.get(series);
+      const isCandle =
+        point &&
+        'close' in point &&
+        typeof (point as unknown as Record<string, unknown>).close === 'number';
+      const isVal =
+        point &&
+        'value' in point &&
+        typeof (point as unknown as Record<string, unknown>).value === 'number';
+
       if (
         !param.time ||
         !param.point ||
@@ -203,12 +214,24 @@ export function LightweightChart<TData extends ChartDataPoint>({
         param.point.y < 0 ||
         param.point.x > container.clientWidth ||
         param.point.y > container.clientHeight ||
-        !point ||
-        !('value' in point)
+        (!isCandle && !isVal)
       ) {
         setTooltip(null);
         return;
       }
+
+      const pointVal = isVal
+        ? (point as { value: number }).value
+        : (point as { close: number }).close;
+      const ohlc = isCandle
+        ? {
+            open: (point as { open: number }).open,
+            high: (point as { high: number }).high,
+            low: (point as { low: number }).low,
+            close: (point as { close: number }).close,
+          }
+        : undefined;
+
       const comparison = comparisonRef.current
         ? param.seriesData.get(comparisonRef.current)
         : undefined;
@@ -225,7 +248,8 @@ export function LightweightChart<TData extends ChartDataPoint>({
         time,
         data: initPropsRef.current.data,
         seriesType,
-        value: point.value,
+        value: pointVal,
+        ohlc,
         ...(comparison &&
         'value' in comparison &&
         typeof comparison.value === 'number'
@@ -396,11 +420,50 @@ export function LightweightChart<TData extends ChartDataPoint>({
       {tooltip && tooltip.data === data && tooltip.seriesType === seriesType ? (
         <div className={styles.tooltip} aria-hidden="true">
           <span>{tooltip.time} UTC</span>
-          <strong>
-            {tooltip.value.toLocaleString('en-US', {
-              maximumFractionDigits: 2,
-            })}
-          </strong>
+          {tooltip.ohlc ? (
+            <div className="flex flex-col gap-0.5 text-[11px] font-mono mt-1">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                <span>
+                  O:{' '}
+                  <strong className="text-white">
+                    {tooltip.ohlc.open.toLocaleString('en-US', {
+                      maximumFractionDigits: 2,
+                    })}
+                  </strong>
+                </span>
+                <span>
+                  H:{' '}
+                  <strong className="text-emerald-400">
+                    {tooltip.ohlc.high.toLocaleString('en-US', {
+                      maximumFractionDigits: 2,
+                    })}
+                  </strong>
+                </span>
+                <span>
+                  L:{' '}
+                  <strong className="text-rose-400">
+                    {tooltip.ohlc.low.toLocaleString('en-US', {
+                      maximumFractionDigits: 2,
+                    })}
+                  </strong>
+                </span>
+                <span>
+                  C:{' '}
+                  <strong className="text-white">
+                    {tooltip.ohlc.close.toLocaleString('en-US', {
+                      maximumFractionDigits: 2,
+                    })}
+                  </strong>
+                </span>
+              </div>
+            </div>
+          ) : (
+            <strong>
+              {tooltip.value.toLocaleString('en-US', {
+                maximumFractionDigits: 2,
+              })}
+            </strong>
+          )}
           {tooltip.comparison !== undefined ? (
             <span>
               {comparisonLabel}{' '}

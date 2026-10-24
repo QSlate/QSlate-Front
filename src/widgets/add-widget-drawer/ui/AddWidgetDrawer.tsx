@@ -3,6 +3,7 @@
 import {
   Activity,
   BarChart3,
+  CandlestickChart,
   Cpu,
   Layers,
   LineChart,
@@ -26,6 +27,9 @@ const WIDGET_ICONS: Record<string, ReactNode> = {
   'monte-carlo': <Activity size={15} className="text-cyan-400" />,
   'order-book': <Layers size={15} className="text-orange-400" />,
   'volatility-filter': <Cpu size={15} className="text-pink-400" />,
+  'tradingview-candles': (
+    <CandlestickChart size={15} className="text-emerald-400" />
+  ),
 };
 
 export function AddWidgetDrawer() {
