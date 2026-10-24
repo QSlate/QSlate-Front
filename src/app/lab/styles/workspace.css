@@ -1,0 +1,122 @@
+.lab-workspace {
+  padding: 0 10px 10px;
+}
+.lab-workspace-heading {
+  min-height: 39px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.lab-workspace-heading > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.lab-workspace-heading h1 {
+  font-weight: 500;
+  font-size: 12px;
+  margin: 0;
+  white-space: nowrap;
+}
+.lab-demo-badge {
+  font: 7px var(--lab-mono);
+  letter-spacing: 0.6px;
+  border: 1px solid var(--lab-border);
+  color: var(--lab-muted);
+  border-radius: 3px;
+  padding: 2px 4px;
+}
+.lab-run-status {
+  color: var(--lab-muted);
+  font-size: 9px;
+}
+.lab-layout-info {
+  font: 8px var(--lab-mono);
+  color: var(--lab-muted);
+  white-space: nowrap;
+}
+.lab-icon-button {
+  background: transparent;
+  color: var(--lab-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 4px;
+}
+.lab-icon-button:hover {
+  color: var(--lab-text);
+  background: var(--lab-hover);
+}
+.lab-shell .lab-widget {
+  background: linear-gradient(155deg, var(--lab-panel), var(--lab-bg));
+  border: 1px solid var(--lab-border);
+  border-top-color: color-mix(in srgb, var(--lab-border) 75%, var(--lab-muted));
+  box-shadow:
+    0 1px 1px #00000018,
+    inset 0 1px 0 #ffffff03;
+  border-radius: 7px;
+  backdrop-filter: none;
+}
+.lab-shell .lab-widget:hover {
+  border-color: color-mix(in srgb, var(--lab-border) 75%, var(--lab-muted));
+}
+.lab-shell .lab-widget-header {
+  height: auto;
+  min-height: 32px;
+  flex-wrap: wrap;
+  padding: 0 7px;
+  background: transparent;
+  border-color: var(--lab-divider);
+  gap: 5px;
+}
+.lab-shell .widget-drag-handle {
+  gap: 6px;
+}
+.lab-shell .widget-drag-handle > svg {
+  width: 10px;
+  height: 12px;
+  color: var(--lab-muted);
+}
+.lab-widget-icon {
+  color: var(--lab-blue);
+}
+.lab-shell .lab-widget-title {
+  font:
+    10px var(--font-inter),
+    sans-serif;
+  color: var(--lab-text);
+  letter-spacing: 0;
+}
+.lab-shell .widget-action-bar {
+  margin-left: 0;
+  gap: 1px;
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.lab-shell .widget-action-bar > button {
+  color: var(--lab-muted);
+  padding: 4px;
+  min-width: 24px;
+  min-height: 24px;
+}
+.lab-shell .widget-action-bar > button:hover {
+  color: var(--lab-text);
+  background: var(--lab-hover);
+}
+.lab-shell .widget-action-bar > button > svg {
+  width: 11px;
+  height: 11px;
+}
+.lab-shell .lab-pin {
+  display: inline-flex;
+}
+
+.lab-shell .lab-widget-content {
+  padding: 10px;
+}

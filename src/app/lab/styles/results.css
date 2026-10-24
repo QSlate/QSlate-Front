@@ -1,0 +1,291 @@
+.lab-equity-toolbar {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.lab-oos {
+  background: color-mix(in srgb, var(--lab-positive) 12%, transparent);
+  border-radius: 3px;
+  padding: 2px 5px;
+  font: 8px var(--lab-mono);
+  white-space: nowrap;
+}
+.lab-ranges {
+  display: flex;
+  padding: 1px;
+  border: 1px solid var(--lab-border);
+  border-radius: 4px;
+}
+.lab-ranges button {
+  background: transparent;
+  color: var(--lab-muted);
+  padding: 1px 4px;
+  min-width: 24px;
+  min-height: 22px;
+  border-radius: 2px;
+  font: 8px var(--lab-mono);
+}
+.lab-ranges button[aria-pressed='true'] {
+  color: var(--lab-text);
+  background: var(--lab-hover);
+}
+.lab-equity-body {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.lab-chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 9px;
+  padding: 0 0 6px;
+}
+.lab-chart-legend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.lab-chart-legend i {
+  width: 10px;
+  height: 2px;
+  background: var(--lab-equity-line);
+}
+.lab-chart-legend span + span i {
+  background: #8b9099;
+  height: 0;
+  border-top: 1px dashed #8b9099;
+}
+.lab-chart {
+  flex: 1;
+  min-height: 0;
+}
+.lab-drawdown {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0 1px 9px;
+  min-height: 0;
+}
+.lab-chart-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+  color: var(--lab-muted);
+  font-size: 9px;
+  white-space: nowrap;
+  flex-wrap: wrap;
+}
+.lab-chart-caption strong {
+  font-weight: 400;
+  color: var(--lab-text);
+}
+.lab-bar-chart {
+  position: relative;
+  flex: 1;
+  margin: 17px 4px 0 34px;
+}
+.lab-bar-gridline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--lab-divider);
+}
+.lab-bar-gridline > span {
+  position: absolute;
+  right: calc(100% + 7px);
+  top: -7px;
+  color: var(--lab-muted);
+  font: 9px var(--lab-mono);
+}
+.lab-bars {
+  position: absolute;
+  inset: 0;
+}
+.lab-bar {
+  position: absolute;
+  padding: 0;
+  border-radius: 1px;
+  opacity: 0.94;
+  min-height: 1px;
+}
+.lab-bar:hover,
+.lab-bar:focus-visible {
+  opacity: 1;
+  filter: brightness(1.2);
+  z-index: 1;
+}
+.lab-bar.is-positive {
+  background: var(--lab-positive);
+}
+.lab-bar.is-negative {
+  background: var(--lab-negative);
+}
+.lab-bar-tooltip {
+  position: absolute;
+  top: 4px;
+  left: 5px;
+  pointer-events: none;
+  background: var(--lab-panel);
+  border: 1px solid var(--lab-border);
+  border-radius: 4px;
+  padding: 5px 8px;
+  font: 9px var(--lab-mono);
+  z-index: 2;
+  box-shadow: 0 3px 10px #0003;
+}
+.lab-bar-tooltip strong {
+  margin-left: 8px;
+}
+.lab-bar-labels {
+  position: relative;
+  height: 12px;
+  flex-shrink: 0;
+  margin: 7px 5px 0 34px;
+  font: 8px var(--lab-mono);
+  color: var(--lab-muted);
+}
+.lab-metrics {
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--lab-border) transparent;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(5, minmax(43px, 1fr));
+  border: 1px solid var(--lab-border);
+  border-radius: 5px;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+}
+.lab-metrics > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 7px 9px;
+}
+.lab-metrics > div:nth-child(odd) {
+  border-right: 1px solid var(--lab-divider);
+}
+.lab-metrics > div:nth-child(n + 3) {
+  border-top: 1px solid var(--lab-divider);
+}
+.lab-metrics dt {
+  color: var(--lab-muted);
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+.lab-metrics dd {
+  font: 13px var(--lab-mono);
+  margin: 0;
+}
+.lab-trades {
+  height: 100%;
+  overflow: auto;
+  border: 1px solid var(--lab-border);
+  border-radius: 5px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--lab-border) transparent;
+}
+.lab-trades table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font: 9px var(--lab-mono);
+  white-space: nowrap;
+  text-align: left;
+}
+.lab-trades th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--lab-panel);
+  font-size: 8px;
+  letter-spacing: 0.8px;
+  color: var(--lab-muted);
+  text-transform: uppercase;
+  font-weight: 400;
+  padding: 6px 7px;
+  border-bottom: 1px solid var(--lab-divider);
+}
+.lab-trades td {
+  padding: 4px 7px;
+  border-bottom: 1px solid var(--lab-divider);
+}
+.lab-trades td:first-child,
+.lab-trades td:nth-last-child(-n + 2) {
+  color: var(--lab-muted);
+}
+.lab-trades tbody tr:hover {
+  background: var(--lab-hover);
+}
+.lab-trades td:nth-child(n + 4):nth-child(-n + 7),
+.lab-trades th:nth-child(n + 4):nth-child(-n + 7) {
+  text-align: right;
+}
+.lab-trades abbr {
+  text-decoration: none;
+  cursor: help;
+}
+.lab-side {
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 8px;
+  background: color-mix(in srgb, var(--lab-positive) 12%, transparent);
+}
+.lab-side.lab-negative {
+  background: color-mix(in srgb, var(--lab-negative) 12%, transparent);
+}
+.lab-simulated {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--lab-muted);
+  font: 7px var(--lab-mono);
+  padding-right: 6px;
+}
+.lab-simulated i {
+  width: 4px;
+  height: 4px;
+}
+.lab-trades-footer {
+  padding: 8px;
+  color: var(--lab-muted);
+  font: 9px var(--lab-mono);
+}
+.lab-bar-labels > span {
+  position: absolute;
+  white-space: nowrap;
+}
+.lab-hash-button {
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  background: transparent;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.lab-hash-popover {
+  max-width: calc(100vw - 32px);
+  margin: auto;
+  padding: 14px 18px;
+  border: 1px solid var(--lab-border);
+  border-radius: 7px;
+  color: var(--lab-text);
+  background: var(--lab-panel);
+  box-shadow: 0 12px 40px #0005;
+}
+.lab-hash-popover span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--lab-muted);
+  font-size: 10px;
+}
+.lab-hash-popover code {
+  font: 12px var(--lab-mono);
+  overflow-wrap: anywhere;
+  user-select: all;
+}

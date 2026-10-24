@@ -2,31 +2,69 @@
 
 import { RotateCcw } from 'lucide-react';
 
-import { useLayoutStore } from '@/entities/layout';
+import { DEFAULT_LAYOUT, useLayoutStore } from '@/entities/layout';
+import { useBacktest } from '@/features/run-backtest/BacktestProvider';
+import { useHydratedStore } from '@/shared/lib/store';
 
 export function LabWorkspaceHeader() {
+  const layout = useHydratedStore(
+    useLayoutStore,
+    (state) => state.layout,
+    DEFAULT_LAYOUT
+  );
   const resetLayout = useLayoutStore((state) => state.resetLayout);
-
+  const { status, config, result } = useBacktest();
+  const isDefault =
+    layout.length === DEFAULT_LAYOUT.length &&
+    layout.every((item, index) => {
+      const original = DEFAULT_LAYOUT[index];
+      return (
+        item.i === original.i &&
+        item.x === original.x &&
+        item.y === original.y &&
+        item.w === original.w &&
+        item.h === original.h &&
+        !item.isMinimized &&
+        !item.isPinned
+      );
+    });
+  const dirty =
+    config.strategyId !== result.config.strategyId ||
+    config.startDate !== result.config.startDate ||
+    config.endDate !== result.config.endDate ||
+    config.timeframe !== result.config.timeframe ||
+    config.capital !== result.config.capital;
   return (
-    <div className="flex items-center justify-between pb-3 mb-2 border-b border-white/[0.06] text-xs font-mono select-none">
-      <div className="flex items-center gap-3">
-        <span className="font-sans font-semibold text-sm text-white">
-          Lab Workspace
+    <div className="lab-workspace-heading">
+      <div>
+        <h1>Lab Workspace</h1>
+        <span className="lab-demo-badge">
+          {result.source === 'mock' ? 'DEMO' : 'BACKTEST'}
         </span>
-        <span className="text-zinc-500">
-          · 3 widgets (TradingView Engine active)
+        <span className="lab-run-status" role="status">
+          {status === 'running'
+            ? 'Simulating backtest…'
+            : dirty
+              ? 'Parameters changed · run to update'
+              : status === 'success'
+                ? 'Simulation complete'
+                : ''}
         </span>
       </div>
-
-      <button
-        type="button"
-        onClick={() => resetLayout('default')}
-        className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white transition-colors border border-white/[0.06]"
-        title="Reset grid layout to defaults"
-      >
-        <RotateCcw className="h-3 w-3 text-zinc-400" />
-        <span>Reset Layout</span>
-      </button>
+      <div className="lab-layout-info">
+        <span>
+          {layout.length} widgets · layout: {isDefault ? 'default' : 'custom'}
+        </span>
+        <button
+          type="button"
+          className="lab-icon-button"
+          title="Reset layout"
+          aria-label="Reset layout"
+          onClick={() => resetLayout()}
+        >
+          <RotateCcw size={12} />
+        </button>
+      </div>
     </div>
   );
 }
