@@ -30,17 +30,21 @@ function TradingViewRealTimeChartComponent({
   const containerRef = useRef<HTMLDivElement>(null);
   const { theme: storeTheme } = useAppearance();
   const activeTheme = themeProp ?? storeTheme;
-  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
 
   const tvSymbol = toTradingViewSymbol(symbol);
   const tvInterval = INTERVAL_MAP[interval] ?? 'D';
+  const currentKey = `${tvSymbol}-${tvInterval}-${activeTheme}`;
+  const isScriptLoaded = loadedKey === currentKey;
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    // Clear any previous widget DOM
-    container.innerHTML = '';
+    // Clear any previous widget DOM inside the isolated container
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
 
     const widgetHolder = document.createElement('div');
     widgetHolder.className = 'tradingview-widget-container__widget';
@@ -73,28 +77,39 @@ function TradingViewRealTimeChartComponent({
     });
 
     script.onload = () => {
-      setIsScriptLoaded(true);
+      setLoadedKey(currentKey);
     };
 
     container.appendChild(script);
 
     return () => {
-      container.innerHTML = '';
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
     };
-  }, [tvSymbol, tvInterval, activeTheme]);
+  }, [tvSymbol, tvInterval, activeTheme, currentKey]);
 
   return (
     <div
-      className={`tradingview-widget-container relative w-full h-full min-h-[300px] overflow-hidden select-none ${
+      className={`relative w-full h-full min-h-[300px] overflow-hidden select-none ${
         className ?? ''
       }`}
-      ref={containerRef}
       data-testid="tradingview-live-container"
       data-symbol={tvSymbol}
       data-theme={activeTheme}
     >
+      {/* 
+        Dedicated leaf DOM node strictly reserved for TradingView script injection.
+        Must NEVER have React children so React never attempts to reconcile or remove external DOM nodes.
+      */}
+      <div
+        ref={containerRef}
+        className="tradingview-widget-container w-full h-full"
+      />
+
+      {/* React-managed loading overlay as an isolated sibling */}
       {!isScriptLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center font-mono text-xs text-zinc-500 bg-transparent">
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-center font-mono text-xs text-zinc-500 bg-transparent">
           <span className="animate-pulse">
             Loading TradingView Live Market Feed…
           </span>
