@@ -368,6 +368,11 @@ export function LightweightChart<TData extends ChartDataPoint>({
       });
   }, [activeTheme, options, seriesType, autoSize]);
 
+  const seriesOptionsKey = useMemo(
+    () => JSON.stringify(seriesOptions ?? {}),
+    [seriesOptions]
+  );
+
   useEffect(() => {
     if (!seriesRef.current) return;
 
@@ -404,7 +409,8 @@ export function LightweightChart<TData extends ChartDataPoint>({
         });
         break;
     }
-  }, [seriesColors, seriesType, seriesOptions, autoSize]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seriesColors, seriesType, seriesOptionsKey, autoSize]);
 
   return (
     <div

@@ -1,7 +1,7 @@
 'use client';
 
 import type { ChartOptions, DeepPartial } from 'lightweight-charts';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import {
   generateMockCandles,
@@ -28,6 +28,7 @@ export function EquityWidget() {
     showEMA21,
   } = useResultControls();
   const { theme, colorblindMode } = useAppearance();
+  const isLight = theme === 'light';
   const isColorblind = colorblindMode === 'orange-blue';
 
   const [hoveredCandle, setHoveredCandle] = useState<{
@@ -128,6 +129,70 @@ export function EquityWidget() {
     [theme, colorblindMode]
   );
 
+  const positiveColor = isColorblind ? '#38BDF8' : '#10B981';
+  const negativeColor = isColorblind ? '#F59E0B' : '#F43F5E';
+
+  const candleSeriesOptions = useMemo(
+    () => ({
+      upColor: positiveColor,
+      downColor: negativeColor,
+      borderUpColor: positiveColor,
+      borderDownColor: negativeColor,
+      wickUpColor: positiveColor,
+      wickDownColor: negativeColor,
+    }),
+    [positiveColor, negativeColor]
+  );
+
+  const handleCrosshairMove = useCallback((param: unknown) => {
+    const p = param as {
+      seriesData?: Map<
+        unknown,
+        {
+          open?: number;
+          high?: number;
+          low?: number;
+          close?: number;
+          time?: number;
+        }
+      >;
+    };
+    if (!p?.seriesData) return;
+    for (const val of p.seriesData.values()) {
+      if (
+        val &&
+        typeof val.close === 'number' &&
+        typeof val.open === 'number'
+      ) {
+        const open = val.open;
+        const close = val.close;
+        const high = val.high ?? close;
+        const low = val.low ?? open;
+        const time = val.time ?? 0;
+
+        setHoveredCandle((prev) => {
+          if (
+            prev &&
+            prev.time === time &&
+            prev.close === close &&
+            prev.open === open
+          ) {
+            return prev;
+          }
+          return {
+            open,
+            high,
+            low,
+            close,
+            time,
+          };
+        });
+        return;
+      }
+    }
+    setHoveredCandle((prev) => (prev === null ? null : null));
+  }, []);
+
   const visibleRange = useMemo(() => {
     if (range === 'ALL' || !result.equity.length) return null;
     const days = { '1D': 1, '1W': 7, '1M': 30, '1Y': 365 }[range];
@@ -138,25 +203,40 @@ export function EquityWidget() {
   if (!result.equity.length)
     return <EmptyState message="No equity data for this backtest." />;
 
-  const positiveColor = isColorblind ? '#38BDF8' : '#10B981';
-  const negativeColor = isColorblind ? '#F59E0B' : '#F43F5E';
-
   return (
     <div className="lab-equity-body" aria-busy={status === 'running'}>
       {chartMode === 'candles' ? (
         /* TradingView Candlestick Header HUD */
-        <div className="flex flex-col gap-1.5 pb-2 border-b border-white/[0.04]">
+        <div
+          className={`flex flex-col gap-1.5 pb-2 border-b ${
+            isLight ? 'border-zinc-200' : 'border-white/[0.04]'
+          }`}
+        >
           <div className="flex items-center justify-between text-xs font-mono">
             {/* Left: Symbol & Exchange & Live Quote */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-white">
+              <span
+                className={`font-semibold ${
+                  isLight ? 'text-zinc-900' : 'text-white'
+                }`}
+              >
                 {currentTickerInfo.symbol}
               </span>
-              <span className="text-[10px] px-1 py-0.2 rounded bg-white/[0.06] text-zinc-400">
+              <span
+                className={`text-[10px] px-1 py-0.2 rounded ${
+                  isLight
+                    ? 'bg-zinc-100 text-zinc-600'
+                    : 'bg-white/[0.06] text-zinc-400'
+                }`}
+              >
                 {currentTickerInfo.exchange} · {candleInterval}
               </span>
-              <span className="text-zinc-500">·</span>
-              <span className="text-white font-medium">
+              <span className="text-zinc-400">·</span>
+              <span
+                className={`font-medium ${
+                  isLight ? 'text-zinc-900' : 'text-white'
+                }`}
+              >
                 $
                 {currentTickerInfo.basePrice.toLocaleString('en-US', {
                   minimumFractionDigits: currentTickerInfo.decimals,
@@ -190,8 +270,12 @@ export function EquityWidget() {
                     onClick={() => setSelectedTicker(symbol)}
                     className={`px-1.5 py-0.5 rounded transition-colors ${
                       isActive
-                        ? 'bg-blue-600/30 text-blue-400 border border-blue-500/40 font-semibold'
-                        : 'bg-white/[0.03] text-zinc-400 hover:text-white hover:bg-white/[0.08]'
+                        ? isLight
+                          ? 'bg-blue-100 text-blue-700 border border-blue-300 font-semibold'
+                          : 'bg-blue-600/30 text-blue-400 border border-blue-500/40 font-semibold'
+                        : isLight
+                          ? 'bg-zinc-100 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200'
+                          : 'bg-white/[0.03] text-zinc-400 hover:text-white hover:bg-white/[0.08]'
                     }`}
                   >
                     {shortLabel}
@@ -203,10 +287,14 @@ export function EquityWidget() {
 
           {/* Active OHLC Readout Bar */}
           {activeCandle && (
-            <div className="flex items-center gap-3 text-[11px] font-mono text-zinc-400">
+            <div
+              className={`flex items-center gap-3 text-[11px] font-mono ${
+                isLight ? 'text-zinc-600' : 'text-zinc-400'
+              }`}
+            >
               <span>
                 O:{' '}
-                <strong className="text-white">
+                <strong className={isLight ? 'text-zinc-900' : 'text-white'}>
                   {activeCandle.open.toFixed(currentTickerInfo.decimals)}
                 </strong>
               </span>
@@ -224,11 +312,11 @@ export function EquityWidget() {
               </span>
               <span>
                 C:{' '}
-                <strong className="text-white">
+                <strong className={isLight ? 'text-zinc-900' : 'text-white'}>
                   {activeCandle.close.toFixed(currentTickerInfo.decimals)}
                 </strong>
               </span>
-              <span className="text-zinc-500">|</span>
+              <span className="text-zinc-400">|</span>
               <span
                 className="font-semibold text-[10px]"
                 style={{
@@ -273,46 +361,8 @@ export function EquityWidget() {
             comparisonLabel="EMA 21"
             ariaLabel={`Interactive TradingView Candlestick Chart for ${selectedTicker}`}
             options={options}
-            seriesOptions={{
-              upColor: positiveColor,
-              downColor: negativeColor,
-              borderUpColor: positiveColor,
-              borderDownColor: negativeColor,
-              wickUpColor: positiveColor,
-              wickDownColor: negativeColor,
-            }}
-            onCrosshairMove={(param: unknown) => {
-              const p = param as {
-                seriesData?: Map<
-                  unknown,
-                  {
-                    open?: number;
-                    high?: number;
-                    low?: number;
-                    close?: number;
-                    time?: number;
-                  }
-                >;
-              };
-              if (!p?.seriesData) return;
-              for (const val of p.seriesData.values()) {
-                if (
-                  val &&
-                  typeof val.close === 'number' &&
-                  typeof val.open === 'number'
-                ) {
-                  setHoveredCandle({
-                    open: val.open,
-                    high: val.high ?? val.close,
-                    low: val.low ?? val.open,
-                    close: val.close,
-                    time: val.time ?? 0,
-                  });
-                  return;
-                }
-              }
-              setHoveredCandle(null);
-            }}
+            seriesOptions={candleSeriesOptions}
+            onCrosshairMove={handleCrosshairMove}
           />
         ) : (
           <DynamicLightweightChart
