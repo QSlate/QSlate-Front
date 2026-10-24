@@ -6,15 +6,17 @@ import {
   Code2,
   History,
   LayoutGrid,
+  LogOut,
   Moon,
   Settings2,
   Store,
   Sun,
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
-import { useUserStore } from '@/entities/user/model';
+import { useAuthStore, useUserStore } from '@/entities/user/model';
+import { apiClient } from '@/shared/api';
 import { useHydratedStore } from '@/shared/lib/store';
 
 const navigation = [
@@ -25,6 +27,7 @@ const navigation = [
 ];
 
 export function LabSidebar() {
+  const router = useRouter();
   const pathname = usePathname();
   const collapsed = useHydratedStore(
     useUserStore,
@@ -32,6 +35,7 @@ export function LabSidebar() {
     false
   );
   const theme = useHydratedStore(useUserStore, (state) => state.theme, 'dark');
+  const authUser = useHydratedStore(useAuthStore, (state) => state.user, null);
   const session = useHydratedStore(
     useUserStore,
     (state) => state.session,
@@ -39,15 +43,35 @@ export function LabSidebar() {
   );
   const toggleTheme = useUserStore((state) => state.toggleTheme);
   const toggleSidebar = useUserStore((state) => state.toggleSidebar);
+
   const name =
-    typeof session?.name === 'string' ? session.name : 'Enzo Gallini';
+    authUser?.display_name ||
+    authUser?.username ||
+    (typeof session?.name === 'string' ? session.name : 'Quant Researcher');
+
   const role =
-    typeof session?.role === 'string' ? session.role : 'Quant Researcher';
-  const initials = name
-    .split(' ')
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join('');
+    authUser?.email ||
+    (typeof session?.role === 'string' ? session.role : 'Quantitative Analyst');
+
+  const initials = (
+    name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((word) => word[0])
+      .join('') || 'QS'
+  ).toUpperCase();
+
+  const handleLogout = async () => {
+    try {
+      await apiClient.logout();
+    } catch {
+      // Ignore network errors on logout
+    } finally {
+      useAuthStore.getState().clearAuth();
+      router.push('/login');
+    }
+  };
 
   return (
     <aside
@@ -100,7 +124,7 @@ export function LabSidebar() {
             <span>gVisor Cluster:</span>
             <span className="lab-positive">99.98% green</span>
           </div>
-          {!session ? (
+          {!authUser && !session ? (
             <span className="lab-demo-user sidebar-label">
               Demo workspace · local data
             </span>
@@ -118,6 +142,15 @@ export function LabSidebar() {
             <span className="sidebar-label">
               {theme === 'dark' ? 'Light' : 'Dark'}
             </span>
+          </button>
+          <button
+            type="button"
+            className="lab-button lab-logout-button"
+            onClick={handleLogout}
+            aria-label="Log out of session"
+            title="Log out of session"
+          >
+            <LogOut size={14} />
           </button>
           <button
             type="button"
