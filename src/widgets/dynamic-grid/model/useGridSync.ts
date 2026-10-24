@@ -13,6 +13,8 @@ import { useLayoutStore, type WidgetLayout } from '@/entities/layout/model';
 
 import {
   GRID_BREAKPOINTS,
+  GRID_MARGIN,
+  GRID_ROW_HEIGHT,
   type GridBreakpoint,
   type WidgetDefinition,
 } from '../types';
@@ -21,6 +23,7 @@ export interface UseGridSyncOptions {
   widgets?: Record<string, WidgetDefinition> | undefined;
   isEditable?: boolean | undefined;
   onLayoutCommit?: ((layouts: WidgetLayout[]) => void) | undefined;
+  rowHeight?: number | undefined;
 }
 
 export interface UseGridSyncReturn {
@@ -36,7 +39,12 @@ export interface UseGridSyncReturn {
 export function useGridSync(
   options: UseGridSyncOptions = {}
 ): UseGridSyncReturn {
-  const { widgets, isEditable = true, onLayoutCommit } = options;
+  const {
+    widgets,
+    isEditable = true,
+    onLayoutCommit,
+    rowHeight = GRID_ROW_HEIGHT,
+  } = options;
 
   const [currentBreakpoint, setCurrentBreakpoint] =
     useState<GridBreakpoint>('lg');
@@ -48,35 +56,41 @@ export function useGridSync(
     }))
   );
 
-  const widgetLayouts = useMemo<Readonly<Record<string, WidgetLayout>>>(
-    () =>
-      Object.fromEntries(storeLayout.map((item) => [item.i, item] as const)),
-    [storeLayout]
-  );
+  const widgetLayouts = useMemo<Readonly<Record<string, WidgetLayout>>>(() => {
+    const layouts: Record<string, WidgetLayout> = Object.fromEntries(
+      storeLayout.map((item) => [item.i, item] as const)
+    );
+
+    for (const [id, widget] of Object.entries(widgets ?? {})) {
+      layouts[id] = {
+        ...widget.defaultLayout,
+        ...layouts[id],
+        i: id,
+        x: layouts[id]?.x ?? widget.defaultLayout?.x ?? 0,
+        y: layouts[id]?.y ?? widget.defaultLayout?.y ?? 0,
+        w: layouts[id]?.w ?? widget.defaultLayout?.w ?? 4,
+        h: layouts[id]?.h ?? widget.defaultLayout?.h ?? 4,
+        isLocked:
+          layouts[id]?.isLocked ??
+          widget.defaultLayout?.isLocked ??
+          widget.isLocked ??
+          false,
+      };
+    }
+
+    return layouts;
+  }, [storeLayout, widgets]);
 
   const rglLayout: Layout = useMemo(() => {
-    const widgetIds = new Set<string>([
-      ...Object.keys(widgetLayouts),
-      ...(widgets ? Object.keys(widgets) : []),
-    ]);
+    const widgetIds = new Set(
+      widgets ? Object.keys(widgets) : Object.keys(widgetLayouts)
+    );
 
     return Array.from(widgetIds).map((id): LayoutItem => {
       const layout = widgetLayouts[id];
-      const widgetDef = widgets?.[id];
-      const defaultLayout = widgetDef?.defaultLayout;
-
-      const x = layout?.x ?? defaultLayout?.x ?? 0;
-      const y = layout?.y ?? defaultLayout?.y ?? 0;
-      const w = layout?.w ?? defaultLayout?.w ?? 4;
-      const rawH = layout?.h ?? defaultLayout?.h ?? 4;
-      const isMinimized =
-        layout?.isMinimized ?? defaultLayout?.isMinimized ?? false;
-      const isPinned = layout?.isPinned ?? defaultLayout?.isPinned ?? false;
-      const isLocked =
-        layout?.isLocked ??
-        defaultLayout?.isLocked ??
-        widgetDef?.isLocked ??
-        false;
+      const isMinimized = layout.isMinimized ?? false;
+      const isPinned = layout.isPinned ?? false;
+      const isLocked = layout.isLocked ?? false;
 
       const isStatic = !isEditable || isPinned || isLocked;
       const isDraggable = isEditable && !isPinned && !isLocked;
@@ -84,101 +98,135 @@ export function useGridSync(
 
       const item: LayoutItem = {
         i: id,
-        x,
-        y,
-        w,
-        h: isMinimized ? 1 : rawH,
-        minW: layout?.minW ?? defaultLayout?.minW ?? 2,
-        minH: isMinimized ? 1 : (layout?.minH ?? defaultLayout?.minH ?? 2),
+        x: layout.x,
+        y: layout.y,
+        w: layout.w,
+        h: isMinimized
+          ? Math.ceil((36 + GRID_MARGIN[1]) / (rowHeight + GRID_MARGIN[1]))
+          : layout.h,
+        minW: layout.minW ?? 2,
+        minH: isMinimized ? 1 : (layout.minH ?? 2),
         static: isStatic,
         isDraggable,
         isResizable,
       };
 
-      const maxW = layout?.maxW ?? defaultLayout?.maxW;
+      const maxW = layout.maxW;
       if (maxW !== undefined) {
         item.maxW = maxW;
       }
 
-      const maxH = isMinimized ? 1 : (layout?.maxH ?? defaultLayout?.maxH);
+      const maxH = isMinimized ? item.h : layout.maxH;
       if (maxH !== undefined) {
         item.maxH = maxH;
       }
 
       return item;
     });
-  }, [isEditable, widgetLayouts, widgets]);
+  }, [isEditable, rowHeight, widgetLayouts, widgets]);
 
   const rglLayouts: ResponsiveLayouts = useMemo(() => {
     return (Object.keys(GRID_BREAKPOINTS) as GridBreakpoint[]).reduce(
       (acc, bp) => {
-        acc[bp] = rglLayout;
+        if (bp === 'sm' || bp === 'xs') {
+          let nextRow = 0;
+          acc[bp] = [...rglLayout]
+            .sort((a, b) => a.y - b.y || a.x - b.x)
+            .map((item) => {
+              const minimizedHeight = Math.ceil(
+                (72 + GRID_MARGIN[1]) / (rowHeight + GRID_MARGIN[1])
+              );
+              const height = widgetLayouts[item.i].isMinimized
+                ? minimizedHeight
+                : item.h;
+              const stacked = {
+                ...item,
+                x: 0,
+                y: nextRow,
+                w: 1,
+                h: height,
+                minW: 1,
+                maxW: 1,
+                ...(widgetLayouts[item.i].isMinimized ? { maxH: height } : {}),
+                static: true,
+                isDraggable: false,
+                isResizable: false,
+              };
+              nextRow += height;
+              return stacked;
+            });
+        } else {
+          acc[bp] = rglLayout;
+        }
         return acc;
       },
       {} as ResponsiveLayouts
     );
-  }, [rglLayout]);
+  }, [rglLayout, rowHeight, widgetLayouts]);
 
   const commitLayoutChanges = useCallback(
     (updatedLayout: Layout) => {
-      const currentById = new Map(
-        useLayoutStore.getState().layout.map((item) => [item.i, item])
+      if (
+        !isEditable ||
+        currentBreakpoint === 'sm' ||
+        currentBreakpoint === 'xs'
+      )
+        return;
+      const currentLayout = useLayoutStore.getState().layout;
+      const currentById = new Map(currentLayout.map((item) => [item.i, item]));
+      const updates = new Map<string, WidgetLayout>();
+
+      for (const item of updatedLayout) {
+        // Ignore stale callbacks for widgets closed during an interaction.
+        if (!widgetLayouts[item.i] || (widgets && !widgets[item.i])) continue;
+        if (
+          storeLayout.some((entry) => entry.i === item.i) &&
+          !currentById.has(item.i)
+        )
+          continue;
+        const existing = currentById.get(item.i);
+        const resolved = existing ?? widgetLayouts[item.i];
+        if (resolved.isPinned || resolved.isLocked) continue;
+        const h = resolved.isMinimized ? resolved.h : item.h;
+        if (
+          existing &&
+          existing.x === item.x &&
+          existing.y === item.y &&
+          existing.w === item.w &&
+          existing.h === h
+        )
+          continue;
+
+        updates.set(item.i, {
+          ...resolved,
+          x: item.x,
+          y: item.y,
+          w: item.w,
+          h,
+        });
+      }
+
+      if (!updates.size) return;
+
+      const updatedList = currentLayout.map(
+        (item) => updates.get(item.i) ?? item
       );
-
-      const updatedList: WidgetLayout[] = updatedLayout.map(
-        (item: LayoutItem) => {
-          const existing = currentById.get(item.i);
-          const widgetDef = widgets?.[item.i];
-          const defaultLayout = widgetDef?.defaultLayout;
-
-          const isMinimized =
-            existing?.isMinimized ?? defaultLayout?.isMinimized ?? false;
-
-          const widgetLayout: WidgetLayout = {
-            i: item.i,
-            x: item.x,
-            y: item.y,
-            w: item.w,
-            h: isMinimized
-              ? (existing?.h ?? defaultLayout?.h ?? item.h)
-              : item.h,
-            isPinned: existing?.isPinned ?? defaultLayout?.isPinned ?? false,
-            isMinimized,
-            isLocked:
-              existing?.isLocked ??
-              defaultLayout?.isLocked ??
-              widgetDef?.isLocked ??
-              false,
-          };
-
-          const minW = existing?.minW ?? defaultLayout?.minW;
-          if (minW !== undefined) {
-            widgetLayout.minW = minW;
-          }
-
-          const minH = existing?.minH ?? defaultLayout?.minH;
-          if (minH !== undefined) {
-            widgetLayout.minH = minH;
-          }
-
-          const maxW = existing?.maxW ?? defaultLayout?.maxW;
-          if (maxW !== undefined) {
-            widgetLayout.maxW = maxW;
-          }
-
-          const maxH = existing?.maxH ?? defaultLayout?.maxH;
-          if (maxH !== undefined) {
-            widgetLayout.maxH = maxH;
-          }
-
-          return widgetLayout;
-        }
-      );
+      for (const [id, item] of updates) {
+        if (!currentById.has(id)) updatedList.push(item);
+      }
 
       setLayout(updatedList);
       onLayoutCommit?.(updatedList);
     },
-    [onLayoutCommit, setLayout, widgets]
+    [
+      currentBreakpoint,
+      isEditable,
+      onLayoutCommit,
+      setLayout,
+      storeLayout,
+      widgetLayouts,
+      widgets,
+    ]
   );
 
   const handleDragStop: NonNullable<ResponsiveGridLayoutProps['onDragStop']> =
@@ -199,7 +247,7 @@ export function useGridSync(
   );
 
   const handleBreakpointChange = useCallback((newBreakpoint: string) => {
-    if (newBreakpoint in GRID_BREAKPOINTS) {
+    if (Object.hasOwn(GRID_BREAKPOINTS, newBreakpoint)) {
       setCurrentBreakpoint(newBreakpoint as GridBreakpoint);
     }
   }, []);

@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   DEFAULT_LAYOUT,
+  sanitizeLayout,
   selectActivePreset,
   selectIsWidgetMinimized,
   selectIsWidgetPinned,
@@ -30,9 +31,11 @@ describe('useLayoutStore', () => {
     it('exposes all core quantitative widgets in the default layout', () => {
       const layout = useLayoutStore.getState().layout;
 
-      expect(layout.find((item) => item.i === 'mini-ide')).toBeDefined();
       expect(layout.find((item) => item.i === 'equity-curve')).toBeDefined();
       expect(layout.find((item) => item.i === 'drawdown')).toBeDefined();
+      expect(
+        layout.find((item) => item.i === 'execution-metrics')
+      ).toBeDefined();
     });
   });
 
@@ -52,20 +55,20 @@ describe('useLayoutStore', () => {
     it('preserves QSlate widget metadata omitted by grid callbacks', () => {
       const { setLayout, toggleWidgetPin } = useLayoutStore.getState();
 
-      toggleWidgetPin('mini-ide');
-      setLayout([{ i: 'mini-ide', x: 2, y: 3, w: 7, h: 5 }]);
+      toggleWidgetPin('equity-curve');
+      setLayout([{ i: 'equity-curve', x: 2, y: 3, w: 7, h: 5 }]);
 
-      expect(selectWidgetLayout('mini-ide')(useLayoutStore.getState())).toEqual(
-        {
-          ...DEFAULT_LAYOUT[0],
-          i: 'mini-ide',
-          x: 2,
-          y: 3,
-          w: 7,
-          h: 5,
-          isPinned: true,
-        }
-      );
+      expect(
+        selectWidgetLayout('equity-curve')(useLayoutStore.getState())
+      ).toEqual({
+        ...DEFAULT_LAYOUT[0],
+        i: 'equity-curve',
+        x: 2,
+        y: 3,
+        w: 7,
+        h: 5,
+        isPinned: true,
+      });
     });
   });
 
@@ -73,22 +76,22 @@ describe('useLayoutStore', () => {
     it('updates coordinates without modifying other widgets', () => {
       const { updateWidget } = useLayoutStore.getState();
 
-      updateWidget('mini-ide', { x: 2, y: 3 });
+      updateWidget('equity-curve', { x: 2, y: 3 });
 
       const state = useLayoutStore.getState();
-      expect(selectWidgetLayout('mini-ide')(state)?.x).toBe(2);
-      expect(selectWidgetLayout('mini-ide')(state)?.y).toBe(3);
-      expect(selectWidgetLayout('equity-curve')(state)).toEqual(
-        DEFAULT_LAYOUT[1]
-      );
+      expect(selectWidgetLayout('equity-curve')(state)?.x).toBe(2);
+      expect(selectWidgetLayout('equity-curve')(state)?.y).toBe(3);
+      expect(selectWidgetLayout('drawdown')(state)).toEqual(DEFAULT_LAYOUT[1]);
     });
 
     it('updates dimensions while preserving existing attributes', () => {
       const { updateWidget } = useLayoutStore.getState();
 
-      updateWidget('drawdown', { w: 6, h: 5 });
+      updateWidget('execution-metrics', { w: 6, h: 5 });
 
-      const updated = selectWidgetLayout('drawdown')(useLayoutStore.getState());
+      const updated = selectWidgetLayout('execution-metrics')(
+        useLayoutStore.getState()
+      );
       expect(updated?.w).toBe(6);
       expect(updated?.h).toBe(5);
       expect(updated?.x).toBe(DEFAULT_LAYOUT[2]?.x);
@@ -110,36 +113,36 @@ describe('useLayoutStore', () => {
     it('toggles the pinned state', () => {
       const { toggleWidgetPin } = useLayoutStore.getState();
 
-      expect(selectIsWidgetPinned('mini-ide')(useLayoutStore.getState())).toBe(
-        false
-      );
+      expect(
+        selectIsWidgetPinned('equity-curve')(useLayoutStore.getState())
+      ).toBe(false);
 
-      toggleWidgetPin('mini-ide');
-      expect(selectIsWidgetPinned('mini-ide')(useLayoutStore.getState())).toBe(
-        true
-      );
+      toggleWidgetPin('equity-curve');
+      expect(
+        selectIsWidgetPinned('equity-curve')(useLayoutStore.getState())
+      ).toBe(true);
 
-      toggleWidgetPin('mini-ide');
-      expect(selectIsWidgetPinned('mini-ide')(useLayoutStore.getState())).toBe(
-        false
-      );
+      toggleWidgetPin('equity-curve');
+      expect(
+        selectIsWidgetPinned('equity-curve')(useLayoutStore.getState())
+      ).toBe(false);
     });
 
     it('toggles the minimized state', () => {
       const { toggleWidgetMinimize } = useLayoutStore.getState();
 
       expect(
-        selectIsWidgetMinimized('equity-curve')(useLayoutStore.getState())
+        selectIsWidgetMinimized('drawdown')(useLayoutStore.getState())
       ).toBe(false);
 
-      toggleWidgetMinimize('equity-curve');
+      toggleWidgetMinimize('drawdown');
       expect(
-        selectIsWidgetMinimized('equity-curve')(useLayoutStore.getState())
+        selectIsWidgetMinimized('drawdown')(useLayoutStore.getState())
       ).toBe(true);
 
-      toggleWidgetMinimize('equity-curve');
+      toggleWidgetMinimize('drawdown');
       expect(
-        selectIsWidgetMinimized('equity-curve')(useLayoutStore.getState())
+        selectIsWidgetMinimized('drawdown')(useLayoutStore.getState())
       ).toBe(false);
     });
 
@@ -159,7 +162,7 @@ describe('useLayoutStore', () => {
     it('restores the default layout preset', () => {
       const { resetLayout, updateWidget } = useLayoutStore.getState();
 
-      updateWidget('mini-ide', { x: 10, y: 20 });
+      updateWidget('equity-curve', { x: 10, y: 20 });
       resetLayout();
 
       const state = useLayoutStore.getState();
@@ -192,10 +195,90 @@ describe('useLayoutStore', () => {
 
       expect(selectLayout(state)).toBe(state.layout);
       expect(selectActivePreset(state)).toBe('default');
-      expect(selectWidgetLayout('mini-ide')(state)).toEqual(DEFAULT_LAYOUT[0]);
+      expect(selectWidgetLayout('equity-curve')(state)).toEqual(
+        DEFAULT_LAYOUT[0]
+      );
       expect(selectWidgetLayout('non-existent')(state)).toBeUndefined();
-      expect(selectIsWidgetPinned('mini-ide')(state)).toBe(false);
-      expect(selectIsWidgetMinimized('mini-ide')(state)).toBe(false);
+      expect(selectIsWidgetPinned('equity-curve')(state)).toBe(false);
+      expect(selectIsWidgetMinimized('equity-curve')(state)).toBe(false);
     });
+  });
+});
+
+describe('Lab layout persistence', () => {
+  it('keeps workspace editing functional when browser storage is unavailable', () => {
+    const storageWrite = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new DOMException('Storage quota exceeded', 'QuotaExceededError');
+      });
+
+    try {
+      expect(() => {
+        useLayoutStore.getState().resetLayout();
+        useLayoutStore.getState().toggleWidgetMinimize('equity-curve');
+        useLayoutStore.getState().removeWidget('trade-log');
+      }).not.toThrow();
+      expect(useLayoutStore.getState().layout).toHaveLength(3);
+      expect(
+        selectIsWidgetMinimized('equity-curve')(useLayoutStore.getState())
+      ).toBe(true);
+    } finally {
+      storageWrite.mockRestore();
+      useLayoutStore.getState().resetLayout();
+    }
+  });
+
+  it('closes and restores widgets without allowing duplicates', () => {
+    const store = useLayoutStore.getState();
+    store.resetLayout();
+    store.removeWidget('trade-log');
+    expect(useLayoutStore.getState().layout).toHaveLength(3);
+    store.addWidget('trade-log');
+    store.addWidget('trade-log');
+    expect(useLayoutStore.getState().layout).toHaveLength(4);
+    store.addWidget('unknown');
+    expect(useLayoutStore.getState().layout).toHaveLength(4);
+  });
+
+  it('rehydrates saved geometry, minimized state and closed widgets', async () => {
+    const store = useLayoutStore.getState();
+    store.resetLayout();
+    store.updateWidget('equity-curve', { w: 7, h: 8, isMinimized: true });
+    store.removeWidget('trade-log');
+    const saved = localStorage.getItem('qslate_lab_layout');
+    store.resetLayout();
+    localStorage.setItem('qslate_lab_layout', saved!);
+    await useLayoutStore.persist.rehydrate();
+    expect(useLayoutStore.getState().layout).toHaveLength(3);
+    expect(
+      selectWidgetLayout('equity-curve')(useLayoutStore.getState())
+    ).toMatchObject({ w: 7, h: 8, isMinimized: true });
+  });
+
+  it('preserves an intentionally empty workspace after rehydration', async () => {
+    localStorage.setItem(
+      'qslate_lab_layout',
+      JSON.stringify({ version: 1, state: { layout: [] } })
+    );
+    await useLayoutStore.persist.rehydrate();
+    expect(useLayoutStore.getState().layout).toHaveLength(0);
+    useLayoutStore.getState().resetLayout();
+  });
+});
+
+describe('stored layout validation', () => {
+  it('rejects unknown, duplicate or malformed widgets and clamps geometry', () => {
+    const valid = { ...DEFAULT_LAYOUT[0], x: -8, w: 50, h: 100 };
+    const restored = sanitizeLayout([
+      valid,
+      valid,
+      { i: 'unknown', x: 0, y: 0, w: 4, h: 4 },
+      { ...DEFAULT_LAYOUT[1], w: 'broken' },
+    ]);
+    expect(restored).toHaveLength(1);
+    expect(restored[0]).toMatchObject({ x: 0, w: 12, h: 30 });
+    expect(sanitizeLayout([{ i: 'obsolete' }])).toEqual(DEFAULT_LAYOUT);
+    expect(sanitizeLayout(null)).toEqual(DEFAULT_LAYOUT);
   });
 });

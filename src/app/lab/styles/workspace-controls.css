@@ -1,0 +1,24 @@
+.lab-spin {
+  animation: lab-spin 1s linear infinite;
+}
+@keyframes lab-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.lab-shell .qslate-dynamic-grid .react-grid-item.react-grid-placeholder {
+  background: #527dff19 !important;
+  border-color: #527dff !important;
+}
+.lab-shell .react-resizable-handle {
+  opacity: 0;
+}
+.lab-shell .lab-widget:hover > .react-resizable-handle {
+  opacity: 0.6;
+}
+.lab-shell
+  .qslate-dynamic-grid
+  .react-grid-item:hover
+  > .react-resizable-handle::after {
+  border-color: var(--lab-blue);
+}

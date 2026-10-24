@@ -1,8 +1,8 @@
+import './lab.css';
+
 import type { Metadata } from 'next';
 
-import { DynamicGridWrapper } from '@/widgets/dynamic-grid';
-
-import { LabWorkspaceHeader } from './LabWorkspaceHeader';
+import { LabWorkspace } from './LabWorkspace';
 
 export const metadata: Metadata = {
   title: 'Lab Workspace · QSlate',
@@ -10,12 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function LabPage() {
-  return (
-    <main className="min-h-screen w-full bg-matte p-4 text-white flex flex-col">
-      <LabWorkspaceHeader />
-      <div className="flex-1 w-full">
-        <DynamicGridWrapper />
-      </div>
-    </main>
-  );
+  return <LabWorkspace />;
 }

@@ -1,0 +1,286 @@
+@media (min-width: 1600px) {
+  .lab-sidebar {
+    width: 214px;
+    flex-basis: 214px;
+  }
+  .lab-toolbar {
+    gap: 18px;
+  }
+  .lab-config-fields {
+    gap: 10px;
+  }
+  .lab-timeframe {
+    width: 95px;
+  }
+  .lab-trades td {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+}
+@media (max-width: 1250px) {
+  .lab-toolbar {
+    gap: 7px;
+  }
+  .lab-strategy {
+    min-width: 160px;
+  }
+}
+@media (max-width: 1100px) {
+  .lab-sidebar {
+    width: 170px;
+    flex-basis: 170px;
+  }
+  .lab-toolbar {
+    flex-wrap: wrap;
+  }
+  .lab-config-fields {
+    flex-basis: 100%;
+  }
+  .lab-toolbar-actions {
+    margin-left: auto;
+  }
+  .lab-select-shell {
+    max-width: none;
+  }
+  .lab-shell .lab-widget-title {
+    font-size: 9px;
+  }
+  .lab-equity-toolbar {
+    gap: 3px;
+  }
+  .lab-ranges button {
+    padding: 2px 3px;
+  }
+  .lab-strategy-label {
+    display: none;
+  }
+}
+@media (max-width: 767px) {
+  .lab-sidebar,
+  .lab-sidebar.is-collapsed {
+    width: 48px;
+    flex-basis: 48px;
+  }
+  .lab-sidebar .sidebar-label {
+    display: none;
+  }
+  .lab-brand {
+    justify-content: center;
+    padding: 0;
+  }
+  .lab-nav-item {
+    justify-content: center;
+    padding: 10px 0;
+  }
+  .lab-sidebar-bottom {
+    padding: 6px;
+  }
+  .lab-user-card {
+    border: 0;
+    padding: 4px;
+  }
+  .lab-sidebar-controls {
+    flex-direction: column;
+  }
+  .lab-collapse-button {
+    display: none;
+  }
+  .lab-toolbar {
+    padding: 8px;
+    gap: 8px;
+  }
+  .lab-config-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 68px;
+    gap: 6px;
+  }
+  .lab-strategy {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+  .lab-select-shell,
+  .lab-timeframe,
+  .lab-date-range,
+  .lab-capital {
+    height: 30px;
+  }
+  .lab-date-range {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+  .lab-date-range input {
+    flex: 1;
+    width: 80px;
+    max-width: 120px;
+    font-size: 10px;
+  }
+  .lab-timeframe {
+    grid-column: 2;
+    grid-row: 3;
+    width: 100%;
+  }
+  .lab-capital {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .lab-capital input {
+    flex: 1;
+  }
+  .lab-toolbar-actions {
+    width: 100%;
+    justify-content: space-between;
+    gap: 4px;
+  }
+  .lab-toolbar-actions .lab-button {
+    padding: 6px;
+    min-height: 36px;
+    font-size: 10px !important;
+  }
+  .lab-run-button kbd {
+    display: none;
+  }
+  .lab-colorblind > span:not(.lab-palette) {
+    display: none;
+  }
+  .lab-workspace {
+    padding: 0 8px 8px;
+  }
+  .lab-workspace-heading {
+    flex-wrap: wrap;
+    padding: 9px 0;
+    gap: 5px;
+  }
+  .lab-workspace-heading > div {
+    gap: 6px;
+  }
+  .lab-workspace-heading h1 {
+    font-size: 11px;
+  }
+  .lab-run-status:not(:empty) {
+    display: block;
+    flex-basis: 100%;
+    font-size: 9px;
+  }
+  .lab-workspace-heading > div:first-child {
+    flex-wrap: wrap;
+  }
+  .lab-layout-info {
+    margin-left: auto;
+    font-size: 7px;
+  }
+  .lab-shell .lab-widget-header {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 32px;
+    padding: 5px 7px;
+  }
+  .lab-shell .widget-drag-handle {
+    cursor: default;
+  }
+  .lab-shell .widget-drag-handle > svg {
+    display: none;
+  }
+  .lab-shell .lab-widget-title {
+    font-size: 10px;
+  }
+  .lab-shell .widget-action-bar {
+    flex-shrink: 1;
+    margin-left: auto;
+  }
+  .lab-shell .lab-widget:has(.lab-equity-toolbar) .widget-action-bar {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .lab-equity-toolbar {
+    margin-right: auto;
+  }
+  .lab-shell .lab-pin {
+    display: none;
+  }
+  .lab-shell .lab-widget-content {
+    padding: 8px;
+  }
+  .lab-metrics dd {
+    font-size: 14px;
+  }
+  .lab-shell {
+    --dialog-padding: 16px;
+  }
+  .lab-shell
+    .lab-widget:has(.lab-equity-toolbar)
+    .lab-widget-header
+    .widget-drag-handle {
+    flex-basis: 100%;
+  }
+  .lab-shell
+    .lab-widget:has(.lab-equity-toolbar)
+    .lab-widget-header
+    .lab-widget-title {
+    overflow: visible;
+  }
+  .lab-shell .widget-action-bar > button {
+    min-width: 28px;
+    min-height: 28px;
+  }
+  .lab-ranges button {
+    min-width: 28px;
+    min-height: 28px;
+  }
+  .lab-shell .widget-action-bar {
+    row-gap: 4px;
+  }
+  .lab-workspace-heading > div:first-child {
+    flex: 1;
+  }
+  .lab-shell .lab-widget[data-minimized='true'] .widget-drag-handle {
+    flex-basis: auto;
+  }
+  .lab-shell
+    .lab-widget[data-minimized='true']:has(.lab-equity-toolbar)
+    .lab-widget-header
+    .widget-drag-handle {
+    flex-basis: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lab-shell *,
+  .lab-shell *::before,
+  .lab-shell *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.lab-shell .lab-widget[data-minimized='true'] .lab-equity-toolbar {
+  display: none;
+}
+
+.lab-shell .lab-widget[data-minimized='true'] .lab-widget-header {
+  flex-wrap: nowrap;
+}
+
+.lab-shell .lab-widget[data-minimized='true'] .widget-action-bar {
+  width: auto;
+  flex-wrap: nowrap;
+}
+
+@media (pointer: coarse) {
+  .lab-sidebar .lab-nav-item,
+  .lab-sidebar-controls .lab-button {
+    min-height: 44px;
+  }
+  .lab-toolbar-actions .lab-button,
+  .lab-select-shell,
+  .lab-date-range,
+  .lab-timeframe,
+  .lab-capital {
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 375px) {
+  .lab-equity-toolbar {
+    flex-basis: 100%;
+    justify-content: space-between;
+  }
+}

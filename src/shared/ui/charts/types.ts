@@ -48,6 +48,9 @@ export interface LightweightChartProps<TData extends ChartDataPoint> {
   className?: string | undefined;
   theme?: ChartThemeMode | undefined;
   colorblindMode?: ChartColorblindMode | undefined;
+  comparisonData?: LinePointData[] | undefined;
+  comparisonLabel?: string | undefined;
+  visibleRange?: { from: number; to: number } | null | undefined;
   onCrosshairMove?: ((param: unknown) => void) | undefined;
   onTimeRangeChange?: ((range: unknown) => void) | undefined;
 }

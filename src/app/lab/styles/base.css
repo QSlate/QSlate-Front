@@ -1,0 +1,106 @@
+.lab-shell {
+  --lab-bg: #08090a;
+  --lab-panel: #0c0d0e;
+  --lab-hover: #141517;
+  --lab-border: #242528;
+  --lab-divider: #1b1c1f;
+  --lab-text: #ededf0;
+  --lab-muted: #a1a1aa;
+  --lab-blue: #527dff;
+  --lab-positive: #62d88b;
+  --lab-negative: #ff6876;
+  --lab-mono: var(--font-jetbrains-mono), monospace;
+  --dialog-surface: var(--lab-panel);
+  --dialog-border: var(--lab-border);
+  --dialog-text: var(--lab-text);
+  --lab-equity-line: #527dff;
+  --chart-tooltip-surface: var(--lab-panel);
+  --chart-tooltip-border: var(--lab-border);
+  --chart-tooltip-text: var(--lab-text);
+  display: flex;
+  min-height: 100dvh;
+  background: var(--lab-bg);
+  color: var(--lab-text);
+  font-size: 11px;
+  line-height: 1.5;
+  color-scheme: dark;
+}
+[data-theme='light'] .lab-shell {
+  --lab-bg: #f4f5f7;
+  --lab-panel: #fff;
+  --lab-hover: #eceef3;
+  --lab-border: #d4d7df;
+  --lab-divider: #e7e9ef;
+  --lab-text: #20242e;
+  --lab-muted: #626875;
+  --lab-blue: #305ad4;
+  --lab-positive: #13763b;
+  --lab-negative: #bd2239;
+  --lab-equity-line: #305ad4;
+  color-scheme: light;
+}
+.lab-shell[data-colorblind='orange-blue'] {
+  --lab-positive: #65b8ff;
+  --lab-equity-line: #65b8ff;
+  --lab-negative: #ffb366;
+}
+[data-theme='light'] .lab-shell[data-colorblind='orange-blue'] {
+  --lab-positive: #155eb8;
+  --lab-equity-line: #155eb8;
+  --lab-negative: #a54b00;
+}
+.lab-shell button,
+.lab-shell a,
+.lab-shell input,
+.lab-shell select {
+  -webkit-tap-highlight-color: transparent;
+}
+.lab-shell button:not(:disabled),
+.lab-shell select {
+  cursor: pointer;
+}
+.lab-shell button:disabled {
+  cursor: not-allowed;
+}
+.lab-shell :focus-visible {
+  outline: 2px solid var(--lab-blue);
+  outline-offset: 3px;
+}
+.lab-shell button,
+.lab-shell input,
+.lab-shell select {
+  font: inherit;
+}
+.lab-shell svg {
+  flex-shrink: 0;
+}
+.lab-shell input,
+.lab-shell select {
+  min-width: 0;
+  color: var(--lab-text);
+}
+.lab-shell input::placeholder {
+  color: var(--lab-muted);
+}
+.lab-shell option {
+  background: var(--lab-panel);
+  color: var(--lab-text);
+}
+.lab-positive {
+  color: var(--lab-positive) !important;
+}
+.lab-negative {
+  color: var(--lab-negative) !important;
+}
+.lab-status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--lab-positive);
+  display: inline-block;
+  flex-shrink: 0;
+}
+.lab-shell [aria-invalid='true'] {
+  outline: 1px solid var(--lab-negative);
+  outline-offset: 2px;
+}

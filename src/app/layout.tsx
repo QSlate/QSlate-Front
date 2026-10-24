@@ -32,8 +32,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased min-h-screen`}
       >
-        <ThemeSync />
-        {children}
+        <ThemeSync>{children}</ThemeSync>
       </body>
     </html>
   );
