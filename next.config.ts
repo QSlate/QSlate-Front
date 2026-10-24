@@ -1,12 +1,25 @@
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { NextConfig } from 'next';
 
-const projectRoot = fileURLToPath(new URL('.', import.meta.url));
+const projectRoot = path.resolve(fileURLToPath(new URL('.', import.meta.url)));
 
 const nextConfig: NextConfig = {
   turbopack: { root: projectRoot },
   outputFileTracingRoot: projectRoot,
+  webpack: (config) => {
+    config.resolve = config.resolve || {};
+    config.resolve.modules = [
+      path.resolve(projectRoot, 'node_modules'),
+      ...(config.resolve.modules || ['node_modules']),
+    ];
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      tailwindcss: path.resolve(projectRoot, 'node_modules/tailwindcss'),
+    };
+    return config;
+  },
   async headers() {
     return [
       {
