@@ -88,6 +88,15 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+If development compilation repeatedly reports `Can't resolve 'tailwindcss'` from a parent directory after a project-root change, stop the development server and regenerate its cache from `QSlate-Front`:
+
+```bash
+node -e "require('node:fs').rmSync('.next/dev', { recursive: true, force: true })"
+npm run dev
+```
+
+This clears only generated development files. Dependencies and the production build are preserved.
+
 ### Build & Production
 
 ```bash
@@ -101,3 +110,23 @@ npm run start
 ---
 
 _Built with precision for the next generation of quantitative researchers._
+
+## Lab Workspace
+
+Open `/lab` for the interactive workspace based on the [Lab Figma design](https://www.figma.com/design/mAu7DgM3b9HPtf5g8A4u1z/Qslate-Design-V1?node-id=16-3).
+
+- Configure a strategy, date range, timeframe and initial USD capital. Run the simulation with **Run Backtest** or **Ctrl/Cmd + Enter**.
+- Inspect portfolio equity against SPX, monthly returns, execution metrics and the latest 100 trades. Dates and timestamps use UTC. The OOS badge covers the final 70% of the synthetic equity series.
+- Drag, resize, pin, minimize, expand or close widgets. **Add Widget** restores closed widgets and provides keyboard-accessible layout controls. The reset icon restores the default four-widget layout.
+- Widget geometry and visibility are saved in browser local storage under `qslate_lab_layout`. Theme, colorblind mode and sidebar preferences use the existing user store. On narrow screens the widgets stack without overwriting the desktop layout.
+- Mini IDE, Marketplace, Backtest Runs and Settings remain disabled until their pages are implemented.
+
+### Demo data and backend integration
+
+The workspace uses deterministic synthetic data, marked **DEMO** and **SIMULATED**. No backtest or market-data backend is contacted. Prices, trades and returns are fixtures for exercising the interface; metrics are illustrative summaries of those fixtures, not validated financial analytics. Form parameters are applied when a simulation completes; previous results remain visible while it runs or if it fails.
+
+`src/entities/backtest/model/types.ts` defines the configuration, result and `BacktestService` contracts. `BacktestProvider` accepts a service with `run(config, signal): Promise<BacktestResult>`; its current default is `mockBacktestService`. When backend contracts are available, implement an adapter at this boundary, map its response into `BacktestResult`, and pass it to the provider. Preserve cancellation, error handling and server-provided quantitative metrics. The backend adapter must replace the demo strategy catalog and initial demo result as part of that integration.
+
+### Verification
+
+Run `npm test`, `npm run lint`, `npx tsc --noEmit` and `npm run build`. Targeted tests cover configuration validation, mock-result consistency, cancellation, duplicate submissions, retry, widget lifecycle and layout persistence. Manually verify `/lab` at desktop, tablet and mobile widths, including keyboard navigation, both themes, colorblind mode and reload persistence.
