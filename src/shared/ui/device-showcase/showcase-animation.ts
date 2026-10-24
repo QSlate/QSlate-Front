@@ -1,6 +1,5 @@
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 
-/** A deterministic pose: jumping or reversing scroll never leaves motion queued. */
 export function getShowcaseFrame(progress: number) {
   const t = clamp((progress - 0.06) / 0.58);
   const open = t * t * t * (t * (t * 6 - 15) + 10);
