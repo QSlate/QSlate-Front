@@ -1,0 +1,7 @@
+# Keep the build context to the sources: no local dependencies, build output or secrets.
+node_modules
+.next
+.git
+.env*
+coverage
+*.log

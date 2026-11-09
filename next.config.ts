@@ -6,6 +6,8 @@ import type { NextConfig } from 'next';
 const projectRoot = path.resolve(fileURLToPath(new URL('.', import.meta.url)));
 
 const nextConfig: NextConfig = {
+  // The Dockerfile runs .next/standalone/server.js
+  output: 'standalone',
   turbopack: { root: projectRoot },
   outputFileTracingRoot: projectRoot,
   webpack: (config) => {
