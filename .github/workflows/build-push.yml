@@ -40,7 +40,5 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.ORG }}/frontend:latest
             ${{ env.REGISTRY }}/${{ env.ORG }}/frontend:${{ github.sha }}
-          build-args: |
-            NEXT_PUBLIC_API_URL=http://37.27.93.212
           cache-from: type=gha
           cache-to: type=gha,mode=max
