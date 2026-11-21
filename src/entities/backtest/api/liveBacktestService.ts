@@ -221,106 +221,110 @@ export class LiveBacktestService implements BacktestService {
       throw new Error('Backtest execution timed out');
     }
 
-    // Fetch summary metrics, trades and equity curve
-    const [summaryRes, tradesRes, equityRes] = await Promise.allSettled([
-      apiClient.getBacktestSummary(job.backtest_id, token),
-      apiClient.getBacktestTrades(job.backtest_id, { limit: 100 }, token),
-      apiClient.getBacktestEquityCurve(job.backtest_id, undefined, token),
-    ]);
-
-    const summary = summaryRes.status === 'fulfilled' ? summaryRes.value : null;
-    const tradesPage =
-      tradesRes.status === 'fulfilled' ? tradesRes.value : null;
-    const equityPage =
-      equityRes.status === 'fulfilled' ? equityRes.value : null;
-
-    const metrics = summary?.metrics || {};
-
-    // Transform backend trades to frontend Trade schema
-    const rawTrades = Array.isArray(tradesPage?.items)
-      ? (tradesPage.items as Record<string, unknown>[])
-      : [];
-    const trades: Trade[] = rawTrades.map((t, index) => ({
-      id: String(t.id || `trade-${index + 1}`),
-      timestamp: t.timestamp
-        ? new Date(String(t.timestamp)).getTime() / 1000
-        : Date.now() / 1000 - (rawTrades.length - index) * 3600,
-      ticker: String(t.symbol || 'ETH'),
-      side: (String(t.side || 'BUY').toUpperCase() === 'SELL'
-        ? 'SELL'
-        : 'BUY') as 'BUY' | 'SELL',
-      quantity: Number(t.quantity || t.amount || 1),
-      entry: Number(t.entry_price || t.price || 2200),
-      exit: Number(t.exit_price || t.entry_price || 2250),
-      pnl: Number(t.pnl_usd || t.pnl || 0),
-      pnlPercent: Number(t.pnl_pct || t.pnl_percent || 0),
-      slippageMs: Number(t.slippage_ms || 0.4),
-      executionHash: String(
-        t.execution_hash || `0x${(index * 7919).toString(16).padStart(8, '0')}`
-      ),
-    }));
-
-    // Transform backend equity points or synthesize from start to end
-    const rawEquity = Array.isArray(equityPage?.items)
-      ? (equityPage.items as Record<string, unknown>[])
-      : [];
-    const parsedEquity: EquityPoint[] =
-      rawEquity.length > 0
-        ? rawEquity
-            .map((p) => {
-              const parsedTime =
-                typeof p.time === 'number'
-                  ? p.time
-                  : Math.floor(
-                      new Date(String(p.timestamp || p.time)).getTime() / 1000
-                    );
-              const nav = Number(p.nav || p.equity || config.capital);
-              const benchmark = Number(p.benchmark || config.capital);
-              return {
-                time: Number.isFinite(parsedTime) ? parsedTime : 0,
-                nav: Number.isFinite(nav) ? nav : config.capital,
-                benchmark: Number.isFinite(benchmark)
-                  ? benchmark
-                  : config.capital,
-              };
-            })
-            .filter((p) => p.time > 0)
-        : [];
-
-    const equity: EquityPoint[] =
-      parsedEquity.length > 0
-        ? parsedEquity
-        : createMockBacktest(config).equity;
-
-    return {
-      id: job.backtest_id,
-      source: 'backend',
-      config,
-      equity,
-      monthlyReturns: createMockBacktest(config).monthlyReturns,
-      trades: trades.length > 0 ? trades : createMockBacktest(config).trades,
-      metrics: {
-        sharpe: Number(metrics.sharpe_ratio ?? 1.85),
-        sortino: Number(metrics.sortino_ratio ?? 2.12),
-        maxDrawdown: Number(metrics.max_drawdown_pct ?? 4.2),
-        winRate: Number(metrics.win_rate_pct ?? 56.4),
-        profitFactor:
-          metrics.profit_factor !== undefined
-            ? Number(metrics.profit_factor)
-            : 1.74,
-        calmar:
-          metrics.calmar_ratio !== undefined
-            ? Number(metrics.calmar_ratio)
-            : 1.45,
-        volatility: Number(metrics.volatility ?? 0.14),
-        beta: 0.92,
-        alpha: 0.08,
-        trades: Number(metrics.total_trades ?? trades.length),
-      },
-      oosReturn: Number(metrics.return_pct ?? 18.2),
-      longestDrawdownDays: Number(metrics.max_drawdown_days ?? 12),
-    };
+    return await fetchBacktestArtifacts(job.backtest_id, config, token);
   }
+}
+
+export async function fetchBacktestArtifacts(
+  backtestId: string,
+  config: BacktestConfig,
+  token?: string | null
+): Promise<BacktestResult> {
+  // Fetch summary metrics, trades and equity curve
+  const [summaryRes, tradesRes, equityRes] = await Promise.allSettled([
+    apiClient.getBacktestSummary(backtestId, token),
+    apiClient.getBacktestTrades(backtestId, { limit: 100 }, token),
+    apiClient.getBacktestEquityCurve(backtestId, undefined, token),
+  ]);
+
+  const summary = summaryRes.status === 'fulfilled' ? summaryRes.value : null;
+  const tradesPage = tradesRes.status === 'fulfilled' ? tradesRes.value : null;
+  const equityPage = equityRes.status === 'fulfilled' ? equityRes.value : null;
+
+  const metrics = summary?.metrics || {};
+
+  // Transform backend trades to frontend Trade schema
+  const rawTrades = Array.isArray(tradesPage?.items)
+    ? (tradesPage.items as Record<string, unknown>[])
+    : [];
+  const trades: Trade[] = rawTrades.map((t, index) => ({
+    id: String(t.id || `trade-${index + 1}`),
+    timestamp: t.timestamp
+      ? new Date(String(t.timestamp)).getTime() / 1000
+      : Date.now() / 1000 - (rawTrades.length - index) * 3600,
+    ticker: String(t.symbol || 'ETH'),
+    side: (String(t.side || 'BUY').toUpperCase() === 'SELL'
+      ? 'SELL'
+      : 'BUY') as 'BUY' | 'SELL',
+    quantity: Number(t.quantity || t.amount || 1),
+    entry: Number(t.entry_price || t.price || 2200),
+    exit: Number(t.exit_price || t.entry_price || 2250),
+    pnl: Number(t.pnl_usd || t.pnl || 0),
+    pnlPercent: Number(t.pnl_pct || t.pnl_percent || 0),
+    slippageMs: Number(t.slippage_ms || 0.4),
+    executionHash: String(
+      t.execution_hash || `0x${(index * 7919).toString(16).padStart(8, '0')}`
+    ),
+  }));
+
+  // Transform backend equity points or synthesize from start to end
+  const rawEquity = Array.isArray(equityPage?.items)
+    ? (equityPage.items as Record<string, unknown>[])
+    : [];
+  const parsedEquity: EquityPoint[] =
+    rawEquity.length > 0
+      ? rawEquity
+          .map((p) => {
+            const parsedTime =
+              typeof p.time === 'number'
+                ? p.time
+                : Math.floor(
+                    new Date(String(p.timestamp || p.time)).getTime() / 1000
+                  );
+            const nav = Number(p.nav || p.equity || config.capital);
+            const benchmark = Number(p.benchmark || config.capital);
+            return {
+              time: Number.isFinite(parsedTime) ? parsedTime : 0,
+              nav: Number.isFinite(nav) ? nav : config.capital,
+              benchmark: Number.isFinite(benchmark)
+                ? benchmark
+                : config.capital,
+            };
+          })
+          .filter((p) => p.time > 0)
+      : [];
+
+  const equity: EquityPoint[] =
+    parsedEquity.length > 0 ? parsedEquity : createMockBacktest(config).equity;
+
+  return {
+    id: backtestId,
+    source: 'backend',
+    config,
+    equity,
+    monthlyReturns: createMockBacktest(config).monthlyReturns,
+    trades: trades.length > 0 ? trades : createMockBacktest(config).trades,
+    metrics: {
+      sharpe: Number(metrics.sharpe_ratio ?? 1.85),
+      sortino: Number(metrics.sortino_ratio ?? 2.12),
+      maxDrawdown: Number(metrics.max_drawdown_pct ?? 4.2),
+      winRate: Number(metrics.win_rate_pct ?? 56.4),
+      profitFactor:
+        metrics.profit_factor !== undefined
+          ? Number(metrics.profit_factor)
+          : 1.74,
+      calmar:
+        metrics.calmar_ratio !== undefined
+          ? Number(metrics.calmar_ratio)
+          : 1.45,
+      volatility: Number(metrics.volatility ?? 0.14),
+      beta: 0.92,
+      alpha: 0.08,
+      trades: Number(metrics.total_trades ?? trades.length),
+    },
+    oosReturn: Number(metrics.return_pct ?? 18.2),
+    longestDrawdownDays: Number(metrics.max_drawdown_days ?? 12),
+  };
 }
 
 export const liveBacktestService = new LiveBacktestService();

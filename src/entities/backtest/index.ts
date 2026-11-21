@@ -1,4 +1,5 @@
 export {
+  fetchBacktestArtifacts,
   LiveBacktestService,
   liveBacktestService,
 } from './api/liveBacktestService';

@@ -16,10 +16,16 @@ import {
   type BacktestResult,
   type BacktestService,
   DEFAULT_BACKTEST_CONFIG,
+  fetchBacktestArtifacts,
   INITIAL_MOCK_RESULT,
   liveBacktestService,
   validateBacktest,
 } from '@/entities/backtest';
+import { useAuthStore } from '@/entities/user/model';
+import { useLabStore } from '@/features/lab-state';
+import { apiClient } from '@/shared/api';
+
+const LAST_RESULT_STORAGE_KEY = 'qslate_last_backtest_result';
 
 interface BacktestContextValue {
   config: BacktestConfig;
@@ -43,11 +49,93 @@ export function BacktestProvider({
   const [config, updateConfig] = useState(() => ({
     ...DEFAULT_BACKTEST_CONFIG,
   }));
-  const [result, setResult] = useState(INITIAL_MOCK_RESULT);
+  const [result, setResult] = useState<BacktestResult>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(LAST_RESULT_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved) as BacktestResult;
+          if (
+            parsed &&
+            Array.isArray(parsed.equity) &&
+            parsed.equity.length > 0
+          ) {
+            return parsed;
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return INITIAL_MOCK_RESULT;
+  });
   const [status, setStatus] = useState<BacktestContextValue['status']>('idle');
   const [error, setError] = useState<string | null>(null);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
+
+  const loadedBacktestId = useLabStore((state) => state.loadedBacktestId);
+  const token = useAuthStore((state) => state.accessToken);
+
+  // Restore latest completed backtest on load or when loadedBacktestId changes
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      const targetId = loadedBacktestId;
+      if (targetId) {
+        try {
+          const loaded = await fetchBacktestArtifacts(targetId, config, token);
+          if (!cancelled && loaded) {
+            setResult(loaded);
+            if (typeof window !== 'undefined') {
+              try {
+                localStorage.setItem(
+                  LAST_RESULT_STORAGE_KEY,
+                  JSON.stringify(loaded)
+                );
+              } catch {
+                // ignore
+              }
+            }
+          }
+        } catch {
+          // ignore
+        }
+      } else if (token) {
+        try {
+          const runs = await apiClient.getBacktests({ limit: 1 }, token);
+          const latest = runs.items?.[0];
+          if (latest && latest.status === 'completed' && latest.backtest_id) {
+            const loaded = await fetchBacktestArtifacts(
+              latest.backtest_id,
+              config,
+              token
+            );
+            if (!cancelled && loaded) {
+              setResult(loaded);
+              if (typeof window !== 'undefined') {
+                try {
+                  localStorage.setItem(
+                    LAST_RESULT_STORAGE_KEY,
+                    JSON.stringify(loaded)
+                  );
+                } catch {
+                  // ignore
+                }
+              }
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loadedBacktestId, token, config]);
 
   const setConfig = useCallback((next: BacktestConfig) => {
     updateConfig({ ...next });
@@ -73,6 +161,13 @@ export function BacktestProvider({
       const next = await service.run({ ...config }, request.signal);
       if (!request.signal.aborted) {
         setResult(next);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(LAST_RESULT_STORAGE_KEY, JSON.stringify(next));
+          } catch {
+            // ignore
+          }
+        }
         setStatus('success');
       }
     } catch (cause) {
