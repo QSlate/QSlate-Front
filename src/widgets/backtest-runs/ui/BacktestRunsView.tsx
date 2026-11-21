@@ -7,6 +7,7 @@ import {
   Clock,
   Download,
   FileSpreadsheet,
+  GitCompare,
   History,
   Loader2,
   Play,
@@ -19,6 +20,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useAuthStore } from '@/entities/user/model';
+import { BacktestComparisonModal } from '@/features/compare-backtests';
 import { useLabStore } from '@/features/lab-state';
 import {
   apiClient,
@@ -55,6 +57,8 @@ export function BacktestRunsView() {
     undefined
   );
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedRunIds, setSelectedRunIds] = useState<string[]>([]);
+  const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
 
   const fetchRuns = useCallback(
     async (cursor?: string) => {
@@ -245,6 +249,24 @@ export function BacktestRunsView() {
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onClick={() => setIsComparisonModalOpen(true)}
+            disabled={selectedRunIds.length < 2 || selectedRunIds.length > 20}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-medium transition-all ${
+              selectedRunIds.length >= 2 && selectedRunIds.length <= 20
+                ? 'bg-blue-600 hover:bg-blue-500 text-white border-blue-500 shadow-2xs cursor-pointer'
+                : 'bg-white/[0.04] text-zinc-500 border-white/[0.06] opacity-60 cursor-not-allowed'
+            }`}
+            title={
+              selectedRunIds.length < 2
+                ? 'Select at least 2 runs below to compare'
+                : `Compare ${selectedRunIds.length} runs`
+            }
+          >
+            <GitCompare size={12} />
+            <span>Compare Selected ({selectedRunIds.length})</span>
+          </button>
+          <button
+            type="button"
             onClick={() => fetchRuns(currentCursor)}
             disabled={isLoading}
             className={`p-1.5 rounded border text-xs transition-colors ${
@@ -392,6 +414,29 @@ export function BacktestRunsView() {
                 }`}
               >
                 <tr>
+                  <th className="py-2.5 px-3 w-8">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all runs"
+                      checked={
+                        filteredRuns.length > 0 &&
+                        selectedRunIds.length === filteredRuns.length
+                      }
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedRunIds(
+                            filteredRuns.map(
+                              (r) =>
+                                r.backtest_id || (r as { id?: string }).id || ''
+                            )
+                          );
+                        } else {
+                          setSelectedRunIds([]);
+                        }
+                      }}
+                      className="rounded border-zinc-500 cursor-pointer"
+                    />
+                  </th>
                   <th className="py-2.5 px-4 font-medium">Run ID</th>
                   <th className="py-2.5 px-4 font-medium">
                     Strategy & Dataset
@@ -432,6 +477,24 @@ export function BacktestRunsView() {
                         isLight ? 'hover:bg-zinc-50' : 'hover:bg-white/[0.02]'
                       }`}
                     >
+                      <td className="py-3 px-3 w-8">
+                        <input
+                          type="checkbox"
+                          aria-label={`Select run ${id}`}
+                          checked={selectedRunIds.includes(id)}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            if (e.target.checked) {
+                              setSelectedRunIds((prev) => [...prev, id]);
+                            } else {
+                              setSelectedRunIds((prev) =>
+                                prev.filter((item) => item !== id)
+                              );
+                            }
+                          }}
+                          className="rounded border-zinc-500 cursor-pointer"
+                        />
+                      </td>
                       <td
                         className={`py-3 px-4 font-bold ${
                           isLight ? 'text-zinc-900' : 'text-white'
@@ -581,6 +644,18 @@ export function BacktestRunsView() {
           </div>
         </div>
       </div>
+      <BacktestComparisonModal
+        isOpen={isComparisonModalOpen}
+        onClose={() => setIsComparisonModalOpen(false)}
+        selectedRunIds={selectedRunIds}
+        onSelectRun={(runId) => {
+          const run = runs.find(
+            (r) =>
+              r.backtest_id === runId || (r as { id?: string }).id === runId
+          );
+          if (run) handleLoadRun(run);
+        }}
+      />
     </div>
   );
 }

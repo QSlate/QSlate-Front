@@ -1324,4 +1324,62 @@ describe('QslateApiClient', () => {
       expect.objectContaining({ method: 'DELETE' })
     );
   });
+
+  it('compares multiple backtest runs via POST /qslate/v1/backtests/compare', async () => {
+    const mockComparison = {
+      summaries: [
+        {
+          backtest_id: 'b-01',
+          strategy_version_id: 's-01',
+          dataset_version_id: 'd-01',
+          metrics: {
+            sharpe_ratio: 2.1,
+            total_return: 0.35,
+            max_drawdown: 0.12,
+            win_rate: 0.62,
+            profit_factor: 1.85,
+            total_trades: 142,
+          },
+        },
+        {
+          backtest_id: 'b-02',
+          strategy_version_id: 's-02',
+          dataset_version_id: 'd-01',
+          metrics: {
+            sharpe_ratio: 1.6,
+            total_return: 0.22,
+            max_drawdown: 0.08,
+            win_rate: 0.58,
+            profit_factor: 1.55,
+            total_trades: 98,
+          },
+        },
+      ],
+    };
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => mockComparison,
+    });
+
+    const res = await client.compareBacktests(
+      ['b-01', 'b-02'],
+      'auth-token-123'
+    );
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/backtests/compare',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ backtest_ids: ['b-01', 'b-02'] }),
+      })
+    );
+    const lastCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+    const headers = lastCall[1].headers as Headers;
+    expect(headers.get('Authorization')).toBe('Bearer auth-token-123');
+    expect(res.summaries).toHaveLength(2);
+    expect(res.summaries[0].metrics.sharpe_ratio).toBe(2.1);
+  });
 });
