@@ -1,4 +1,6 @@
 import type {
+  APIKeyInputDto,
+  APIKeysPageDto,
   AuthSession,
   BackendErrorResponse,
   CustomWidget,
@@ -17,6 +19,7 @@ import type {
   MarketplaceReview,
   MarketplaceReviewInput,
   MarketplaceReviewsPage,
+  NewAPIKeyDto,
   RegisterPayload,
   Strategy,
   StrategyInput,
@@ -205,6 +208,70 @@ export class QslateApiClient {
       body: JSON.stringify(patch),
       ...(token ? { token } : {}),
     });
+  }
+
+  /**
+   * Fetch user preferences (alias for getPreferences).
+   * GET /qslate/v1/users/me/preferences
+   */
+  public async getUserPreferences(
+    token?: string | null
+  ): Promise<UserPreferencesDTO> {
+    return this.getPreferences(token);
+  }
+
+  /**
+   * Update user preferences (alias for updatePreferences).
+   * PATCH /qslate/v1/users/me/preferences
+   */
+  public async updateUserPreferences(
+    patch: UserPreferencesPatchDTO,
+    token?: string | null
+  ): Promise<UserPreferencesDTO> {
+    return this.updatePreferences(patch, token);
+  }
+
+  /**
+   * Fetch runner API keys.
+   * GET /qslate/v1/users/me/api-keys
+   */
+  public async getApiKeys(token?: string | null): Promise<APIKeysPageDto> {
+    return this.request<APIKeysPageDto>('/qslate/v1/users/me/api-keys', {
+      method: 'GET',
+      ...(token ? { token } : {}),
+    });
+  }
+
+  /**
+   * Create a new runner API key.
+   * POST /qslate/v1/users/me/api-keys
+   */
+  public async createApiKey(
+    payload: APIKeyInputDto,
+    token?: string | null
+  ): Promise<NewAPIKeyDto> {
+    return this.request<NewAPIKeyDto>('/qslate/v1/users/me/api-keys', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      ...(token ? { token } : {}),
+    });
+  }
+
+  /**
+   * Revoke an existing runner API key.
+   * DELETE /qslate/v1/users/me/api-keys/{keyId}
+   */
+  public async revokeApiKey(
+    keyId: string,
+    token?: string | null
+  ): Promise<void> {
+    return this.request<void>(
+      `/qslate/v1/users/me/api-keys/${encodeURIComponent(keyId)}`,
+      {
+        method: 'DELETE',
+        ...(token ? { token } : {}),
+      }
+    );
   }
 
   /**

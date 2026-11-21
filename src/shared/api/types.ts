@@ -262,3 +262,34 @@ export interface DashboardAddWidgetInput {
   widget_version_id?: string;
   configuration?: Record<string, unknown>;
 }
+
+// ---------------------------------------------------------------------------
+// Auth Service User Preferences & Runner API Keys (/qslate/v1/users/me/*)
+// ---------------------------------------------------------------------------
+
+export type UserPreferences = UserPreferencesDTO;
+export type UserPreferencesPatch = UserPreferencesPatchDTO;
+
+export interface APIKeyDto {
+  id: string;
+  name: string;
+  scopes: string[];
+  created_at: string;
+  expires_at: string;
+  revoked_at?: string | null;
+}
+
+export interface APIKeyInputDto {
+  name: string;
+  scopes?: string[];
+  expires_in_days?: number;
+}
+
+export interface NewAPIKeyDto {
+  key: APIKeyDto;
+  secret: string;
+}
+
+export interface APIKeysPageDto {
+  items: APIKeyDto[];
+}
