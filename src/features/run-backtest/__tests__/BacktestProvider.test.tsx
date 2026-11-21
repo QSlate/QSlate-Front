@@ -12,12 +12,18 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   type BacktestResult,
   type BacktestService,
-  INITIAL_MOCK_RESULT,
+  EMPTY_BACKTEST_RESULT,
 } from '@/entities/backtest';
 
 import { BacktestProvider, useBacktest } from '../BacktestProvider';
 
 afterEach(cleanup);
+
+const SAMPLE_RESULT: BacktestResult = {
+  ...EMPTY_BACKTEST_RESULT,
+  id: 'test-run-1',
+  equity: [{ time: 1000, nav: 100000, benchmark: 100000 }],
+};
 
 function Controls() {
   const { config, setConfig, run, status, error, result } = useBacktest();
@@ -61,11 +67,11 @@ describe('backtest execution', () => {
   });
 
   it('submits a configuration snapshot once and commits results on completion', async () => {
-    let complete!: (value: typeof INITIAL_MOCK_RESULT) => void;
+    let complete!: (value: typeof SAMPLE_RESULT) => void;
     const service: BacktestService = {
       run: vi.fn(
         () =>
-          new Promise<typeof INITIAL_MOCK_RESULT>((resolve) => {
+          new Promise<typeof SAMPLE_RESULT>((resolve) => {
             complete = resolve;
           })
       ),
@@ -87,8 +93,8 @@ describe('backtest execution', () => {
     expect(screen.getByTestId('result').textContent).toBe('100000');
     await act(async () =>
       complete({
-        ...INITIAL_MOCK_RESULT,
-        config: { ...INITIAL_MOCK_RESULT.config, capital: 50000 },
+        ...SAMPLE_RESULT,
+        config: { ...SAMPLE_RESULT.config, capital: 50000 },
       })
     );
     expect(screen.getByTestId('status').textContent).toBe('success');
@@ -112,11 +118,11 @@ describe('backtest execution', () => {
 
   it('aborts an in-flight execution when the provider unmounts', async () => {
     let signal: AbortSignal | undefined;
-    let complete!: (value: typeof INITIAL_MOCK_RESULT) => void;
+    let complete!: (value: typeof SAMPLE_RESULT) => void;
     const service: BacktestService = {
       run: vi.fn((_config, requestSignal) => {
         signal = requestSignal;
-        return new Promise<typeof INITIAL_MOCK_RESULT>((resolve) => {
+        return new Promise<typeof SAMPLE_RESULT>((resolve) => {
           complete = resolve;
         });
       }),
@@ -130,7 +136,7 @@ describe('backtest execution', () => {
     expect(signal?.aborted).toBe(false);
     unmount();
     expect(signal?.aborted).toBe(true);
-    await act(async () => complete(INITIAL_MOCK_RESULT));
+    await act(async () => complete(SAMPLE_RESULT));
   });
 
   it('reports a service error and supports retry', async () => {
@@ -138,7 +144,7 @@ describe('backtest execution', () => {
       run: vi
         .fn()
         .mockRejectedValueOnce(new Error('Simulation failed'))
-        .mockResolvedValue(INITIAL_MOCK_RESULT),
+        .mockResolvedValue(SAMPLE_RESULT),
     };
     render(
       <BacktestProvider service={service}>

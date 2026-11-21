@@ -190,7 +190,7 @@ describe('TradingView Candlestick and Ticker Selection in Lab', () => {
     it('renders chart skeleton during dynamic loading in EquityWidget', () => {
       render(
         <BacktestProvider>
-          <ResultControlsProvider>
+          <ResultControlsProvider defaultMode="candles">
             <EquityWidget />
           </ResultControlsProvider>
         </BacktestProvider>

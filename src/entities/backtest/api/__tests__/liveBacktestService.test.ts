@@ -97,16 +97,16 @@ describe('LiveBacktestService', () => {
     expect(result.equity).toHaveLength(2);
   });
 
-  it('falls back to mock service if runBacktest network request fails', async () => {
+  it('throws error without fallback to mock if runBacktest network request fails', async () => {
     const service = new LiveBacktestService();
 
     vi.spyOn(apiClient, 'runBacktest').mockRejectedValueOnce(
       new Error('API offline')
     );
 
-    const result = await service.run(DEFAULT_BACKTEST_CONFIG);
-    expect(result.source).toBe('mock');
-    expect(result.equity.length).toBeGreaterThan(0);
+    await expect(service.run(DEFAULT_BACKTEST_CONFIG)).rejects.toThrow(
+      'API offline'
+    );
   });
 
   it('aborts backtest and calls cancelBacktest when AbortSignal triggers', async () => {

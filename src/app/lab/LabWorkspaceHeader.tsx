@@ -161,9 +161,7 @@ export function LabWorkspaceHeader() {
             </>
           )}
         </div>
-        <span className="lab-demo-badge">
-          {result.source === 'mock' ? 'DEMO' : 'BACKTEST'}
-        </span>
+        {result.id ? <span className="lab-demo-badge">BACKTEST</span> : null}
         <span className="lab-run-status" role="status">
           {status === 'running'
             ? 'Simulating backtest…'

@@ -146,11 +146,13 @@ export function EquityToolbar() {
         </>
       ) : (
         <>
-          <span
-            className={`lab-oos ${result.oosReturn >= 0 ? 'lab-positive' : 'lab-negative'}`}
-          >
-            {signed(result.oosReturn)}% OOS
-          </span>
+          {result.id ? (
+            <span
+              className={`lab-oos ${result.oosReturn >= 0 ? 'lab-positive' : 'lab-negative'}`}
+            >
+              {signed(result.oosReturn)}% OOS
+            </span>
+          ) : null}
           <div
             className="lab-ranges"
             role="group"

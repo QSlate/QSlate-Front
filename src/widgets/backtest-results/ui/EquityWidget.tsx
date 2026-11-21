@@ -192,9 +192,6 @@ export function EquityWidget() {
     [theme, isColorblind]
   );
 
-  if (!result.equity.length)
-    return <EmptyState message="No equity data for this backtest." />;
-
   return (
     <div className="lab-equity-body" aria-busy={status === 'running'}>
       {chartMode === 'candles' ? (
@@ -381,69 +378,75 @@ export function EquityWidget() {
               </span>
             )}
 
-            <div className="hidden md:flex items-center gap-2 text-[10px] text-zinc-400">
-              <span>·</span>
-              <span>
-                Benchmark (SPX):{' '}
-                <strong className={isLight ? 'text-zinc-800' : 'text-zinc-200'}>
-                  {navStats && navStats.benchReturnPct >= 0 ? '+' : ''}
-                  {navStats ? navStats.benchReturnPct.toFixed(2) : '0.00'}%
-                </strong>
-              </span>
-              <span>·</span>
-              <span>
-                Alpha:{' '}
-                <strong
-                  className={
-                    navStats && navStats.alphaPct >= 0
-                      ? 'text-emerald-400'
-                      : 'text-rose-400'
-                  }
-                >
-                  {navStats && navStats.alphaPct >= 0 ? '+' : ''}
-                  {navStats ? navStats.alphaPct.toFixed(2) : '0.00'}%
-                </strong>
-              </span>
-            </div>
+            {navStats && (
+              <div className="hidden md:flex items-center gap-2 text-[10px] text-zinc-400">
+                <span>·</span>
+                <span>
+                  Benchmark (SPX):{' '}
+                  <strong
+                    className={isLight ? 'text-zinc-800' : 'text-zinc-200'}
+                  >
+                    {navStats.benchReturnPct >= 0 ? '+' : ''}
+                    {navStats.benchReturnPct.toFixed(2)}%
+                  </strong>
+                </span>
+                <span>·</span>
+                <span>
+                  Alpha:{' '}
+                  <strong
+                    className={
+                      navStats.alphaPct >= 0
+                        ? 'text-emerald-400'
+                        : 'text-rose-400'
+                    }
+                  >
+                    {navStats.alphaPct >= 0 ? '+' : ''}
+                    {navStats.alphaPct.toFixed(2)}%
+                  </strong>
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Right: Key Performance Badges & Legend */}
-          <div className="flex items-center gap-3 text-[10px]">
-            <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1 text-zinc-400">
-                <span className="w-2.5 h-0.5 bg-blue-500 rounded-full inline-block" />
-                Strategy NAV
+          {navStats && (
+            <div className="flex items-center gap-3 text-[10px]">
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1 text-zinc-400">
+                  <span className="w-2.5 h-0.5 bg-blue-500 rounded-full inline-block" />
+                  Strategy NAV
+                </span>
+                <span className="flex items-center gap-1 text-zinc-500">
+                  <span className="w-2.5 h-0.5 border-t border-dashed border-zinc-400 inline-block" />
+                  SPX
+                </span>
+              </div>
+              <span
+                className={`px-1.5 py-0.5 rounded border ${
+                  isLight
+                    ? 'bg-zinc-100 text-zinc-700 border-zinc-200'
+                    : 'bg-white/[0.04] text-zinc-300 border-white/10'
+                }`}
+              >
+                Sharpe:{' '}
+                <strong className="text-blue-400">
+                  {result.metrics.sharpe.toFixed(2)}
+                </strong>
               </span>
-              <span className="flex items-center gap-1 text-zinc-500">
-                <span className="w-2.5 h-0.5 border-t border-dashed border-zinc-400 inline-block" />
-                SPX
+              <span
+                className={`px-1.5 py-0.5 rounded border ${
+                  isLight
+                    ? 'bg-zinc-100 text-zinc-700 border-zinc-200'
+                    : 'bg-white/[0.04] text-zinc-300 border-white/10'
+                }`}
+              >
+                Max DD:{' '}
+                <strong className="text-rose-400">
+                  {result.metrics.maxDrawdown.toFixed(1)}%
+                </strong>
               </span>
             </div>
-            <span
-              className={`px-1.5 py-0.5 rounded border ${
-                isLight
-                  ? 'bg-zinc-100 text-zinc-700 border-zinc-200'
-                  : 'bg-white/[0.04] text-zinc-300 border-white/10'
-              }`}
-            >
-              Sharpe:{' '}
-              <strong className="text-blue-400">
-                {result.metrics.sharpe.toFixed(2)}
-              </strong>
-            </span>
-            <span
-              className={`px-1.5 py-0.5 rounded border ${
-                isLight
-                  ? 'bg-zinc-100 text-zinc-700 border-zinc-200'
-                  : 'bg-white/[0.04] text-zinc-300 border-white/10'
-              }`}
-            >
-              Max DD:{' '}
-              <strong className="text-rose-400">
-                {result.metrics.maxDrawdown.toFixed(1)}%
-              </strong>
-            </span>
-          </div>
+          )}
         </div>
       )}
 
@@ -455,6 +458,8 @@ export function EquityWidget() {
             interval={candleInterval}
             theme={theme}
           />
+        ) : series.nav.length === 0 ? (
+          <EmptyState message="No backtest executed yet. Run a backtest to generate your portfolio equity curve." />
         ) : (
           <DynamicLightweightChart
             data={series.nav}

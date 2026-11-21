@@ -12,9 +12,9 @@ import {
   type BacktestResult,
   type BacktestService,
   type EquityPoint,
+  type MonthlyReturn,
   type Trade,
 } from '../model/types';
-import { createMockBacktest, mockBacktestService } from './mockBacktestService';
 
 const DEFAULT_STRATEGY_ID = '6ABA8SdBPvDUzJS_GlWVp4CgP3NHjqecm5rZLuQaBXE';
 const DEFAULT_VERSION_ID = 'Kazk9Z7E-NzcqT9_XM2Nl-8logVhbBsGuVcDeEPufYw';
@@ -162,21 +162,17 @@ export class LiveBacktestService implements BacktestService {
     try {
       job = await apiClient.runBacktest(payload, undefined, token);
     } catch (err) {
-      if (token) {
-        if (err instanceof ApiError && err.statusCode === 401) {
-          useAuthStore.getState().clearAuth();
-          throw new Error(
-            'Session expirée ou non valide. Veuillez vous reconnecter pour exécuter ce backtest.'
-          );
-        }
-        const message =
-          err instanceof Error
-            ? err.message
-            : 'Failed to start backtest on server';
-        throw new Error(message);
+      if (err instanceof ApiError && err.statusCode === 401) {
+        useAuthStore.getState().clearAuth();
+        throw new Error(
+          'Session expirée ou non valide. Veuillez vous reconnecter pour exécuter ce backtest.'
+        );
       }
-      // Demo mode without credentials: fallback gracefully to simulated mock
-      return mockBacktestService.run(config, signal);
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Erreur lors du lancement du backtest sur le serveur';
+      throw new Error(message);
     }
 
     if (signal?.aborted) {
@@ -294,37 +290,75 @@ export async function fetchBacktestArtifacts(
           .filter((p) => p.time > 0)
       : [];
 
-  const equity: EquityPoint[] =
-    parsedEquity.length > 0 ? parsedEquity : createMockBacktest(config).equity;
+  const equity: EquityPoint[] = parsedEquity;
 
   return {
     id: backtestId,
     source: 'backend',
     config,
     equity,
-    monthlyReturns: createMockBacktest(config).monthlyReturns,
-    trades: trades.length > 0 ? trades : createMockBacktest(config).trades,
+    monthlyReturns: computeMonthlyReturns(equity),
+    trades,
     metrics: {
-      sharpe: Number(metrics.sharpe_ratio ?? 1.85),
-      sortino: Number(metrics.sortino_ratio ?? 2.12),
-      maxDrawdown: Number(metrics.max_drawdown_pct ?? 4.2),
-      winRate: Number(metrics.win_rate_pct ?? 56.4),
+      sharpe: Number(metrics.sharpe_ratio ?? 0),
+      sortino: Number(metrics.sortino_ratio ?? 0),
+      maxDrawdown: Number(metrics.max_drawdown_pct ?? 0),
+      winRate: Number(metrics.win_rate_pct ?? 0),
       profitFactor:
         metrics.profit_factor !== undefined
           ? Number(metrics.profit_factor)
-          : 1.74,
+          : null,
       calmar:
         metrics.calmar_ratio !== undefined
           ? Number(metrics.calmar_ratio)
-          : 1.45,
-      volatility: Number(metrics.volatility ?? 0.14),
-      beta: 0.92,
-      alpha: 0.08,
+          : null,
+      volatility: Number(metrics.volatility ?? 0),
+      beta: Number(metrics.beta ?? 0),
+      alpha: Number(metrics.alpha ?? 0),
       trades: Number(metrics.total_trades ?? trades.length),
     },
-    oosReturn: Number(metrics.return_pct ?? 18.2),
-    longestDrawdownDays: Number(metrics.max_drawdown_days ?? 12),
+    oosReturn: Number(metrics.return_pct ?? 0),
+    longestDrawdownDays: Number(metrics.max_drawdown_days ?? 0),
   };
+}
+
+export function computeMonthlyReturns(equity: EquityPoint[]): MonthlyReturn[] {
+  if (!equity || equity.length < 2) return [];
+  const monthlyBuckets = new Map<
+    string,
+    { firstNav: number; lastNav: number }
+  >();
+  const monthNames = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  for (const pt of equity) {
+    if (!pt || !Number.isFinite(pt.time) || !Number.isFinite(pt.nav)) continue;
+    const date = new Date(pt.time * 1000);
+    const key = `${monthNames[date.getUTCMonth()]} ${String(date.getUTCFullYear()).slice(-2)}`;
+    const existing = monthlyBuckets.get(key);
+    if (!existing) {
+      monthlyBuckets.set(key, { firstNav: pt.nav, lastNav: pt.nav });
+    } else {
+      existing.lastNav = pt.nav;
+    }
+  }
+  const results: MonthlyReturn[] = [];
+  for (const [month, { firstNav, lastNav }] of monthlyBuckets.entries()) {
+    const retPct = firstNav > 0 ? ((lastNav - firstNav) / firstNav) * 100 : 0;
+    results.push({ month, value: Number(retPct.toFixed(2)) });
+  }
+  return results;
 }
 
 export const liveBacktestService = new LiveBacktestService();

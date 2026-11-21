@@ -84,6 +84,29 @@ export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
   capital: 100_000,
 };
 
+export const EMPTY_BACKTEST_RESULT: BacktestResult = {
+  id: '',
+  source: 'backend',
+  config: DEFAULT_BACKTEST_CONFIG,
+  equity: [],
+  monthlyReturns: [],
+  trades: [],
+  metrics: {
+    sharpe: 0,
+    sortino: 0,
+    maxDrawdown: 0,
+    winRate: 0,
+    profitFactor: null,
+    calmar: null,
+    volatility: 0,
+    beta: 0,
+    alpha: 0,
+    trades: 0,
+  },
+  oosReturn: 0,
+  longestDrawdownDays: 0,
+};
+
 export type BacktestValidationErrors = Partial<
   Record<keyof BacktestConfig, string>
 >;

@@ -16,8 +16,8 @@ import {
   type BacktestResult,
   type BacktestService,
   DEFAULT_BACKTEST_CONFIG,
+  EMPTY_BACKTEST_RESULT,
   fetchBacktestArtifacts,
-  INITIAL_MOCK_RESULT,
   liveBacktestService,
   validateBacktest,
 } from '@/entities/backtest';
@@ -57,17 +57,21 @@ export function BacktestProvider({
           const parsed = JSON.parse(saved) as BacktestResult;
           if (
             parsed &&
+            parsed.source === 'backend' &&
+            parsed.id &&
             Array.isArray(parsed.equity) &&
             parsed.equity.length > 0
           ) {
             return parsed;
           }
+          // Clean up stale mock data from localStorage
+          localStorage.removeItem(LAST_RESULT_STORAGE_KEY);
         }
       } catch {
         // ignore
       }
     }
-    return INITIAL_MOCK_RESULT;
+    return EMPTY_BACKTEST_RESULT;
   });
   const [status, setStatus] = useState<BacktestContextValue['status']>('idle');
   const [error, setError] = useState<string | null>(null);

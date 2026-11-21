@@ -2,8 +2,16 @@
 
 import { useBacktest } from '@/features/run-backtest/BacktestProvider';
 
+import { EmptyState } from './EmptyState';
+
 export function MetricsWidget() {
   const { result, status } = useBacktest();
+
+  if (!result.id) {
+    return (
+      <EmptyState message="No metrics available. Run a backtest to compute risk and performance statistics." />
+    );
+  }
   const m = result.metrics;
   const metrics: {
     label: string;
