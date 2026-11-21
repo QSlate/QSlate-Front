@@ -3,7 +3,11 @@
 import { create } from 'zustand';
 
 import { MOCK_STRATEGIES } from '@/entities/strategy';
-import type { Diagnostic, StrategyVersion } from '@/shared/api';
+import type {
+  Diagnostic,
+  MarketplaceItem,
+  StrategyVersion,
+} from '@/shared/api';
 
 export type LabTab = 'workspace' | 'ide' | 'marketplace' | 'runs' | 'settings';
 
@@ -22,6 +26,8 @@ export interface LabState {
   ideSplitView: boolean;
   marketplaceSearch: string;
   marketplaceCategory: string;
+  installedMarketplaceIds: string[];
+  reviewingItem: MarketplaceItem | null;
   toast: ToastNotice | null;
 
   // Live strategy state & versioning
@@ -42,6 +48,10 @@ export interface LabState {
   toggleIdeSplitView: () => void;
   setMarketplaceSearch: (query: string) => void;
   setMarketplaceCategory: (category: string) => void;
+  setInstalledMarketplaceIds: (ids: string[]) => void;
+  addInstalledMarketplaceId: (id: string) => void;
+  removeInstalledMarketplaceId: (id: string) => void;
+  setReviewingItem: (item: MarketplaceItem | null) => void;
   showToast: (message: string, type?: 'success' | 'info' | 'warning') => void;
   clearToast: () => void;
   applyAiPrompt: (promptText?: string) => Promise<void>;
@@ -76,6 +86,8 @@ export const useLabStore = create<LabState>((set, get) => ({
   ideSplitView: false,
   marketplaceSearch: '',
   marketplaceCategory: 'All',
+  installedMarketplaceIds: [],
+  reviewingItem: null,
   toast: null,
 
   strategyId: null,
@@ -107,6 +119,24 @@ export const useLabStore = create<LabState>((set, get) => ({
   setMarketplaceSearch: (query) => set({ marketplaceSearch: query }),
 
   setMarketplaceCategory: (category) => set({ marketplaceCategory: category }),
+
+  setInstalledMarketplaceIds: (ids) => set({ installedMarketplaceIds: ids }),
+
+  addInstalledMarketplaceId: (id) =>
+    set((state) => ({
+      installedMarketplaceIds: state.installedMarketplaceIds.includes(id)
+        ? state.installedMarketplaceIds
+        : [...state.installedMarketplaceIds, id],
+    })),
+
+  removeInstalledMarketplaceId: (id) =>
+    set((state) => ({
+      installedMarketplaceIds: state.installedMarketplaceIds.filter(
+        (existingId) => existingId !== id
+      ),
+    })),
+
+  setReviewingItem: (item) => set({ reviewingItem: item }),
 
   setStrategyDiagnostics: (diagnostics) =>
     set({

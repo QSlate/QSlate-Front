@@ -3,6 +3,16 @@ import type {
   BackendErrorResponse,
   DiagnosticsResponse,
   LoginPayload,
+  MarketplaceCategoriesPage,
+  MarketplaceFilter,
+  MarketplaceInstallation,
+  MarketplaceItem,
+  MarketplacePage,
+  MarketplacePatchInput,
+  MarketplacePublishInput,
+  MarketplaceReview,
+  MarketplaceReviewInput,
+  MarketplaceReviewsPage,
   RegisterPayload,
   Strategy,
   StrategyInput,
@@ -346,6 +356,213 @@ export class QslateApiClient {
       body: formData,
       ...(token ? { token } : {}),
     });
+  }
+
+  // -------------------------------------------------------------------------
+  // Marketplace Service Methods (/qslate/v1/marketplace/*)
+  // -------------------------------------------------------------------------
+
+  /**
+   * List community marketplace items with search, category filtering and pagination.
+   * GET /qslate/v1/marketplace/items
+   */
+  public async getMarketplaceItems(
+    params?: MarketplaceFilter,
+    token?: string | null
+  ): Promise<MarketplacePage> {
+    const query = new URLSearchParams();
+    if (params?.q) query.set('q', params.q);
+    if (params?.kind) query.set('kind', params.kind);
+    if (params?.category) query.set('category', params.category);
+    if (params?.cursor) query.set('cursor', params.cursor);
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString();
+    return this.request<MarketplacePage>(
+      `/qslate/v1/marketplace/items${qs ? `?${qs}` : ''}`,
+      {
+        method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * List featured highlight items.
+   * GET /qslate/v1/marketplace/featured
+   */
+  public async getMarketplaceFeatured(
+    token?: string | null
+  ): Promise<MarketplacePage> {
+    return this.request<MarketplacePage>('/qslate/v1/marketplace/featured', {
+      method: 'GET',
+      ...(token ? { token } : {}),
+    });
+  }
+
+  /**
+   * List all verified marketplace categories.
+   * GET /qslate/v1/marketplace/categories
+   */
+  public async getMarketplaceCategories(
+    params?: { cursor?: string; limit?: number },
+    token?: string | null
+  ): Promise<MarketplaceCategoriesPage> {
+    const query = new URLSearchParams();
+    if (params?.cursor) query.set('cursor', params.cursor);
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString();
+    return this.request<MarketplaceCategoriesPage>(
+      `/qslate/v1/marketplace/categories${qs ? `?${qs}` : ''}`,
+      {
+        method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Fetch single marketplace item details.
+   * GET /qslate/v1/marketplace/items/{itemId}
+   */
+  public async getMarketplaceItem(
+    itemId: string,
+    token?: string | null
+  ): Promise<MarketplaceItem> {
+    return this.request<MarketplaceItem>(
+      `/qslate/v1/marketplace/items/${encodeURIComponent(itemId)}`,
+      {
+        method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Publish a strategy or widget into the marketplace catalog.
+   * POST /qslate/v1/marketplace/items
+   */
+  public async publishMarketplaceItem(
+    input: MarketplacePublishInput,
+    token?: string | null
+  ): Promise<MarketplaceItem> {
+    return this.request<MarketplaceItem>('/qslate/v1/marketplace/items', {
+      method: 'POST',
+      body: JSON.stringify(input),
+      ...(token ? { token } : {}),
+    });
+  }
+
+  /**
+   * Patch an existing listing metadata.
+   * PATCH /qslate/v1/marketplace/items/{itemId}
+   */
+  public async patchMarketplaceItem(
+    itemId: string,
+    input: MarketplacePatchInput,
+    token?: string | null
+  ): Promise<MarketplaceItem> {
+    return this.request<MarketplaceItem>(
+      `/qslate/v1/marketplace/items/${encodeURIComponent(itemId)}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(input),
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Delete an existing marketplace listing.
+   * DELETE /qslate/v1/marketplace/items/{itemId}
+   */
+  public async deleteMarketplaceItem(
+    itemId: string,
+    token?: string | null
+  ): Promise<void> {
+    return this.request<void>(
+      `/qslate/v1/marketplace/items/${encodeURIComponent(itemId)}`,
+      {
+        method: 'DELETE',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Install an item version into the user's workspace catalog.
+   * POST /qslate/v1/marketplace/items/{itemId}/install
+   */
+  public async installMarketplaceItem(
+    itemId: string,
+    versionId: string,
+    token?: string | null
+  ): Promise<MarketplaceInstallation> {
+    return this.request<MarketplaceInstallation>(
+      `/qslate/v1/marketplace/items/${encodeURIComponent(itemId)}/install`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ version_id: versionId }),
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Uninstall an item from the user's workspace catalog.
+   * DELETE /qslate/v1/marketplace/items/{itemId}/installation
+   */
+  public async uninstallMarketplaceItem(
+    itemId: string,
+    token?: string | null
+  ): Promise<void> {
+    return this.request<void>(
+      `/qslate/v1/marketplace/items/${encodeURIComponent(itemId)}/installation`,
+      {
+        method: 'DELETE',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Retrieve community reviews for an item.
+   * GET /qslate/v1/marketplace/items/{itemId}/reviews
+   */
+  public async getMarketplaceReviews(
+    itemId: string,
+    params?: { cursor?: string; limit?: number },
+    token?: string | null
+  ): Promise<MarketplaceReviewsPage> {
+    const query = new URLSearchParams();
+    if (params?.cursor) query.set('cursor', params.cursor);
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString();
+    return this.request<MarketplaceReviewsPage>(
+      `/qslate/v1/marketplace/items/${encodeURIComponent(itemId)}/reviews${qs ? `?${qs}` : ''}`,
+      {
+        method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Post a 1-5 star review and comment on an installed item.
+   * POST /qslate/v1/marketplace/items/{itemId}/reviews
+   */
+  public async createMarketplaceReview(
+    itemId: string,
+    input: MarketplaceReviewInput,
+    token?: string | null
+  ): Promise<MarketplaceReview> {
+    return this.request<MarketplaceReview>(
+      `/qslate/v1/marketplace/items/${encodeURIComponent(itemId)}/reviews`,
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+        ...(token ? { token } : {}),
+      }
+    );
   }
 }
 

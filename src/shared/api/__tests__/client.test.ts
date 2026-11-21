@@ -330,4 +330,131 @@ describe('QslateApiClient', () => {
       expect.objectContaining({ method: 'POST' })
     );
   });
+
+  it('fetches marketplace items, categories, and handles install/uninstall/reviews', async () => {
+    // 1. getMarketplaceCategories
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        items: [
+          { id: 'strategies', name: 'Strategies' },
+          { id: 'visualization', name: 'Visualization' },
+        ],
+      }),
+    });
+
+    const categories = await client.getMarketplaceCategories();
+    expect(categories.items.length).toBe(2);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/marketplace/categories',
+      expect.objectContaining({ method: 'GET' })
+    );
+
+    // 2. getMarketplaceItems with filters
+    const mockItems = {
+      items: [
+        {
+          id: 'item-1',
+          kind: 'strategy',
+          version_id: 'ver-1',
+          author_id: 42,
+          name: 'Breakout Pro',
+          description: 'High alpha strategy',
+          category: 'strategies',
+          visibility: 'public',
+          revision: 1,
+          install_count: 10,
+          review_count: 5,
+          average_rating: 4.8,
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z',
+        },
+      ],
+      next_cursor: 'cursor-2',
+    };
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => mockItems,
+    });
+
+    const itemsPage = await client.getMarketplaceItems({
+      q: 'Breakout',
+      category: 'strategies',
+      limit: 10,
+    });
+    expect(itemsPage.items[0].name).toBe('Breakout Pro');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/marketplace/items?q=Breakout&category=strategies&limit=10',
+      expect.objectContaining({ method: 'GET' })
+    );
+
+    // 3. installMarketplaceItem
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 201,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        item_id: 'item-1',
+        version_id: 'ver-1',
+        kind: 'strategy',
+        catalog_id: 'cat-1',
+        installed_at: '2026-01-01T00:00:00Z',
+      }),
+    });
+
+    const installed = await client.installMarketplaceItem('item-1', 'ver-1');
+    expect(installed.item_id).toBe('item-1');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/marketplace/items/item-1/install',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ version_id: 'ver-1' }),
+      })
+    );
+
+    // 4. uninstallMarketplaceItem
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 204,
+      headers: new Headers(),
+    });
+
+    await client.uninstallMarketplaceItem('item-1');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/marketplace/items/item-1/installation',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+
+    // 5. createMarketplaceReview
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 201,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        id: 'rev-1',
+        author_id: 1,
+        rating: 5,
+        comment: 'Outstanding alpha!',
+        created_at: '2026-01-01T00:00:00Z',
+      }),
+    });
+
+    const review = await client.createMarketplaceReview('item-1', {
+      rating: 5,
+      comment: 'Outstanding alpha!',
+    });
+    expect(review.rating).toBe(5);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/marketplace/items/item-1/reviews',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ rating: 5, comment: 'Outstanding alpha!' }),
+      })
+    );
+  });
 });
