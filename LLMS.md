@@ -319,6 +319,28 @@ Here are the four prioritized front-to-back connection tickets currently queued:
   - Sync `AppearanceProvider` changes to `PATCH /qslate/v1/users/me/preferences` with debounce.
   - Build the Runner API Keys management card in `src/widgets/settings-view/ui/SettingsView.tsx` with copy-to-clipboard modal.
 
+### Ticket #122: Connect Backtest Runs History View (/lab/runs) to Lab API
+
+- **Goal:** Replace `MOCK_RUNS` in `/lab/runs` with live Go Lab service endpoints.
+- **Key Tasks:**
+  - Add API methods: `getBacktests(params)`, `getBacktest(id)`, `deleteBacktest(id)`.
+  - Wire `BacktestRunsView.tsx` with TanStack Query, server pagination, status filters, and deletion.
+  - Implement "Load into Lab" action dispatching selected run configuration to the workspace.
+
+### Ticket #123: Build Backtest Execution Logs Console & Diagnostics Drawer
+
+- **Goal:** Display real-time execution stdout/stderr and tracebacks for active or failed simulations.
+- **Key Tasks:**
+  - Add `getBacktestLogs(id)` and connect live WebSocket stream frames (`type: "logs"`).
+  - Build accessible, collapsible terminal drawer (`ExecutionLogsConsole.tsx`) with search and log download.
+
+### Ticket #124: Build Strategy Parameter Optimization & Grid Search UI
+
+- **Goal:** Enable multi-trial parameter optimization campaigns (Grid Search / Monte Carlo) via `POST /qslate/v1/backtests/optimize`.
+- **Key Tasks:**
+  - Build parameter range configuration modal with permutation calculation badge.
+  - Connect optimization job submission and batch trial progress tracker.
+
 ---
 
 ## 7. Useful Diagnostic & Development Commands
