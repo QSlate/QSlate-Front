@@ -32,7 +32,7 @@ export function createMockBacktest(input: BacktestConfig): BacktestResult {
   const strategyIndex = STRATEGIES.findIndex(
     (item) => item.id === config.strategyId
   );
-  const multiplier = [1, 0.72, 1.18][strategyIndex];
+  const multiplier = [1, 0.72, 1.18][strategyIndex] ?? 1.0;
   const equity: EquityPoint[] = Array.from(
     { length: count + 1 },
     (_, index) => {

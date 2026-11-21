@@ -73,14 +73,26 @@ export function EquityWidget() {
   // Strategy NAV series
   const series = useMemo(
     () => ({
-      nav: result.equity.map((point) => ({
-        time: point.time,
-        value: point.nav,
-      })),
-      benchmark: result.equity.map((point) => ({
-        time: point.time,
-        value: point.benchmark,
-      })),
+      nav: (result.equity || [])
+        .filter(
+          (point) =>
+            point && Number.isFinite(point.nav) && Number.isFinite(point.time)
+        )
+        .map((point) => ({
+          time: point.time,
+          value: point.nav,
+        })),
+      benchmark: (result.equity || [])
+        .filter(
+          (point) =>
+            point &&
+            Number.isFinite(point.benchmark) &&
+            Number.isFinite(point.time)
+        )
+        .map((point) => ({
+          time: point.time,
+          value: point.benchmark,
+        })),
     }),
     [result]
   );

@@ -312,9 +312,35 @@ export function LightweightChart<TData extends ChartDataPoint>({
 
   useEffect(() => {
     if (!seriesRef.current || !chartRef.current) return;
-    seriesRef.current.setData(
-      data as Parameters<ISeriesApi<SeriesType>['setData']>[0]
-    );
+    try {
+      if (Array.isArray(data)) {
+        const cleanData = data.filter((item) => {
+          if (!item || item.time === null || item.time === undefined)
+            return false;
+          if (seriesType === 'candlestick') {
+            const bar = item as unknown as {
+              open?: number;
+              high?: number;
+              low?: number;
+              close?: number;
+            };
+            return (
+              Number.isFinite(bar.open) &&
+              Number.isFinite(bar.high) &&
+              Number.isFinite(bar.low) &&
+              Number.isFinite(bar.close)
+            );
+          }
+          const pt = item as unknown as { value?: number };
+          return Number.isFinite(pt.value);
+        });
+        seriesRef.current.setData(
+          cleanData as Parameters<ISeriesApi<SeriesType>['setData']>[0]
+        );
+      }
+    } catch (err) {
+      console.warn('LightweightChart: setData failed', err);
+    }
   }, [data, seriesType, autoSize]);
 
   useEffect(() => {
@@ -336,9 +362,22 @@ export function LightweightChart<TData extends ChartDataPoint>({
     comparisonRef.current.applyOptions({
       color: activeTheme === 'dark' ? '#8b9099' : '#626875',
     });
-    comparisonRef.current.setData(
-      comparisonData as { time: Time; value: number }[]
-    );
+    try {
+      if (Array.isArray(comparisonData)) {
+        const cleanComparison = comparisonData.filter(
+          (item) =>
+            item &&
+            item.time !== null &&
+            item.time !== undefined &&
+            Number.isFinite(item.value)
+        );
+        comparisonRef.current.setData(
+          cleanComparison as { time: Time; value: number }[]
+        );
+      }
+    } catch (err) {
+      console.warn('LightweightChart: setComparisonData failed', err);
+    }
   }, [comparisonData, seriesType, autoSize, activeTheme]);
 
   useEffect(() => {

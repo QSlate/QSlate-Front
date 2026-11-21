@@ -264,18 +264,32 @@ export class LiveBacktestService implements BacktestService {
     const rawEquity = Array.isArray(equityPage?.items)
       ? (equityPage.items as Record<string, unknown>[])
       : [];
-    const equity: EquityPoint[] =
+    const parsedEquity: EquityPoint[] =
       rawEquity.length > 0
-        ? rawEquity.map((p) => ({
-            time:
-              typeof p.time === 'number'
-                ? p.time
-                : Math.floor(
-                    new Date(String(p.timestamp || p.time)).getTime() / 1000
-                  ),
-            nav: Number(p.nav || p.equity || config.capital),
-            benchmark: Number(p.benchmark || config.capital),
-          }))
+        ? rawEquity
+            .map((p) => {
+              const parsedTime =
+                typeof p.time === 'number'
+                  ? p.time
+                  : Math.floor(
+                      new Date(String(p.timestamp || p.time)).getTime() / 1000
+                    );
+              const nav = Number(p.nav || p.equity || config.capital);
+              const benchmark = Number(p.benchmark || config.capital);
+              return {
+                time: Number.isFinite(parsedTime) ? parsedTime : 0,
+                nav: Number.isFinite(nav) ? nav : config.capital,
+                benchmark: Number.isFinite(benchmark)
+                  ? benchmark
+                  : config.capital,
+              };
+            })
+            .filter((p) => p.time > 0)
+        : [];
+
+    const equity: EquityPoint[] =
+      parsedEquity.length > 0
+        ? parsedEquity
         : createMockBacktest(config).equity;
 
     return {
