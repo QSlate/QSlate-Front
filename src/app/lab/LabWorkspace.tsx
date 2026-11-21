@@ -41,6 +41,7 @@ import {
   DynamicGridWrapper,
   type WidgetDefinition,
 } from '@/widgets/dynamic-grid';
+import { ExecutionLogsConsole } from '@/widgets/execution-logs';
 import { LabSidebar } from '@/widgets/lab-sidebar/LabSidebar';
 import { LabToolbar } from '@/widgets/lab-toolbar/LabToolbar';
 
@@ -192,6 +193,7 @@ function Workspace() {
         </section>
       </main>
       <AddWidgetDrawer />
+      <ExecutionLogsConsole />
       <Toast />
       {expandedWidget && ExpandedComponent ? (
         <Dialog
