@@ -55,6 +55,16 @@ export const useAuthStore = create<AuthStore>()(
             false,
             'auth/setAuth'
           );
+
+          // Asynchronously hydrate user preferences from backend
+          apiClient
+            .getUserPreferences(session.access_token)
+            .then((remotePrefs) => {
+              useUserStore.getState().hydrateRemotePreferences(remotePrefs);
+            })
+            .catch(() => {
+              // Ignore network or preference fetch error
+            });
         },
 
         updateUser: (patch: Partial<User>) => {
@@ -115,6 +125,14 @@ export const useAuthStore = create<AuthStore>()(
               get().updateUser(remoteUser);
             } catch {
               // Token might be invalid or network error
+            }
+
+            try {
+              const remotePrefs =
+                await apiClient.getUserPreferences(cookieToken);
+              useUserStore.getState().hydrateRemotePreferences(remotePrefs);
+            } catch {
+              // Ignore network or preference fetch error
             }
           } else {
             set(

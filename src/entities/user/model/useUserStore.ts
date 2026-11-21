@@ -46,6 +46,10 @@ function sanitizePreferences(
       typeof value.sidebarCollapsed === 'boolean'
         ? value.sidebarCollapsed
         : fallback.sidebarCollapsed,
+    soundAlerts:
+      typeof value.soundAlerts === 'boolean'
+        ? value.soundAlerts
+        : fallback.soundAlerts,
   };
 }
 
@@ -53,8 +57,9 @@ function selectPersistedPreferences({
   theme,
   colorblindMode,
   sidebarCollapsed,
+  soundAlerts,
 }: UserStore): UserPreferencesState {
-  return { theme, colorblindMode, sidebarCollapsed };
+  return { theme, colorblindMode, sidebarCollapsed, soundAlerts };
 }
 
 export const useUserStore = create<UserStore>()(
@@ -100,6 +105,50 @@ export const useUserStore = create<UserStore>()(
             'user/toggleSidebar'
           ),
 
+        setSoundAlerts: (soundAlerts: boolean) =>
+          set({ soundAlerts }, false, 'user/setSoundAlerts'),
+
+        toggleSoundAlerts: () =>
+          set(
+            (state) => ({
+              soundAlerts: !state.soundAlerts,
+            }),
+            false,
+            'user/toggleSoundAlerts'
+          ),
+
+        hydrateRemotePreferences: (remote: {
+          theme?: string;
+          colorblind_mode?: boolean;
+        }) =>
+          set(
+            (state) => {
+              let updatedTheme = state.theme;
+              if (remote.theme === 'dark' || remote.theme === 'light') {
+                updatedTheme = remote.theme;
+              }
+              let updatedColorblind = state.colorblindMode;
+              if (typeof remote.colorblind_mode === 'boolean') {
+                updatedColorblind = remote.colorblind_mode
+                  ? 'orange-blue'
+                  : 'none';
+              }
+              if (
+                updatedTheme === state.theme &&
+                updatedColorblind === state.colorblindMode
+              ) {
+                return state;
+              }
+              return {
+                ...state,
+                theme: updatedTheme,
+                colorblindMode: updatedColorblind,
+              };
+            },
+            false,
+            'user/hydrateRemotePreferences'
+          ),
+
         resetPreferences: () =>
           set({ ...DEFAULT_USER_PREFERENCES }, false, 'user/resetPreferences'),
 
@@ -134,6 +183,9 @@ export const selectColorblindMode = (state: UserStore): ColorblindMode =>
 
 export const selectSidebarCollapsed = (state: UserStore): boolean =>
   state.sidebarCollapsed;
+
+export const selectSoundAlerts = (state: UserStore): boolean =>
+  state.soundAlerts;
 
 export const selectSession = (state: UserStore): UserSession | null =>
   state.session;

@@ -548,4 +548,123 @@ describe('QslateApiClient', () => {
       })
     );
   });
+
+  it('supports user display preferences sync endpoints', async () => {
+    // 1. getUserPreferences
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        theme: 'light',
+        colorblind_mode: true,
+      }),
+    });
+
+    const prefs = await client.getUserPreferences();
+    expect(prefs).toEqual({ theme: 'light', colorblind_mode: true });
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/users/me/preferences',
+      expect.objectContaining({ method: 'GET' })
+    );
+
+    // 2. updateUserPreferences
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        theme: 'dark',
+        colorblind_mode: false,
+      }),
+    });
+
+    const updated = await client.updateUserPreferences({
+      theme: 'dark',
+      colorblind_mode: false,
+    });
+    expect(updated).toEqual({ theme: 'dark', colorblind_mode: false });
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/users/me/preferences',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ theme: 'dark', colorblind_mode: false }),
+      })
+    );
+  });
+
+  it('supports runner API key management endpoints', async () => {
+    // 1. getApiKeys
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        items: [
+          {
+            id: 'key-123',
+            name: 'Cluster Runner Alpha',
+            scopes: ['runner:results:write'],
+            created_at: '2026-01-01T00:00:00Z',
+            expires_at: '2026-04-01T00:00:00Z',
+          },
+        ],
+      }),
+    });
+
+    const page = await client.getApiKeys();
+    expect(page.items).toHaveLength(1);
+    expect(page.items[0]?.name).toBe('Cluster Runner Alpha');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/users/me/api-keys',
+      expect.objectContaining({ method: 'GET' })
+    );
+
+    // 2. createApiKey
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 201,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        key: {
+          id: 'key-456',
+          name: 'Dedicated Worker',
+          scopes: ['runner:heartbeat'],
+          created_at: '2026-01-01T00:00:00Z',
+          expires_at: '2026-02-01T00:00:00Z',
+        },
+        secret: 'qsl_key-456.secrettoken123',
+      }),
+    });
+
+    const created = await client.createApiKey({
+      name: 'Dedicated Worker',
+      expires_in_days: 30,
+    });
+    expect(created.key.id).toBe('key-456');
+    expect(created.secret).toBe('qsl_key-456.secrettoken123');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/users/me/api-keys',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          name: 'Dedicated Worker',
+          expires_in_days: 30,
+        }),
+      })
+    );
+
+    // 3. revokeApiKey
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 204,
+      headers: new Headers(),
+    });
+
+    await expect(client.revokeApiKey('key-456')).resolves.toBeUndefined();
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/users/me/api-keys/key-456',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+  });
 });

@@ -215,4 +215,37 @@ describe('useUserStore', () => {
       expect(selectSession(state)).toEqual(session);
     });
   });
+
+  describe('sound alerts & remote hydration', () => {
+    it('manages soundAlerts state and toggling', () => {
+      const { setSoundAlerts, toggleSoundAlerts } = useUserStore.getState();
+
+      expect(useUserStore.getState().soundAlerts).toBe(true);
+      toggleSoundAlerts();
+      expect(useUserStore.getState().soundAlerts).toBe(false);
+      setSoundAlerts(true);
+      expect(useUserStore.getState().soundAlerts).toBe(true);
+    });
+
+    it('hydrates remote preferences from backend DTO', () => {
+      const { hydrateRemotePreferences } = useUserStore.getState();
+
+      hydrateRemotePreferences({
+        theme: 'light',
+        colorblind_mode: true,
+      });
+
+      expect(useUserStore.getState().theme).toBe('light');
+      expect(useUserStore.getState().colorblindMode).toBe('orange-blue');
+
+      // Hydrate back to dark / false
+      hydrateRemotePreferences({
+        theme: 'dark',
+        colorblind_mode: false,
+      });
+
+      expect(useUserStore.getState().theme).toBe('dark');
+      expect(useUserStore.getState().colorblindMode).toBe('none');
+    });
+  });
 });
