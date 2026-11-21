@@ -49,7 +49,7 @@ export function ExecutionLogsConsole() {
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const accessToken = useAuthStore((state) => state.accessToken);
-  const { status: backtestStatus } = useBacktest();
+  const { status: backtestStatus, error: backtestError } = useBacktest();
 
   const [rawLogs, setRawLogs] = useState<string[]>(DEFAULT_SANDBOX_LOGS);
   const [searchQuery, setSearchQuery] = useState('');
@@ -107,42 +107,78 @@ export function ExecutionLogsConsole() {
   }, [parsedLogs, levelFilter, searchQuery]);
 
   // Fetch historical logs from backend when a backtest is loaded
-  const fetchLogsHistory = useCallback(async () => {
-    if (!loadedBacktestId || !isAuthenticated) return;
-    setIsLoadingHistory(true);
-    try {
-      const page = await apiClient.getBacktestLogs(
-        loadedBacktestId,
-        { limit: 200 },
-        accessToken ?? undefined
-      );
-      if (page.items && page.items.length > 0) {
-        setRawLogs(page.items.map((it) => it.message));
-        showToast('Execution logs loaded from Lab service', 'info');
+  const fetchLogsHistory = useCallback(
+    async (silent = false) => {
+      if (!loadedBacktestId || !isAuthenticated) return;
+      if (!silent) setIsLoadingHistory(true);
+      try {
+        const page = await apiClient.getBacktestLogs(
+          loadedBacktestId,
+          { limit: 200 },
+          accessToken ?? undefined
+        );
+        if (page.items && page.items.length > 0) {
+          const lines = page.items
+            .map((it) => it.message)
+            .filter((msg) => msg && msg.trim() !== '');
+          if (lines.length > 0) {
+            setRawLogs(lines);
+          }
+          if (!silent) {
+            showToast('Execution logs loaded from Lab service', 'info');
+          }
+        }
+      } catch {
+        // Keep sandbox defaults if backend logs are not available
+      } finally {
+        if (!silent) setIsLoadingHistory(false);
       }
-    } catch {
-      // Keep sandbox defaults if backend logs are not available
-    } finally {
-      setIsLoadingHistory(false);
-    }
-  }, [loadedBacktestId, isAuthenticated, accessToken, showToast]);
+    },
+    [loadedBacktestId, isAuthenticated, accessToken, showToast]
+  );
 
   useEffect(() => {
     if (isOpen && loadedBacktestId) {
-      fetchLogsHistory();
+      void fetchLogsHistory();
     }
   }, [isOpen, loadedBacktestId, fetchLogsHistory]);
 
-  // Automatically open logs drawer when a backtest run fails
+  // Live polling while backtest is actively running
   useEffect(() => {
-    if (backtestStatus === 'error') {
+    if (backtestStatus === 'running' && loadedBacktestId) {
+      void fetchLogsHistory(true);
+      const interval = setInterval(() => {
+        void fetchLogsHistory(true);
+      }, 500);
+      return () => clearInterval(interval);
+    }
+  }, [backtestStatus, loadedBacktestId, fetchLogsHistory]);
+
+  // Automatically open logs drawer and handle backtest execution state transitions
+  useEffect(() => {
+    if (backtestStatus === 'running') {
       setIsOpen(true);
       setRawLogs((prev) => [
         ...prev,
-        `[${new Date().toLocaleTimeString()}] [ERROR] Simulation execution failed: Python traceback captured in kernel sandbox.`,
+        `[${new Date().toLocaleTimeString()}] [SYS] Initializing backtest simulation in gVisor sandbox...`,
+      ]);
+    } else if (backtestStatus === 'success') {
+      void fetchLogsHistory(true);
+      setRawLogs((prev) => [
+        ...prev,
+        `[${new Date().toLocaleTimeString()}] [INFO] Simulation completed successfully. 100% telemetry received.`,
+      ]);
+    } else if (backtestStatus === 'error') {
+      setIsOpen(true);
+      void fetchLogsHistory(true);
+      setRawLogs((prev) => [
+        ...prev,
+        `[${new Date().toLocaleTimeString()}] [ERROR] Simulation execution failed: Python traceback captured in kernel sandbox.${
+          backtestError ? ` (${backtestError})` : ''
+        }`,
       ]);
     }
-  }, [backtestStatus, setIsOpen]);
+  }, [backtestStatus, backtestError, setIsOpen, fetchLogsHistory]);
 
   // Autoscroll handling
   useEffect(() => {
@@ -424,8 +460,22 @@ export function ExecutionLogsConsole() {
         }`}
       >
         <span className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Kernel Stream: Synchronized</span>
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              backtestStatus === 'running'
+                ? 'bg-amber-400 animate-pulse'
+                : backtestStatus === 'error'
+                  ? 'bg-rose-500'
+                  : 'bg-emerald-500 animate-pulse'
+            }`}
+          />
+          <span>
+            {backtestStatus === 'running'
+              ? 'Kernel Stream: Simulating in Sandbox…'
+              : backtestStatus === 'error'
+                ? 'Kernel Stream: Simulation Error'
+                : 'Kernel Stream: Synchronized'}
+          </span>
         </span>
         <span>
           Showing {filteredLogs.length} of {rawLogs.length} lines

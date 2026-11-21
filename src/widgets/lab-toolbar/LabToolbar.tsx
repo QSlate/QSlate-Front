@@ -99,12 +99,22 @@ export function LabToolbar({ onAddWidget }: { onAddWidget: () => void }) {
         event.preventDefault();
         setSubmitted(true);
         const firstInvalidField = Object.keys(validation)[0];
-        if (firstInvalidField)
+        if (firstInvalidField) {
           requestAnimationFrame(() => {
             const field =
               formRef.current?.elements.namedItem(firstInvalidField);
             if (field instanceof HTMLElement) field.focus();
           });
+          const message =
+            validation[firstInvalidField as keyof typeof validation];
+          if (message) {
+            useLabStore.getState().showToast(message, 'error');
+          }
+          return;
+        }
+        useLabStore
+          .getState()
+          .showToast('Starting backtest simulation…', 'info');
         void run();
       }}
     >

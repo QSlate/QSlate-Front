@@ -15,7 +15,7 @@ export type LabTab = 'workspace' | 'ide' | 'marketplace' | 'runs' | 'settings';
 export interface ToastNotice {
   id: string;
   message: string;
-  type: 'success' | 'info' | 'warning';
+  type: 'success' | 'info' | 'warning' | 'error';
 }
 
 export interface LabState {
@@ -60,7 +60,10 @@ export interface LabState {
   addInstalledMarketplaceId: (id: string) => void;
   removeInstalledMarketplaceId: (id: string) => void;
   setReviewingItem: (item: MarketplaceItem | null) => void;
-  showToast: (message: string, type?: 'success' | 'info' | 'warning') => void;
+  showToast: (
+    message: string,
+    type?: 'success' | 'info' | 'warning' | 'error'
+  ) => void;
   clearToast: () => void;
   applyAiPrompt: (promptText?: string) => Promise<void>;
   loadStrategyFiles: (strategyId: string) => void;

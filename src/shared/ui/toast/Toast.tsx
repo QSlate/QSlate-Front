@@ -1,6 +1,12 @@
 'use client';
 
-import { CheckCircle2, Info, X } from 'lucide-react';
+import {
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle2,
+  Info,
+  X,
+} from 'lucide-react';
 
 import { useLabStore } from '@/features/lab-state';
 
@@ -16,7 +22,11 @@ export function Toast() {
       role="status"
       aria-live="polite"
     >
-      {toast.type === 'success' ? (
+      {toast.type === 'error' ? (
+        <AlertCircle size={15} className="text-rose-400 shrink-0" />
+      ) : toast.type === 'warning' ? (
+        <AlertTriangle size={15} className="text-amber-400 shrink-0" />
+      ) : toast.type === 'success' ? (
         <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
       ) : (
         <Info size={15} className="text-blue-400 shrink-0" />

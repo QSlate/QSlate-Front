@@ -154,8 +154,15 @@ export class LiveBacktestService implements BacktestService {
     let job: BacktestJob;
     try {
       job = await apiClient.runBacktest(payload, undefined, token);
-    } catch {
-      // Backend unavailable or network failure: fallback gracefully to simulated mock
+    } catch (err) {
+      if (token) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : 'Failed to start backtest on server';
+        throw new Error(message);
+      }
+      // Demo mode without credentials: fallback gracefully to simulated mock
       return mockBacktestService.run(config, signal);
     }
 
