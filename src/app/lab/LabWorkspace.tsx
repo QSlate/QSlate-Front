@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { DEFAULT_LAYOUT, useLayoutStore } from '@/entities/layout';
 import { useUserStore } from '@/entities/user/model';
 import { useLabStore } from '@/features/lab-state';
+import { StrategyOptimizationModal } from '@/features/optimize-strategy';
 import {
   BacktestProvider,
   useBacktest,
@@ -194,6 +195,7 @@ function Workspace() {
       </main>
       <AddWidgetDrawer />
       <ExecutionLogsConsole />
+      <StrategyOptimizationModal />
       <Toast />
       {expandedWidget && ExpandedComponent ? (
         <Dialog
