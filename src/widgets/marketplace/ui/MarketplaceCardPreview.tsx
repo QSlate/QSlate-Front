@@ -299,6 +299,47 @@ export function MarketplaceCardPreview({ moduleId }: { moduleId: string }) {
       );
 
     default:
-      return <div className="w-full h-full bg-white/[0.02]" />;
+      return (
+        <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-950/20 via-transparent to-transparent">
+          <svg
+            viewBox="0 0 320 120"
+            className="w-full h-full opacity-30"
+            preserveAspectRatio="none"
+            role="img"
+            aria-label="Marketplace item visual preview"
+          >
+            <line
+              x1="0"
+              y1="30"
+              x2="320"
+              y2="30"
+              stroke="rgba(255,255,255,0.06)"
+              strokeDasharray="3 3"
+            />
+            <line
+              x1="0"
+              y1="60"
+              x2="320"
+              y2="60"
+              stroke="rgba(255,255,255,0.06)"
+              strokeDasharray="3 3"
+            />
+            <line
+              x1="0"
+              y1="90"
+              x2="320"
+              y2="90"
+              stroke="rgba(255,255,255,0.06)"
+              strokeDasharray="3 3"
+            />
+            <path
+              d="M 0 80 Q 80 30 160 55 T 320 20"
+              fill="none"
+              stroke="#3b82f6"
+              strokeWidth="1.5"
+            />
+          </svg>
+        </div>
+      );
   }
 }
