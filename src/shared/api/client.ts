@@ -17,7 +17,10 @@ import type {
   CustomDatasetValidationJob,
   CustomWidget,
   CustomWidgetInput,
+  Dashboard,
   DashboardAddWidgetInput,
+  DashboardLayoutUpdatePayload,
+  DashboardsPage,
   DiagnosticsResponse,
   InstalledWidgetsPage,
   LoginPayload,
@@ -1169,6 +1172,158 @@ export class QslateApiClient {
       `/qslate/v1/data/history${qs ? `?${qs}` : ''}`,
       {
         method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Lists all dashboards owned by the authenticated user.
+   * GET /qslate/v1/dashboards
+   */
+  public async getDashboards(
+    paramsOrToken?: { cursor?: string; limit?: number } | string | null,
+    token?: string | null
+  ): Promise<DashboardsPage> {
+    let actualParams: { cursor?: string; limit?: number } | undefined;
+    let actualToken = token;
+    if (typeof paramsOrToken === 'string' || paramsOrToken === null) {
+      actualToken = paramsOrToken ?? undefined;
+    } else {
+      actualParams = paramsOrToken;
+    }
+
+    const searchParams = new URLSearchParams();
+    if (actualParams?.cursor) searchParams.set('cursor', actualParams.cursor);
+    if (actualParams?.limit)
+      searchParams.set('limit', String(actualParams.limit));
+    const qs = searchParams.toString();
+
+    return this.request<DashboardsPage>(
+      `/qslate/v1/dashboards${qs ? `?${qs}` : ''}`,
+      {
+        method: 'GET',
+        ...(actualToken ? { token: actualToken } : {}),
+      }
+    );
+  }
+
+  /**
+   * Creates a new dashboard with initial metadata.
+   * POST /qslate/v1/dashboards
+   */
+  public async createDashboard(
+    payload: { title: string; description?: string; tags?: string[] },
+    token?: string | null
+  ): Promise<Dashboard> {
+    return this.request<Dashboard>('/qslate/v1/dashboards', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      ...(token ? { token } : {}),
+    });
+  }
+
+  /**
+   * Fetches full dashboard configuration including widgets and layout items.
+   * GET /qslate/v1/dashboards/{dashboardId}
+   */
+  public async getDashboard(
+    dashboardId: string,
+    token?: string | null
+  ): Promise<Dashboard> {
+    return this.request<Dashboard>(
+      `/qslate/v1/dashboards/${encodeURIComponent(dashboardId)}`,
+      {
+        method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Replaces dashboard metadata (title, description, tags).
+   * PUT /qslate/v1/dashboards/{dashboardId}
+   */
+  public async updateDashboard(
+    dashboardId: string,
+    payload: { title: string; description?: string; tags?: string[] },
+    token?: string | null
+  ): Promise<Dashboard> {
+    return this.request<Dashboard>(
+      `/qslate/v1/dashboards/${encodeURIComponent(dashboardId)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Deletes a dashboard.
+   * DELETE /qslate/v1/dashboards/{dashboardId}
+   */
+  public async deleteDashboard(
+    dashboardId: string,
+    token?: string | null
+  ): Promise<void> {
+    return this.request<void>(
+      `/qslate/v1/dashboards/${encodeURIComponent(dashboardId)}`,
+      {
+        method: 'DELETE',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Duplicates an existing dashboard with all its widgets and layout.
+   * POST /qslate/v1/dashboards/{dashboardId}/duplicate
+   */
+  public async duplicateDashboard(
+    dashboardId: string,
+    token?: string | null
+  ): Promise<Dashboard> {
+    return this.request<Dashboard>(
+      `/qslate/v1/dashboards/${encodeURIComponent(dashboardId)}/duplicate`,
+      {
+        method: 'POST',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Saves updated grid layout coordinates and dimensions to the server.
+   * PUT /qslate/v1/dashboards/{dashboardId}/layout
+   */
+  public async updateDashboardLayout(
+    dashboardId: string,
+    payload: DashboardLayoutUpdatePayload,
+    token?: string | null
+  ): Promise<Dashboard> {
+    return this.request<Dashboard>(
+      `/qslate/v1/dashboards/${encodeURIComponent(dashboardId)}/layout`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Resets the dashboard layout to default layout positions.
+   * POST /qslate/v1/dashboards/{dashboardId}/layout/reset
+   */
+  public async resetDashboardLayout(
+    dashboardId: string,
+    token?: string | null
+  ): Promise<Dashboard> {
+    return this.request<Dashboard>(
+      `/qslate/v1/dashboards/${encodeURIComponent(dashboardId)}/layout/reset`,
+      {
+        method: 'POST',
         ...(token ? { token } : {}),
       }
     );

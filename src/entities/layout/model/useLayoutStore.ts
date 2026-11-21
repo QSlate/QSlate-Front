@@ -4,6 +4,8 @@ import type { Layout, LayoutItem } from 'react-grid-layout';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 
+import { apiClient } from '@/shared/api';
+
 import type {
   LayoutPresetName,
   LayoutStore,
@@ -146,9 +148,14 @@ export function sanitizeLayout(value: unknown): WidgetLayout[] {
 export const useLayoutStore = create<LayoutStore>()(
   devtools(
     persist(
-      (set) => ({
+      (set, get) => ({
         layout: cloneLayout(DEFAULT_LAYOUT),
         activePreset: DEFAULT_LAYOUT_PRESET,
+        dashboards: [],
+        activeDashboardId: null,
+        activeDashboardTitle: 'Default Workspace',
+        dashboardRevision: 1,
+        isSyncing: false,
 
         addWidget: (
           widgetId: string,
@@ -241,7 +248,11 @@ export const useLayoutStore = create<LayoutStore>()(
             'layout/updateWidget'
           ),
 
-        resetLayout: (presetName: string = DEFAULT_LAYOUT_PRESET) =>
+        resetLayout: (presetName: string = DEFAULT_LAYOUT_PRESET) => {
+          const activeId = get().activeDashboardId;
+          if (activeId) {
+            void apiClient.resetDashboardLayout(activeId).catch(() => {});
+          }
           set(
             () => {
               const preset = resolveLayoutPreset(presetName);
@@ -253,7 +264,8 @@ export const useLayoutStore = create<LayoutStore>()(
             },
             false,
             'layout/resetLayout'
-          ),
+          );
+        },
 
         toggleWidgetPin: (widgetId: LayoutItem['i']) =>
           set(
@@ -284,6 +296,214 @@ export const useLayoutStore = create<LayoutStore>()(
             false,
             'layout/toggleWidgetMinimize'
           ),
+
+        loadDashboards: async (token?: string | null) => {
+          try {
+            set({ isSyncing: true }, false, 'layout/loadDashboards/start');
+            const page = await apiClient.getDashboards(token);
+            set(
+              {
+                dashboards: page.items,
+                isSyncing: false,
+              },
+              false,
+              'layout/loadDashboards/success'
+            );
+            if (!get().activeDashboardId && page.items.length > 0) {
+              await get().selectDashboard(page.items[0].id, token);
+            }
+          } catch (err) {
+            set({ isSyncing: false }, false, 'layout/loadDashboards/error');
+            console.error('Failed to load dashboards', err);
+          }
+        },
+
+        selectDashboard: async (dashboardId: string, token?: string | null) => {
+          try {
+            set({ isSyncing: true }, false, 'layout/selectDashboard/start');
+            const d = await apiClient.getDashboard(dashboardId, token);
+            let mappedLayout: WidgetLayout[] = [];
+            if (d.layout && d.layout.length > 0) {
+              mappedLayout = d.layout.map((item) => {
+                const known = KNOWN_WIDGET_LAYOUTS.find(
+                  (k) => k.i === item.instance_id
+                );
+                return {
+                  i: item.instance_id,
+                  x: item.x,
+                  y: item.y,
+                  w: item.width,
+                  h: item.height,
+                  minW: known?.minW ?? 3,
+                  minH: known?.minH ?? 2,
+                  isPinned: false,
+                  isMinimized: false,
+                };
+              });
+            } else {
+              mappedLayout = cloneLayout(DEFAULT_LAYOUT);
+            }
+            set(
+              {
+                activeDashboardId: d.id,
+                activeDashboardTitle: d.title,
+                dashboardRevision: d.revision,
+                layout: mappedLayout,
+                isSyncing: false,
+              },
+              false,
+              'layout/selectDashboard/success'
+            );
+          } catch (err) {
+            set({ isSyncing: false }, false, 'layout/selectDashboard/error');
+            console.error('Failed to select dashboard', err);
+          }
+        },
+
+        createDashboard: async (title: string, token?: string | null) => {
+          set({ isSyncing: true }, false, 'layout/createDashboard/start');
+          try {
+            const created = await apiClient.createDashboard({ title }, token);
+            set(
+              (state) => ({
+                dashboards: [
+                  ...state.dashboards,
+                  {
+                    id: created.id,
+                    title: created.title,
+                    description: created.description,
+                    tags: created.tags,
+                    revision: created.revision,
+                    created_at: created.created_at,
+                    updated_at: created.updated_at,
+                  },
+                ],
+                activeDashboardId: created.id,
+                activeDashboardTitle: created.title,
+                dashboardRevision: created.revision,
+                layout: cloneLayout(DEFAULT_LAYOUT),
+                isSyncing: false,
+              }),
+              false,
+              'layout/createDashboard/success'
+            );
+            return created;
+          } catch (err) {
+            set({ isSyncing: false }, false, 'layout/createDashboard/error');
+            throw err;
+          }
+        },
+
+        duplicateActiveDashboard: async (token?: string | null) => {
+          const currentId = get().activeDashboardId;
+          if (!currentId) {
+            throw new Error('No active dashboard to duplicate');
+          }
+          set({ isSyncing: true }, false, 'layout/duplicateDashboard/start');
+          try {
+            const duplicated = await apiClient.duplicateDashboard(
+              currentId,
+              token
+            );
+            set(
+              (state) => ({
+                dashboards: [
+                  ...state.dashboards,
+                  {
+                    id: duplicated.id,
+                    title: duplicated.title,
+                    description: duplicated.description,
+                    tags: duplicated.tags,
+                    revision: duplicated.revision,
+                    created_at: duplicated.created_at,
+                    updated_at: duplicated.updated_at,
+                  },
+                ],
+                activeDashboardId: duplicated.id,
+                activeDashboardTitle: duplicated.title,
+                dashboardRevision: duplicated.revision,
+                isSyncing: false,
+              }),
+              false,
+              'layout/duplicateDashboard/success'
+            );
+            return duplicated;
+          } catch (err) {
+            set({ isSyncing: false }, false, 'layout/duplicateDashboard/error');
+            throw err;
+          }
+        },
+
+        deleteActiveDashboard: async (token?: string | null) => {
+          const currentId = get().activeDashboardId;
+          if (!currentId) return;
+          set({ isSyncing: true }, false, 'layout/deleteDashboard/start');
+          try {
+            await apiClient.deleteDashboard(currentId, token);
+            const remaining = get().dashboards.filter(
+              (d) => d.id !== currentId
+            );
+            if (remaining.length > 0) {
+              set(
+                { dashboards: remaining, isSyncing: false },
+                false,
+                'layout/deleteDashboard/success'
+              );
+              await get().selectDashboard(remaining[0].id, token);
+            } else {
+              set(
+                {
+                  dashboards: [],
+                  activeDashboardId: null,
+                  activeDashboardTitle: 'Default Workspace',
+                  dashboardRevision: 1,
+                  layout: cloneLayout(DEFAULT_LAYOUT),
+                  isSyncing: false,
+                },
+                false,
+                'layout/deleteDashboard/reset'
+              );
+            }
+          } catch (err) {
+            set({ isSyncing: false }, false, 'layout/deleteDashboard/error');
+            throw err;
+          }
+        },
+
+        saveServerLayout: async (token?: string | null) => {
+          const currentId = get().activeDashboardId;
+          if (!currentId) return;
+          set({ isSyncing: true }, false, 'layout/saveServerLayout/start');
+          try {
+            const currentLayout = get().layout;
+            const items = currentLayout.map((l) => ({
+              instance_id: l.i,
+              x: l.x,
+              y: l.y,
+              width: l.w,
+              height: l.h,
+            }));
+            const updated = await apiClient.updateDashboardLayout(
+              currentId,
+              {
+                revision: get().dashboardRevision,
+                items,
+              },
+              token
+            );
+            set(
+              {
+                dashboardRevision: updated.revision,
+                isSyncing: false,
+              },
+              false,
+              'layout/saveServerLayout/success'
+            );
+          } catch (err) {
+            set({ isSyncing: false }, false, 'layout/saveServerLayout/error');
+            console.error('Failed to save layout to server', err);
+          }
+        },
       }),
       {
         name: LAYOUT_STORAGE_KEY,

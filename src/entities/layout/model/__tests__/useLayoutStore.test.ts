@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { apiClient } from '@/shared/api';
+
 import {
   DEFAULT_LAYOUT,
   sanitizeLayout,
@@ -264,6 +266,103 @@ describe('Lab layout persistence', () => {
     await useLayoutStore.persist.rehydrate();
     expect(useLayoutStore.getState().layout).toHaveLength(0);
     useLayoutStore.getState().resetLayout();
+  });
+
+  describe('server-side dashboard and layout sync', () => {
+    it('loads dashboards and auto-selects the first one if none selected', async () => {
+      vi.spyOn(apiClient, 'getDashboards').mockResolvedValueOnce({
+        items: [
+          {
+            id: 'dash-1',
+            title: 'Macro Overview',
+            description: '',
+            tags: [],
+            revision: 1,
+            created_at: '2026-01-01',
+            updated_at: '2026-01-01',
+          },
+        ],
+      });
+      vi.spyOn(apiClient, 'getDashboard').mockResolvedValueOnce({
+        id: 'dash-1',
+        title: 'Macro Overview',
+        description: '',
+        tags: [],
+        revision: 1,
+        created_at: '2026-01-01',
+        updated_at: '2026-01-01',
+        widgets: [],
+        layout: [
+          { instance_id: 'equity-curve', x: 0, y: 0, width: 8, height: 6 },
+        ],
+      });
+
+      await useLayoutStore.getState().loadDashboards();
+
+      expect(useLayoutStore.getState().dashboards).toHaveLength(1);
+      expect(useLayoutStore.getState().activeDashboardId).toBe('dash-1');
+      expect(useLayoutStore.getState().activeDashboardTitle).toBe(
+        'Macro Overview'
+      );
+      expect(useLayoutStore.getState().layout[0]).toMatchObject({
+        i: 'equity-curve',
+        w: 8,
+        h: 6,
+      });
+    });
+
+    it('creates and selects a new dashboard', async () => {
+      vi.spyOn(apiClient, 'createDashboard').mockResolvedValueOnce({
+        id: 'dash-2',
+        title: 'Crypto Scalper',
+        description: '',
+        tags: [],
+        revision: 1,
+        created_at: '2026-01-02',
+        updated_at: '2026-01-02',
+        widgets: [],
+        layout: [],
+      });
+
+      const created = await useLayoutStore
+        .getState()
+        .createDashboard('Crypto Scalper');
+
+      expect(created.id).toBe('dash-2');
+      expect(useLayoutStore.getState().activeDashboardId).toBe('dash-2');
+      expect(useLayoutStore.getState().activeDashboardTitle).toBe(
+        'Crypto Scalper'
+      );
+    });
+
+    it('saves current layout to server with optimistic revision', async () => {
+      useLayoutStore.setState({
+        activeDashboardId: 'dash-2',
+        dashboardRevision: 1,
+      });
+      const updateSpy = vi
+        .spyOn(apiClient, 'updateDashboardLayout')
+        .mockResolvedValueOnce({
+          id: 'dash-2',
+          title: 'Crypto Scalper',
+          description: '',
+          tags: [],
+          revision: 2,
+          created_at: '2026-01-02',
+          updated_at: '2026-01-02',
+          widgets: [],
+          layout: [],
+        });
+
+      await useLayoutStore.getState().saveServerLayout();
+
+      expect(updateSpy).toHaveBeenCalledWith(
+        'dash-2',
+        expect.objectContaining({ revision: 1 }),
+        undefined
+      );
+      expect(useLayoutStore.getState().dashboardRevision).toBe(2);
+    });
   });
 });
 

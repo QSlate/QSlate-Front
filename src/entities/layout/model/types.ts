@@ -1,5 +1,7 @@
 import type { Layout, LayoutItem } from 'react-grid-layout';
 
+import type { Dashboard, DashboardSummary } from '@/shared/api';
+
 export interface WidgetLayout extends LayoutItem {
   isPinned?: boolean | undefined;
   isMinimized?: boolean | undefined;
@@ -11,6 +13,11 @@ export type WidgetLayoutUpdate = Partial<Omit<WidgetLayout, 'i'>>;
 export interface LayoutState {
   layout: readonly WidgetLayout[];
   activePreset: LayoutPresetName;
+  dashboards: DashboardSummary[];
+  activeDashboardId: string | null;
+  activeDashboardTitle: string;
+  dashboardRevision: number;
+  isSyncing: boolean;
 }
 
 export interface LayoutActions {
@@ -32,6 +39,15 @@ export interface LayoutActions {
   resetLayout: (presetName?: string) => void;
   toggleWidgetPin: (widgetId: LayoutItem['i']) => void;
   toggleWidgetMinimize: (widgetId: LayoutItem['i']) => void;
+  loadDashboards: (token?: string | null) => Promise<void>;
+  selectDashboard: (
+    dashboardId: string,
+    token?: string | null
+  ) => Promise<void>;
+  createDashboard: (title: string, token?: string | null) => Promise<Dashboard>;
+  duplicateActiveDashboard: (token?: string | null) => Promise<Dashboard>;
+  deleteActiveDashboard: (token?: string | null) => Promise<void>;
+  saveServerLayout: (token?: string | null) => Promise<void>;
 }
 
 export type LayoutStore = LayoutState & LayoutActions;

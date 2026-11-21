@@ -496,3 +496,47 @@ export interface MarketTick {
   price: string;
   quantity: string;
 }
+
+// ---------------------------------------------------------------------------
+// Workspace Dashboards & Server-Side Layouts (/qslate/v1/dashboards)
+// ---------------------------------------------------------------------------
+
+export interface DashboardSummary {
+  id: string;
+  title: string;
+  description: string;
+  tags: string[];
+  revision: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DashboardLayoutItem {
+  instance_id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface DashboardWidgetInstance {
+  instance_id: string;
+  widget_id: string;
+  widget_version_id: string;
+  configuration?: Record<string, unknown>;
+}
+
+export interface Dashboard extends DashboardSummary {
+  widgets: DashboardWidgetInstance[];
+  layout: DashboardLayoutItem[];
+}
+
+export interface DashboardsPage {
+  items: DashboardSummary[];
+  next_cursor?: string;
+}
+
+export interface DashboardLayoutUpdatePayload {
+  revision: number;
+  items: DashboardLayoutItem[];
+}
