@@ -308,8 +308,11 @@ export interface BacktestRunInput {
   dataset_version_id?: string;
   start_date?: string;
   end_date?: string;
+  initial_capital?: string | number;
   initial_cash?: number;
   parameters?: Record<string, unknown>;
+  execution_target?: string;
+  window?: number;
   strategy_name?: string;
 }
 

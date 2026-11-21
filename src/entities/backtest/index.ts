@@ -1,4 +1,8 @@
 export {
+  LiveBacktestService,
+  liveBacktestService,
+} from './api/liveBacktestService';
+export {
   INITIAL_MOCK_RESULT,
   mockBacktestService,
 } from './api/mockBacktestService';

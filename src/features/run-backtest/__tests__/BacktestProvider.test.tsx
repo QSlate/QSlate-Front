@@ -9,7 +9,11 @@ import {
 } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { type BacktestService, INITIAL_MOCK_RESULT } from '@/entities/backtest';
+import {
+  type BacktestResult,
+  type BacktestService,
+  INITIAL_MOCK_RESULT,
+} from '@/entities/backtest';
 
 import { BacktestProvider, useBacktest } from '../BacktestProvider';
 
@@ -150,5 +154,40 @@ describe('backtest execution', () => {
       expect(screen.getByTestId('status').textContent).toBe('success')
     );
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('cancels an in-flight execution when cancel() is called', () => {
+    let signal: AbortSignal | undefined;
+    const service: BacktestService = {
+      run: vi.fn((_config, requestSignal) => {
+        signal = requestSignal;
+        return new Promise<BacktestResult>(() => {}); // pending
+      }),
+    };
+
+    function CancelableControls() {
+      const { run, cancel, status } = useBacktest();
+      return (
+        <>
+          <button onClick={() => void run()}>Run</button>
+          <button onClick={cancel}>Cancel</button>
+          <span data-testid="status">{status}</span>
+        </>
+      );
+    }
+
+    render(
+      <BacktestProvider service={service}>
+        <CancelableControls />
+      </BacktestProvider>
+    );
+
+    fireEvent.click(screen.getByText('Run'));
+    expect(screen.getByTestId('status').textContent).toBe('running');
+    expect(signal?.aborted).toBe(false);
+
+    fireEvent.click(screen.getByText('Cancel'));
+    expect(screen.getByTestId('status').textContent).toBe('idle');
+    expect(signal?.aborted).toBe(true);
   });
 });

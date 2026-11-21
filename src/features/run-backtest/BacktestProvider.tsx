@@ -17,7 +17,7 @@ import {
   type BacktestService,
   DEFAULT_BACKTEST_CONFIG,
   INITIAL_MOCK_RESULT,
-  mockBacktestService,
+  liveBacktestService,
   validateBacktest,
 } from '@/entities/backtest';
 
@@ -28,13 +28,14 @@ interface BacktestContextValue {
   status: 'idle' | 'running' | 'success' | 'error';
   error: string | null;
   run: () => Promise<void>;
+  cancel: () => void;
 }
 
 const BacktestContext = createContext<BacktestContextValue | null>(null);
 
 export function BacktestProvider({
   children,
-  service = mockBacktestService,
+  service = liveBacktestService,
 }: {
   children: ReactNode;
   service?: BacktestService;
@@ -88,9 +89,17 @@ export function BacktestProvider({
     }
   }, [config, service]);
 
+  const cancel = useCallback(() => {
+    if (controller.current) {
+      controller.current.abort();
+      controller.current = null;
+      setStatus('idle');
+    }
+  }, []);
+
   const value = useMemo(
-    () => ({ config, setConfig, result, status, error, run }),
-    [config, setConfig, result, status, error, run]
+    () => ({ config, setConfig, result, status, error, run, cancel }),
+    [config, setConfig, result, status, error, run, cancel]
   );
 
   return (
