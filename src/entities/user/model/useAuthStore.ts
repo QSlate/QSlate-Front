@@ -162,5 +162,7 @@ export const useAuthStore = create<AuthStore>()(
   )
 );
 
-// Wire API client token injection to auth store
-apiClient.setTokenProvider(() => useAuthStore.getState().accessToken);
+// Wire API client token injection to auth store with fallback to session cookie
+apiClient.setTokenProvider(
+  () => useAuthStore.getState().accessToken ?? getAuthTokenFromCookie()
+);

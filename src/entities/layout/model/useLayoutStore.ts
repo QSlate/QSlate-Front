@@ -312,9 +312,8 @@ export const useLayoutStore = create<LayoutStore>()(
             if (!get().activeDashboardId && page.items.length > 0) {
               await get().selectDashboard(page.items[0].id, token);
             }
-          } catch (err) {
+          } catch {
             set({ isSyncing: false }, false, 'layout/loadDashboards/error');
-            console.error('Failed to load dashboards', err);
           }
         },
 
@@ -499,9 +498,8 @@ export const useLayoutStore = create<LayoutStore>()(
               false,
               'layout/saveServerLayout/success'
             );
-          } catch (err) {
+          } catch {
             set({ isSyncing: false }, false, 'layout/saveServerLayout/error');
-            console.error('Failed to save layout to server', err);
           }
         },
       }),

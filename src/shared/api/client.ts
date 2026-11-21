@@ -84,6 +84,10 @@ export class QslateApiClient {
     this.tokenProvider = provider;
   }
 
+  public getToken(): string | null {
+    return this.tokenProvider ? this.tokenProvider() : null;
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestOptions = {}

@@ -4,6 +4,7 @@ import { Cloud, Copy, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useEffect } from 'react';
 
 import { DEFAULT_LAYOUT, useLayoutStore } from '@/entities/layout';
+import { useAuthStore } from '@/entities/user/model';
 import { useBacktest } from '@/features/run-backtest/BacktestProvider';
 import { useHydratedStore } from '@/shared/lib/store';
 
@@ -31,11 +32,16 @@ export function LabWorkspaceHeader() {
   );
   const saveServerLayout = useLayoutStore((state) => state.saveServerLayout);
 
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
   const { status, config, result } = useBacktest();
 
   useEffect(() => {
-    void loadDashboards();
-  }, [loadDashboards]);
+    if (isAuthenticated && accessToken) {
+      void loadDashboards(accessToken);
+    }
+  }, [isAuthenticated, accessToken, loadDashboards]);
 
   const handleCreateDashboard = async () => {
     const name = window.prompt('Enter new dashboard name:');
