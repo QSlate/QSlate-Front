@@ -150,17 +150,35 @@ export const useLayoutStore = create<LayoutStore>()(
         layout: cloneLayout(DEFAULT_LAYOUT),
         activePreset: DEFAULT_LAYOUT_PRESET,
 
-        addWidget: (widgetId: string) =>
+        addWidget: (
+          widgetId: string,
+          customDimensions?: {
+            w?: number;
+            h?: number;
+            minW?: number;
+            minH?: number;
+          }
+        ) =>
           set(
             (state) => {
-              const definition = KNOWN_WIDGET_LAYOUTS.find(
+              if (state.layout.some((item) => item.i === widgetId)) {
+                return state;
+              }
+              const known = KNOWN_WIDGET_LAYOUTS.find(
                 (item) => item.i === widgetId
               );
-              if (
-                !definition ||
-                state.layout.some((item) => item.i === widgetId)
-              )
+              if (!known && !customDimensions) {
                 return state;
+              }
+              const definition = known ?? {
+                i: widgetId,
+                x: 0,
+                y: 0,
+                w: customDimensions?.w ?? 6,
+                h: customDimensions?.h ?? 4,
+                minW: customDimensions?.minW ?? 3,
+                minH: customDimensions?.minH ?? 2,
+              };
               const bottom = state.layout.reduce(
                 (max, item) => Math.max(max, item.y + item.h),
                 0
