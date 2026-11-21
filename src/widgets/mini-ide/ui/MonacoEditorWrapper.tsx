@@ -24,12 +24,22 @@ if (typeof window !== 'undefined') {
   });
 }
 
-interface MonacoEditorProps {
+export interface DiagnosticMarker {
+  line: number;
+  column: number;
+  endLine?: number;
+  endColumn?: number;
+  severity: 'error' | 'warning' | 'info';
+  message: string;
+}
+
+export interface MonacoEditorProps {
   value: string;
   language: string;
   onChange: (value: string) => void;
   height?: string;
   theme?: 'dark' | 'light';
+  markers?: DiagnosticMarker[];
 }
 
 function EditorSkeleton({ isLight }: { isLight?: boolean }) {
@@ -74,9 +84,11 @@ function FallbackCodeEditor({
   onChange,
   onRetry,
   theme = 'dark',
+  markers = [],
 }: MonacoEditorProps & { onRetry?: () => void }) {
   const isLight = theme === 'light';
   const lines = value.split('\n');
+  const errorLines = new Set(markers.map((m) => m.line));
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Tab') {
@@ -127,6 +139,21 @@ function FallbackCodeEditor({
         )}
       </div>
 
+      {markers.length > 0 && (
+        <div
+          className={`px-3 py-1 border-b text-[11px] flex items-center gap-2 ${
+            isLight
+              ? 'bg-rose-50 border-rose-200 text-rose-700'
+              : 'bg-rose-950/40 border-rose-900/50 text-rose-300'
+          }`}
+        >
+          <AlertTriangle size={12} className="shrink-0 text-rose-500" />
+          <span className="truncate">
+            Line {markers[0].line}: {markers[0].message}
+          </span>
+        </div>
+      )}
+
       {/* Editor Body with Line Numbers */}
       <div className="flex-1 flex overflow-hidden">
         {/* Line Numbers Gutter */}
@@ -137,9 +164,19 @@ function FallbackCodeEditor({
               : 'bg-[#07080a] text-zinc-600 border-white/[0.04]'
           }`}
         >
-          {lines.map((_, i) => (
-            <div key={i}>{i + 1}</div>
-          ))}
+          {lines.map((_, i) => {
+            const hasErr = errorLines.has(i + 1);
+            return (
+              <div
+                key={i}
+                className={
+                  hasErr ? 'text-rose-500 font-bold bg-rose-500/10' : ''
+                }
+              >
+                {i + 1}
+              </div>
+            );
+          })}
         </div>
 
         {/* Text Area */}
@@ -214,9 +251,12 @@ const DynamicEditor = dynamic(
         onChange,
         height = '100%',
         theme = 'dark',
+        markers = [],
         onErrorFallback,
       }: MonacoEditorProps & { onErrorFallback: () => void }) {
         const monacoRef = useRef<typeof monacoType | null>(null);
+        const editorRef =
+          useRef<monacoType.editor.IStandaloneCodeEditor | null>(null);
 
         useEffect(() => {
           loader.init().catch(() => {
@@ -231,6 +271,35 @@ const DynamicEditor = dynamic(
             );
           }
         }, [theme]);
+
+        useEffect(() => {
+          if (monacoRef.current && editorRef.current) {
+            const model = editorRef.current.getModel();
+            if (model) {
+              const monaco = monacoRef.current;
+              const monacoMarkers: monacoType.editor.IMarkerData[] = (
+                markers ?? []
+              ).map((m) => ({
+                startLineNumber: m.line,
+                startColumn: m.column,
+                endLineNumber: m.endLine ?? m.line,
+                endColumn: m.endColumn ?? m.column + 1,
+                message: m.message,
+                severity:
+                  m.severity === 'error'
+                    ? monaco.MarkerSeverity.Error
+                    : m.severity === 'warning'
+                      ? monaco.MarkerSeverity.Warning
+                      : monaco.MarkerSeverity.Info,
+              }));
+              monaco.editor.setModelMarkers(
+                model,
+                'qslate-strategy-linter',
+                monacoMarkers
+              );
+            }
+          }
+        }, [markers]);
 
         return (
           <EditorComponent
@@ -299,12 +368,37 @@ const DynamicEditor = dynamic(
                 // Catch any theme definition error
               }
             }}
-            onMount={(_, monaco) => {
+            onMount={(editor, monaco) => {
               try {
+                editorRef.current =
+                  editor as unknown as monacoType.editor.IStandaloneCodeEditor;
                 monacoRef.current = monaco as unknown as typeof monacoType;
                 monaco.editor.setTheme(
                   theme === 'light' ? 'qslate-light' : 'qslate-dark'
                 );
+                const model = editorRef.current.getModel();
+                if (model) {
+                  const monacoMarkers: monacoType.editor.IMarkerData[] = (
+                    markers ?? []
+                  ).map((m) => ({
+                    startLineNumber: m.line,
+                    startColumn: m.column,
+                    endLineNumber: m.endLine ?? m.line,
+                    endColumn: m.endColumn ?? m.column + 1,
+                    message: m.message,
+                    severity:
+                      m.severity === 'error'
+                        ? monaco.MarkerSeverity.Error
+                        : m.severity === 'warning'
+                          ? monaco.MarkerSeverity.Warning
+                          : monaco.MarkerSeverity.Info,
+                  }));
+                  monaco.editor.setModelMarkers(
+                    model,
+                    'qslate-strategy-linter',
+                    monacoMarkers
+                  );
+                }
               } catch {
                 // Ignore
               }

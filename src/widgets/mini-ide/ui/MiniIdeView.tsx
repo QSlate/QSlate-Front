@@ -10,16 +10,22 @@ import {
   Copy,
   FileCode,
   FileJson,
+  History,
+  Loader2,
   RotateCcw,
+  Save,
   ShieldCheck,
   Sparkles,
+  Upload,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useLabStore } from '@/features/lab-state';
+import { apiClient, ApiError, type StrategyVersion } from '@/shared/api';
 import { useAppearance } from '@/shared/theme';
 
 import { MonacoEditorWrapper } from './MonacoEditorWrapper';
+import { VersionHistoryDrawer } from './VersionHistoryDrawer';
 
 const FILE_TABS = [
   { id: 'strategy.py', label: 'strategy.py', icon: FileCode, lang: 'python' },
@@ -49,6 +55,26 @@ export function MiniIdeView() {
   const applyAiPrompt = useLabStore((state) => state.applyAiPrompt);
   const showToast = useLabStore((state) => state.showToast);
 
+  // Strategy metadata & versioning state from useLabStore
+  const strategyId = useLabStore((state) => state.strategyId);
+  const versionId = useLabStore((state) => state.versionId);
+  const strategyRevision = useLabStore((state) => state.strategyRevision);
+  const strategyName = useLabStore((state) => state.strategyName);
+  const strategyDiagnostics = useLabStore((state) => state.strategyDiagnostics);
+  const isLinting = useLabStore((state) => state.isLinting);
+  const isVersionDrawerOpen = useLabStore((state) => state.isVersionDrawerOpen);
+  const strategyVersions = useLabStore((state) => state.strategyVersions);
+
+  const setStrategyDiagnostics = useLabStore(
+    (state) => state.setStrategyDiagnostics
+  );
+  const setIsLinting = useLabStore((state) => state.setIsLinting);
+  const setStrategyMeta = useLabStore((state) => state.setStrategyMeta);
+  const setVersionDrawerOpen = useLabStore(
+    (state) => state.setVersionDrawerOpen
+  );
+  const setStrategyVersions = useLabStore((state) => state.setStrategyVersions);
+
   const { theme, colorblindMode } = useAppearance();
   const isLight = theme === 'light';
   const isColorblind = colorblindMode === 'orange-blue';
@@ -56,11 +82,45 @@ export function MiniIdeView() {
 
   const [promptInput, setPromptInput] = useState('');
   const [copied, setCopied] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingVersions, setIsLoadingVersions] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentContent = files[activeFile] ?? '';
   const currentLang = activeFile.endsWith('.json') ? 'json' : 'python';
 
-  // Real-time AST security validation check
+  // 1. Live AST linting debounced at 300ms via Go Strategy endpoint
+  useEffect(() => {
+    if (activeFile !== 'strategy.py') {
+      setStrategyDiagnostics([]);
+      setIsLinting(false);
+      return;
+    }
+
+    setIsLinting(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await apiClient.lintStrategy(currentContent, 'python');
+        if (res.valid) {
+          setStrategyDiagnostics([]);
+        } else {
+          setStrategyDiagnostics(res.diagnostics ?? []);
+        }
+      } catch (err) {
+        // Fallback gracefully without breaking editing
+        console.warn('AST Linting request warning:', err);
+      } finally {
+        setIsLinting(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [currentContent, activeFile, setStrategyDiagnostics, setIsLinting]);
+
+  // Real-time AST security validation check (static safety guard)
   const securityAnalysis = useMemo(() => {
     const forbidden = [
       'import os',
@@ -75,6 +135,18 @@ export function MiniIdeView() {
       violations: detected,
     };
   }, [currentContent]);
+
+  // Map diagnostics into Monaco editor markers
+  const markers = useMemo(() => {
+    return strategyDiagnostics.map((d) => ({
+      line: d.line,
+      column: d.column,
+      endLine: d.end_line || d.line,
+      endColumn: d.end_column || d.column + 1,
+      severity: d.severity,
+      message: d.message,
+    }));
+  }, [strategyDiagnostics]);
 
   const handleCopy = async () => {
     try {
@@ -95,13 +167,164 @@ export function MiniIdeView() {
     void applyAiPrompt(text);
   };
 
+  // 2. Save Strategy Revision to Go Strategy Service
+  const handleSaveVersion = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      if (!strategyId || !versionId) {
+        // First-time strategy creation
+        const created = await apiClient.createStrategy({
+          name: strategyName || 'Momentum_ETH_4h',
+          source: currentContent,
+        });
+        setStrategyMeta({
+          id: created.id,
+          version_id: created.version_id,
+          revision: created.revision,
+          name: created.name,
+        });
+        showToast(
+          `Strategy "${created.name}" created (v${created.revision})`,
+          'success'
+        );
+      } else {
+        // Commit new revision
+        const updated = await apiClient.updateStrategy(strategyId, {
+          base_version_id: versionId,
+          source: currentContent,
+          name: strategyName || 'My Strategy',
+        });
+        setStrategyMeta({
+          id: updated.id,
+          version_id: updated.version_id,
+          revision: updated.revision,
+          name: updated.name,
+        });
+        showToast(
+          `Committed revision v${updated.revision} successfully`,
+          'success'
+        );
+      }
+    } catch (err) {
+      if (err instanceof ApiError && err.statusCode === 409) {
+        showToast(
+          'Version conflict: Strategy modified concurrently. Please refresh history.',
+          'warning'
+        );
+      } else {
+        showToast('Failed to save strategy revision.', 'warning');
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // 3. Open Version History Drawer & Fetch Past Versions
+  const handleOpenHistory = async () => {
+    setVersionDrawerOpen(true);
+    if (!strategyId) {
+      setStrategyVersions([]);
+      return;
+    }
+    setIsLoadingVersions(true);
+    try {
+      const res = await apiClient.getStrategyVersions(strategyId);
+      setStrategyVersions(res.items ?? []);
+    } catch (err) {
+      console.warn('Failed to fetch strategy version history:', err);
+    } finally {
+      setIsLoadingVersions(false);
+    }
+  };
+
+  // 4. Restore a Previous Version
+  const handleRestoreVersion = async (ver: StrategyVersion) => {
+    if (!strategyId || !versionId || isRestoring) return;
+    setIsRestoring(true);
+    try {
+      const restored = await apiClient.restoreStrategyVersion(strategyId, {
+        version_id: ver.version_id,
+        base_version_id: versionId,
+      });
+      setStrategyMeta({
+        id: restored.id,
+        version_id: restored.version_id,
+        revision: restored.revision,
+        name: restored.name,
+      });
+      updateFileContent('strategy.py', restored.source);
+      showToast(
+        `Restored revision v${ver.revision} as new active v${restored.revision}`,
+        'success'
+      );
+      // Refresh versions drawer
+      const res = await apiClient.getStrategyVersions(strategyId);
+      setStrategyVersions(res.items ?? []);
+    } catch {
+      showToast('Failed to restore strategy revision.', 'warning');
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
+  // 5. Import Strategy (.py) via Multipart Upload
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.py')) {
+      showToast('Only .py strategy files are supported.', 'warning');
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const imported = await apiClient.importStrategy(file);
+      setStrategyMeta({
+        id: imported.id,
+        version_id: imported.version_id,
+        revision: imported.revision,
+        name: imported.name,
+      });
+      updateFileContent('strategy.py', imported.source);
+      setActiveFile('strategy.py');
+      showToast(
+        `Imported "${imported.name}" (v${imported.revision}) successfully`,
+        'success'
+      );
+    } catch {
+      showToast('Failed to import strategy file.', 'warning');
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const hasDiagnosticsError = strategyDiagnostics.some(
+    (d) => d.severity === 'error'
+  );
+
   return (
     <div
       className={`flex flex-col h-[calc(100vh-46px)] w-full overflow-hidden select-none transition-colors duration-200 ${
         isLight ? 'bg-[#f4f5f7] text-zinc-900' : 'bg-[#08090a] text-zinc-200'
       }`}
     >
-      {/* Editor Header Bar with File Tabs */}
+      {/* Hidden File Input for .py Strategy Import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".py"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      {/* Editor Header Bar with File Tabs and Strategy Lifecycle Controls */}
       <div
         className={`flex items-center justify-between h-9 px-3 border-b shrink-0 text-xs font-mono transition-colors ${
           isLight
@@ -109,7 +332,7 @@ export function MiniIdeView() {
             : 'bg-[#0c0d0e] border-[#242528]'
         }`}
       >
-        {/* Tabs */}
+        {/* Left: Tabs */}
         <div className="flex items-center gap-1 h-full pt-1">
           {FILE_TABS.map((tab) => {
             const Icon = tab.icon;
@@ -145,8 +368,84 @@ export function MiniIdeView() {
           })}
         </div>
 
-        {/* Action Controls */}
+        {/* Right: Strategy Lifecycle & Action Controls */}
         <div className="flex items-center gap-1.5">
+          {/* Strategy Name & Revision Badge */}
+          <div
+            className={`flex items-center gap-1.5 px-2 py-0.5 rounded border text-[11px] font-sans ${
+              isLight
+                ? 'bg-white border-zinc-300 text-zinc-700'
+                : 'bg-[#121418] border-white/10 text-zinc-300'
+            }`}
+          >
+            <span className="font-semibold truncate max-w-[140px]">
+              {strategyName}
+            </span>
+            <span className="font-mono text-[10px] px-1 py-0.2 bg-blue-500/10 text-blue-400 rounded">
+              v{strategyRevision}
+            </span>
+          </div>
+
+          {/* Save Version Button */}
+          <button
+            type="button"
+            onClick={handleSaveVersion}
+            disabled={isSaving}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
+              isLight
+                ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-xs'
+                : 'bg-blue-600 hover:bg-blue-500 text-white shadow-xs'
+            }`}
+            title="Commit new immutable strategy version to backend"
+          >
+            {isSaving ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : (
+              <Save size={12} />
+            )}
+            <span>{isSaving ? 'Saving…' : 'Save Version'}</span>
+          </button>
+
+          {/* History Drawer Toggle Button */}
+          <button
+            type="button"
+            onClick={handleOpenHistory}
+            className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] transition-colors ${
+              isLight
+                ? 'bg-white hover:bg-zinc-100 text-zinc-800 border border-zinc-300'
+                : 'bg-[#15171d] hover:bg-[#1a1d24] text-zinc-200 border border-white/10'
+            }`}
+            title="View immutable revision history"
+          >
+            <History size={12} className="text-blue-400" />
+            <span>History</span>
+          </button>
+
+          {/* Import Strategy Button */}
+          <button
+            type="button"
+            onClick={handleImportClick}
+            disabled={isImporting}
+            className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] transition-colors ${
+              isLight
+                ? 'bg-white hover:bg-zinc-100 text-zinc-800 border border-zinc-300'
+                : 'bg-[#15171d] hover:bg-[#1a1d24] text-zinc-200 border border-white/10'
+            }`}
+            title="Import external .py strategy file"
+          >
+            {isImporting ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : (
+              <Upload size={12} className="text-emerald-400" />
+            )}
+            <span>{isImporting ? 'Importing…' : 'Import'}</span>
+          </button>
+
+          <div
+            className={`h-4 w-px mx-0.5 ${isLight ? 'bg-zinc-300' : 'bg-white/10'}`}
+          />
+
+          {/* Split View Toggle */}
           <button
             type="button"
             onClick={toggleSplitView}
@@ -163,6 +462,7 @@ export function MiniIdeView() {
             <Columns2 size={13} />
           </button>
 
+          {/* Copy Buffer */}
           <button
             type="button"
             onClick={handleCopy}
@@ -181,6 +481,7 @@ export function MiniIdeView() {
             <span className="text-[11px]">{copied ? 'Copied' : 'Copy'}</span>
           </button>
 
+          {/* Re-synthesize Reset */}
           <button
             type="button"
             onClick={() => {
@@ -201,12 +502,13 @@ export function MiniIdeView() {
 
       {/* Editor Main Body */}
       <div className="flex-1 min-h-0 flex overflow-hidden">
-        {/* Primary Monaco Editor */}
+        {/* Primary Monaco Editor with Diagnostics Markers */}
         <div className="flex-1 h-full min-w-0 relative">
           <MonacoEditorWrapper
             value={currentContent}
             language={currentLang}
             theme={theme}
+            markers={markers}
             onChange={(val) => updateFileContent(activeFile, val)}
           />
 
@@ -370,7 +672,7 @@ export function MiniIdeView() {
         </form>
       </div>
 
-      {/* Docked Runtime & Security Telemetry Footer */}
+      {/* Docked Runtime & Security Telemetry Footer with Backend Linting Feedback */}
       <div
         className={`flex items-center justify-between px-3 py-1.5 border-t text-[10px] font-mono shrink-0 transition-colors ${
           isLight
@@ -379,7 +681,29 @@ export function MiniIdeView() {
         }`}
       >
         <div className="flex items-center gap-3">
-          {securityAnalysis.isValid ? (
+          {isLinting ? (
+            <div className="flex items-center gap-1.5 text-blue-400 font-medium">
+              <Loader2 size={11} className="animate-spin text-blue-500" />
+              <span>Verifying Python AST Syntax…</span>
+            </div>
+          ) : hasDiagnosticsError ? (
+            <div className="flex items-center gap-1.5 text-rose-500 font-semibold">
+              <AlertTriangle size={12} />
+              <span>
+                Syntax Error: Line {strategyDiagnostics[0].line}, Col{' '}
+                {strategyDiagnostics[0].column}:{' '}
+                {strategyDiagnostics[0].message}
+              </span>
+            </div>
+          ) : !securityAnalysis.isValid ? (
+            <div className="flex items-center gap-1.5 text-rose-500 font-semibold">
+              <AlertTriangle size={12} />
+              <span>
+                AST Guard Triggered: Unsafe imports detected (
+                {securityAnalysis.violations.join(', ')})
+              </span>
+            </div>
+          ) : (
             <div className="flex items-center gap-1.5">
               <CheckCircle2 size={12} style={{ color: statusColor }} />
               <span
@@ -389,19 +713,11 @@ export function MiniIdeView() {
               </span>
               <span className="text-zinc-400">·</span>
               <span className={isLight ? 'text-zinc-700' : 'text-zinc-400'}>
-                Python 3.12
+                Python 3.13 (Isolated Analyzer)
               </span>
               <span className="text-zinc-400">·</span>
               <span className={isLight ? 'text-zinc-700' : 'text-zinc-400'}>
                 gVisor runtime
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5 text-rose-500 font-semibold">
-              <AlertTriangle size={12} />
-              <span>
-                AST Guard Triggered: Unsafe imports detected (
-                {securityAnalysis.violations.join(', ')})
               </span>
             </div>
           )}
@@ -419,6 +735,18 @@ export function MiniIdeView() {
           </span>
         </div>
       </div>
+
+      {/* Version History Drawer Modal */}
+      <VersionHistoryDrawer
+        isOpen={isVersionDrawerOpen}
+        onClose={() => setVersionDrawerOpen(false)}
+        versions={strategyVersions}
+        currentVersionId={versionId}
+        strategyName={strategyName}
+        isLoading={isLoadingVersions}
+        isRestoring={isRestoring}
+        onRestore={handleRestoreVersion}
+      />
     </div>
   );
 }
