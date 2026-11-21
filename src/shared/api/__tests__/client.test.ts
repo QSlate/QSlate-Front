@@ -776,5 +776,23 @@ describe('QslateApiClient', () => {
       'http://localhost:8080/qslate/v1/backtests/bt-100/trades',
       expect.objectContaining({ method: 'GET' })
     );
+
+    // 6. getBacktestLogs
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        items: [{ message: '[INFO] Initializing strategy' }],
+      }),
+    });
+
+    const logs = await client.getBacktestLogs('bt-100', { limit: 50 });
+    expect(logs.items).toHaveLength(1);
+    expect(logs.items[0]?.message).toBe('[INFO] Initializing strategy');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/backtests/bt-100/logs?limit=50',
+      expect.objectContaining({ method: 'GET' })
+    );
   });
 });
