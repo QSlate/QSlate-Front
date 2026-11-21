@@ -41,6 +41,8 @@ export interface LabState {
   strategyVersions: StrategyVersion[];
   loadedBacktestId: string | null;
   isExecutionLogsOpen: boolean;
+  isOptimizationModalOpen: boolean;
+  activeStrategyParameters: Record<string, number>;
 
   setActiveTab: (tab: LabTab) => void;
   setAddWidgetDrawerOpen: (open: boolean) => void;
@@ -73,6 +75,9 @@ export interface LabState {
   setLoadedBacktestId: (id: string | null) => void;
   setExecutionLogsOpen: (open: boolean) => void;
   toggleExecutionLogs: () => void;
+  setOptimizationModalOpen: (open: boolean) => void;
+  toggleOptimizationModal: () => void;
+  setActiveStrategyParameters: (params: Record<string, number>) => void;
 }
 
 const DEFAULT_STRATEGY_ID = 'momentum-eth';
@@ -105,6 +110,12 @@ export const useLabStore = create<LabState>((set, get) => ({
   strategyVersions: [],
   loadedBacktestId: null,
   isExecutionLogsOpen: false,
+  isOptimizationModalOpen: false,
+  activeStrategyParameters: {
+    fast_period: 12,
+    slow_period: 26,
+    signal_period: 9,
+  },
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
@@ -178,6 +189,21 @@ export const useLabStore = create<LabState>((set, get) => ({
 
   toggleExecutionLogs: () =>
     set((state) => ({ isExecutionLogsOpen: !state.isExecutionLogsOpen })),
+
+  setOptimizationModalOpen: (open) => set({ isOptimizationModalOpen: open }),
+
+  toggleOptimizationModal: () =>
+    set((state) => ({
+      isOptimizationModalOpen: !state.isOptimizationModalOpen,
+    })),
+
+  setActiveStrategyParameters: (params) =>
+    set((state) => ({
+      activeStrategyParameters: {
+        ...state.activeStrategyParameters,
+        ...params,
+      },
+    })),
 
   showToast: (message, type = 'success') => {
     const id = Math.random().toString(36).slice(2, 9);
