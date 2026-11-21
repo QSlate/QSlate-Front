@@ -11,6 +11,10 @@ import type {
   BacktestRunInput,
   BacktestRunsPage,
   BacktestSummary,
+  CustomDataset,
+  CustomDatasetMappingPayload,
+  CustomDatasetsPage,
+  CustomDatasetValidationJob,
   CustomWidget,
   CustomWidgetInput,
   DashboardAddWidgetInput,
@@ -995,6 +999,125 @@ export class QslateApiClient {
       'equity-curve',
       params,
       token
+    );
+  }
+
+  /**
+   * Uploads a custom CSV/Parquet market data dataset.
+   * POST /qslate/v1/data/custom/upload
+   */
+  public async uploadCustomDataset(
+    file: File | Blob,
+    name: string,
+    token?: string | null
+  ): Promise<CustomDataset> {
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('file', file);
+
+    return this.request<CustomDataset>('/qslate/v1/data/custom/upload', {
+      method: 'POST',
+      body: formData,
+      ...(token ? { token } : {}),
+    });
+  }
+
+  /**
+   * Lists custom datasets owned by the authenticated user.
+   * GET /qslate/v1/data/custom
+   */
+  public async getCustomDatasets(
+    params?: { cursor?: string; limit?: number },
+    token?: string | null
+  ): Promise<CustomDatasetsPage> {
+    const searchParams = new URLSearchParams();
+    if (params?.cursor) searchParams.set('cursor', params.cursor);
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const qs = searchParams.toString();
+
+    return this.request<CustomDatasetsPage>(
+      `/qslate/v1/data/custom${qs ? `?${qs}` : ''}`,
+      {
+        method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Fetches metadata, column schema, and preview rows for a custom dataset.
+   * GET /qslate/v1/data/custom/{datasetId}
+   */
+  public async getCustomDataset(
+    datasetId: string,
+    token?: string | null
+  ): Promise<CustomDataset> {
+    return this.request<CustomDataset>(
+      `/qslate/v1/data/custom/${encodeURIComponent(datasetId)}`,
+      {
+        method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Deletes a custom dataset.
+   * DELETE /qslate/v1/data/custom/{datasetId}
+   */
+  public async deleteCustomDataset(
+    datasetId: string,
+    token?: string | null
+  ): Promise<void> {
+    return this.request<void>(
+      `/qslate/v1/data/custom/${encodeURIComponent(datasetId)}`,
+      {
+        method: 'DELETE',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Configures timestamp and OHLCV column mappings for a custom dataset.
+   * POST /qslate/v1/data/custom/{datasetId}/mapping
+   */
+  public async mapDatasetColumns(
+    datasetId: string,
+    payload: CustomDatasetMappingPayload,
+    token?: string | null
+  ): Promise<CustomDataset> {
+    return this.request<CustomDataset>(
+      `/qslate/v1/data/custom/${encodeURIComponent(datasetId)}/mapping`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Triggers integrity and format validation on a mapped custom dataset.
+   * POST /qslate/v1/data/custom/{datasetId}/validate
+   */
+  public async validateDataset(
+    datasetId: string,
+    idempotencyKey?: string,
+    token?: string | null
+  ): Promise<CustomDatasetValidationJob> {
+    const key =
+      idempotencyKey ||
+      `validate-${crypto.randomUUID().replace(/-/g, '')}-${Date.now()}`;
+    return this.request<CustomDatasetValidationJob>(
+      `/qslate/v1/data/custom/${encodeURIComponent(datasetId)}/validate`,
+      {
+        method: 'POST',
+        headers: {
+          'Idempotency-Key': key,
+        },
+        ...(token ? { token } : {}),
+      }
     );
   }
 }

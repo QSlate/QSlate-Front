@@ -14,6 +14,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { DEFAULT_LAYOUT, useLayoutStore } from '@/entities/layout';
 import { useUserStore } from '@/entities/user/model';
+import { CustomDatasetsDrawer } from '@/features/custom-datasets';
 import { useLabStore } from '@/features/lab-state';
 import { StrategyOptimizationModal } from '@/features/optimize-strategy';
 import {
@@ -196,6 +197,7 @@ function Workspace() {
       <AddWidgetDrawer />
       <ExecutionLogsConsole />
       <StrategyOptimizationModal />
+      <CustomDatasetsDrawer />
       <Toast />
       {expandedWidget && ExpandedComponent ? (
         <Dialog

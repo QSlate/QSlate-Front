@@ -4,6 +4,7 @@ import { create } from 'zustand';
 
 import { MOCK_STRATEGIES } from '@/entities/strategy';
 import type {
+  CustomDataset,
   Diagnostic,
   MarketplaceItem,
   StrategyVersion,
@@ -43,6 +44,9 @@ export interface LabState {
   isExecutionLogsOpen: boolean;
   isOptimizationModalOpen: boolean;
   activeStrategyParameters: Record<string, number>;
+  isCustomDatasetsDrawerOpen: boolean;
+  customDatasets: CustomDataset[];
+  selectedCustomDataset: CustomDataset | null;
 
   setActiveTab: (tab: LabTab) => void;
   setAddWidgetDrawerOpen: (open: boolean) => void;
@@ -78,6 +82,10 @@ export interface LabState {
   setOptimizationModalOpen: (open: boolean) => void;
   toggleOptimizationModal: () => void;
   setActiveStrategyParameters: (params: Record<string, number>) => void;
+  setCustomDatasetsDrawerOpen: (open: boolean) => void;
+  toggleCustomDatasetsDrawer: () => void;
+  setCustomDatasets: (datasets: CustomDataset[]) => void;
+  setSelectedCustomDataset: (dataset: CustomDataset | null) => void;
 }
 
 const DEFAULT_STRATEGY_ID = 'momentum-eth';
@@ -116,6 +124,9 @@ export const useLabStore = create<LabState>((set, get) => ({
     slow_period: 26,
     signal_period: 9,
   },
+  isCustomDatasetsDrawerOpen: false,
+  customDatasets: [],
+  selectedCustomDataset: null,
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
@@ -204,6 +215,19 @@ export const useLabStore = create<LabState>((set, get) => ({
         ...params,
       },
     })),
+
+  setCustomDatasetsDrawerOpen: (open) =>
+    set({ isCustomDatasetsDrawerOpen: open }),
+
+  toggleCustomDatasetsDrawer: () =>
+    set((state) => ({
+      isCustomDatasetsDrawerOpen: !state.isCustomDatasetsDrawerOpen,
+    })),
+
+  setCustomDatasets: (datasets) => set({ customDatasets: datasets }),
+
+  setSelectedCustomDataset: (dataset) =>
+    set({ selectedCustomDataset: dataset }),
 
   showToast: (message, type = 'success') => {
     const id = Math.random().toString(36).slice(2, 9);
