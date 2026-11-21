@@ -794,5 +794,74 @@ describe('QslateApiClient', () => {
       'http://localhost:8080/qslate/v1/backtests/bt-100/logs?limit=50',
       expect.objectContaining({ method: 'GET' })
     );
+
+    // 7. optimizeBacktest
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 202,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        optimization_id: 'opt-100',
+        seed: 42,
+        backtests: [
+          {
+            backtest_id: 'bt-opt-1',
+            status: 'pending',
+            progress: 0,
+            input: {
+              strategy_id: 'strat-1',
+              dataset_id: 'data-1',
+            },
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-01T00:00:00Z',
+          },
+        ],
+      }),
+    });
+
+    const batch = await client.optimizeBacktest(
+      {
+        run: {
+          strategy_id: 'strat-1',
+          strategy_version_id: 'v1',
+          dataset_id: 'data-1',
+          dataset_version_id: 'v1',
+          initial_capital: '100000',
+        },
+        method: 'grid_search',
+        search_space: {
+          fast_period: [10, 15],
+          slow_period: [30, 45],
+        },
+        max_runs: 10,
+      },
+      'opt-key-12345678',
+      'test-token'
+    );
+
+    expect(batch.optimization_id).toBe('opt-100');
+    expect(batch.backtests).toHaveLength(1);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/backtests/optimize',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.any(Headers),
+        body: JSON.stringify({
+          run: {
+            strategy_id: 'strat-1',
+            strategy_version_id: 'v1',
+            dataset_id: 'data-1',
+            dataset_version_id: 'v1',
+            initial_capital: '100000',
+          },
+          method: 'grid_search',
+          search_space: {
+            fast_period: [10, 15],
+            slow_period: [30, 45],
+          },
+          max_runs: 10,
+        }),
+      })
+    );
   });
 });

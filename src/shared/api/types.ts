@@ -360,3 +360,31 @@ export interface BacktestLogsPage {
   items: BacktestLogItem[];
   next_cursor?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Lab Service Parameter Optimization (/qslate/v1/backtests/optimize)
+// ---------------------------------------------------------------------------
+
+export type OptimizationMethod = 'grid_search' | 'monte_carlo';
+
+export interface BacktestOptimizeInput {
+  run: {
+    strategy_id: string;
+    strategy_version_id: string;
+    dataset_id: string;
+    dataset_version_id: string;
+    initial_capital: string;
+    parameters?: Record<string, unknown>;
+    execution_target?: string;
+  };
+  method: OptimizationMethod;
+  search_space: Record<string, number[]>;
+  max_runs: number;
+  seed?: number;
+}
+
+export interface OptimizationBatch {
+  optimization_id: string;
+  seed?: number;
+  backtests: BacktestJob[];
+}

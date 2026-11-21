@@ -7,6 +7,7 @@ import type {
   BacktestJob,
   BacktestLogItem,
   BacktestLogsPage,
+  BacktestOptimizeInput,
   BacktestRunsPage,
   BacktestSummary,
   CustomWidget,
@@ -26,6 +27,7 @@ import type {
   MarketplaceReviewInput,
   MarketplaceReviewsPage,
   NewAPIKeyDto,
+  OptimizationBatch,
   RegisterPayload,
   Strategy,
   StrategyInput,
@@ -887,6 +889,27 @@ export class QslateApiClient {
       params,
       token
     );
+  }
+  /**
+   * Launch a strategy parameter optimization campaign.
+   * POST /qslate/v1/backtests/optimize
+   */
+  public async optimizeBacktest(
+    input: BacktestOptimizeInput,
+    idempotencyKey?: string,
+    token?: string | null
+  ): Promise<OptimizationBatch> {
+    const key =
+      idempotencyKey ||
+      `opt-${crypto.randomUUID().replace(/-/g, '')}-${Date.now()}`;
+    return this.request<OptimizationBatch>('/qslate/v1/backtests/optimize', {
+      method: 'POST',
+      headers: {
+        'Idempotency-Key': key,
+      },
+      body: JSON.stringify(input),
+      ...(token ? { token } : {}),
+    });
   }
 }
 
