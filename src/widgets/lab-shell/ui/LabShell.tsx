@@ -4,6 +4,7 @@ import { type ReactNode } from 'react';
 
 import { useUserStore } from '@/entities/user/model';
 import { useLabStore } from '@/features/lab-state';
+import { StrategyOptimizationModal } from '@/features/optimize-strategy';
 import {
   BacktestProvider,
   useBacktest,
@@ -46,6 +47,7 @@ function ShellInner({ children }: { children: ReactNode }) {
       </main>
       <AddWidgetDrawer />
       <ExecutionLogsConsole />
+      <StrategyOptimizationModal />
       <Toast />
     </div>
   );

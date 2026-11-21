@@ -7,6 +7,7 @@ import {
   LoaderCircle,
   Play,
   Plus,
+  SlidersHorizontal,
   Terminal,
 } from 'lucide-react';
 import {
@@ -42,6 +43,9 @@ export function LabToolbar({ onAddWidget }: { onAddWidget: () => void }) {
   const toggleColorblind = useUserStore((state) => state.toggleColorblindMode);
   const isExecutionLogsOpen = useLabStore((state) => state.isExecutionLogsOpen);
   const toggleExecutionLogs = useLabStore((state) => state.toggleExecutionLogs);
+  const setOptimizationModalOpen = useLabStore(
+    (state) => state.setOptimizationModalOpen
+  );
   const formRef = useRef<HTMLFormElement>(null);
   const running = status === 'running';
   const [submitted, setSubmitted] = useState(false);
@@ -171,6 +175,15 @@ export function LabToolbar({ onAddWidget }: { onAddWidget: () => void }) {
         </label>
       </fieldset>
       <div className="lab-toolbar-actions">
+        <button
+          className="lab-button"
+          type="button"
+          onClick={() => setOptimizationModalOpen(true)}
+          aria-label="Open strategy parameter optimization"
+        >
+          <SlidersHorizontal size={12} />
+          <span>Optimize</span>
+        </button>
         <button className="lab-button" type="button" onClick={onAddWidget}>
           <Plus size={12} />
           <span>Add Widget</span>
