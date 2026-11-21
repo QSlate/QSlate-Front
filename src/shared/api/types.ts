@@ -122,3 +122,98 @@ export interface StrategyRestoreInput {
   version_id: string;
   base_version_id: string;
 }
+
+// ---------------------------------------------------------------------------
+// Marketplace Types & DTOs
+// ---------------------------------------------------------------------------
+
+export type MarketplaceItemKind = 'strategy' | 'widget';
+
+export interface MarketplaceItem {
+  id: string;
+  kind: MarketplaceItemKind;
+  version_id: string;
+  author_id: number;
+  name: string;
+  description: string;
+  category: string;
+  visibility: string;
+  revision: number;
+  install_count: number;
+  review_count: number;
+  average_rating: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MarketplacePage {
+  items: MarketplaceItem[];
+  next_cursor?: string;
+}
+
+export interface MarketplaceCategory {
+  id: string;
+  name: string;
+}
+
+export interface MarketplaceCategoriesPage {
+  items: MarketplaceCategory[];
+  next_cursor?: string;
+}
+
+export interface MarketplaceReview {
+  id: string;
+  author_id: number;
+  rating: number;
+  comment: string;
+  created_at: string;
+}
+
+export interface MarketplaceReviewInput {
+  rating: number;
+  comment: string;
+}
+
+export interface MarketplaceReviewsPage {
+  items: MarketplaceReview[];
+  next_cursor?: string;
+}
+
+export interface MarketplacePublishInput {
+  kind: MarketplaceItemKind;
+  resource_id: string;
+  version_id: string;
+  name: string;
+  description: string;
+  category: string;
+  visibility?: string;
+}
+
+export interface MarketplacePatchInput {
+  base_revision: number;
+  name?: string;
+  description?: string;
+  category?: string;
+  visibility?: string;
+  version_id?: string;
+}
+
+export interface MarketplaceInstallation {
+  item_id: string;
+  version_id: string;
+  kind: string;
+  catalog_id: string;
+  installed_at: string;
+  name?: string;
+  language?: string;
+  source?: string;
+  configuration?: unknown;
+}
+
+export interface MarketplaceFilter {
+  q?: string;
+  kind?: string;
+  category?: string;
+  cursor?: string;
+  limit?: number;
+}
