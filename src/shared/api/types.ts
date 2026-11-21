@@ -391,3 +391,57 @@ export interface OptimizationBatch {
   seed?: number;
   backtests: BacktestJob[];
 }
+
+// ---------------------------------------------------------------------------
+// Market Data Custom Datasets (/qslate/v1/data/custom)
+// ---------------------------------------------------------------------------
+
+export type CustomDatasetStatus =
+  'uploaded' | 'mapped' | 'validating' | 'ready' | 'failed';
+
+export interface CustomDatasetColumnMapping {
+  timestamp_column: string;
+  timezone: string;
+  timestamp_unit: string;
+  columns: {
+    open: string;
+    high: string;
+    low: string;
+    close: string;
+    volume?: string;
+  };
+}
+
+export interface CustomDatasetMappingPayload extends CustomDatasetColumnMapping {
+  base_version_id: string;
+}
+
+export interface CustomDataset {
+  id: string;
+  version_id: string;
+  name: string;
+  status: CustomDatasetStatus;
+  format: 'csv' | 'parquet';
+  columns: string[];
+  preview?: string[][];
+  row_count: number;
+  mapping?: CustomDatasetColumnMapping;
+  sha256?: string;
+  symbol: string;
+  error?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CustomDatasetsPage {
+  items: CustomDataset[];
+  next_cursor?: string;
+}
+
+export interface CustomDatasetValidationJob {
+  job_id: string;
+  dataset_id: string;
+  version_id: string;
+  status: string;
+  error?: string;
+}

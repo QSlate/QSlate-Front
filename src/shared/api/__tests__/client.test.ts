@@ -987,4 +987,141 @@ describe('QslateApiClient', () => {
     const equity = await client.getBacktestEquityCurve('bt-live-1');
     expect(equity.items).toHaveLength(2);
   });
+
+  it('manages market data custom datasets lifecycle (upload, list, get, map, validate, delete)', async () => {
+    // 1. uploadCustomDataset
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 201,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        id: 'ds-custom-1',
+        version_id: 'ver-1',
+        name: 'Binance ETH 15m',
+        status: 'uploaded',
+        format: 'csv',
+        columns: ['timestamp', 'open', 'high', 'low', 'close', 'volume'],
+        preview: [['2024-01-01T00:00:00Z', '100', '105', '99', '104', '500']],
+        row_count: 1,
+        symbol: 'custom:ds-custom-1',
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-01T00:00:00Z',
+      }),
+    });
+
+    const file = new Blob(['timestamp,open\n2024-01-01,100'], {
+      type: 'text/csv',
+    });
+    const uploaded = await client.uploadCustomDataset(
+      file,
+      'Binance ETH 15m',
+      'test-token'
+    );
+    expect(uploaded.id).toBe('ds-custom-1');
+    expect(uploaded.status).toBe('uploaded');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/data/custom/upload',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.any(Headers),
+      })
+    );
+
+    // 2. getCustomDatasets
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        items: [uploaded],
+        next_cursor: undefined,
+      }),
+    });
+
+    const datasets = await client.getCustomDatasets({ limit: 10 });
+    expect(datasets.items).toHaveLength(1);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/data/custom?limit=10',
+      expect.objectContaining({ method: 'GET' })
+    );
+
+    // 3. getCustomDataset
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => uploaded,
+    });
+
+    const single = await client.getCustomDataset('ds-custom-1');
+    expect(single.name).toBe('Binance ETH 15m');
+
+    // 4. mapDatasetColumns
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        ...uploaded,
+        status: 'mapped',
+        mapping: {
+          timestamp_column: 'timestamp',
+          timezone: 'UTC',
+          timestamp_unit: 's',
+          columns: {
+            open: 'open',
+            high: 'high',
+            low: 'low',
+            close: 'close',
+            volume: 'volume',
+          },
+        },
+      }),
+    });
+
+    const mapped = await client.mapDatasetColumns('ds-custom-1', {
+      base_version_id: 'ver-1',
+      timestamp_column: 'timestamp',
+      timezone: 'UTC',
+      timestamp_unit: 's',
+      columns: {
+        open: 'open',
+        high: 'high',
+        low: 'low',
+        close: 'close',
+        volume: 'volume',
+      },
+    });
+    expect(mapped.status).toBe('mapped');
+
+    // 5. validateDataset
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 202,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        job_id: 'job-val-1',
+        dataset_id: 'ds-custom-1',
+        version_id: 'ver-1',
+        status: 'queued',
+      }),
+    });
+
+    const validationJob = await client.validateDataset('ds-custom-1');
+    expect(validationJob.job_id).toBe('job-val-1');
+    expect(validationJob.status).toBe('queued');
+
+    // 6. deleteCustomDataset
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 204,
+      headers: new Headers(),
+    });
+
+    await client.deleteCustomDataset('ds-custom-1');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/data/custom/ds-custom-1',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+  });
 });

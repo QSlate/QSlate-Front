@@ -3,6 +3,7 @@
 import {
   CalendarDays,
   ChevronDown,
+  Database,
   Eye,
   LoaderCircle,
   Play,
@@ -43,6 +44,15 @@ export function LabToolbar({ onAddWidget }: { onAddWidget: () => void }) {
   const toggleColorblind = useUserStore((state) => state.toggleColorblindMode);
   const isExecutionLogsOpen = useLabStore((state) => state.isExecutionLogsOpen);
   const toggleExecutionLogs = useLabStore((state) => state.toggleExecutionLogs);
+  const isCustomDatasetsDrawerOpen = useLabStore(
+    (state) => state.isCustomDatasetsDrawerOpen
+  );
+  const toggleCustomDatasetsDrawer = useLabStore(
+    (state) => state.toggleCustomDatasetsDrawer
+  );
+  const selectedCustomDataset = useLabStore(
+    (state) => state.selectedCustomDataset
+  );
   const setOptimizationModalOpen = useLabStore(
     (state) => state.setOptimizationModalOpen
   );
@@ -175,6 +185,21 @@ export function LabToolbar({ onAddWidget }: { onAddWidget: () => void }) {
         </label>
       </fieldset>
       <div className="lab-toolbar-actions">
+        <button
+          className="lab-button"
+          type="button"
+          onClick={toggleCustomDatasetsDrawer}
+          aria-pressed={isCustomDatasetsDrawerOpen}
+          aria-label="Manage custom market datasets"
+        >
+          <Database size={12} />
+          <span>Datasets</span>
+          {selectedCustomDataset && (
+            <span className="text-[10px] text-blue-400 font-mono">
+              ({selectedCustomDataset.name.slice(0, 10)})
+            </span>
+          )}
+        </button>
         <button
           className="lab-button"
           type="button"

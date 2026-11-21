@@ -33,11 +33,17 @@ export class LiveBacktestService implements BacktestService {
     const versionId = labState.versionId || DEFAULT_VERSION_ID;
     const parameters = labState.activeStrategyParameters || {};
 
+    const customDs = labState.selectedCustomDataset;
+    const datasetId = customDs ? customDs.id : DEFAULT_DATASET_ID;
+    const datasetVersionId = customDs
+      ? customDs.version_id
+      : DEFAULT_DATASET_VERSION;
+
     const payload: BacktestRunInput = {
       strategy_id: strategyId,
       strategy_version_id: versionId,
-      dataset_id: DEFAULT_DATASET_ID,
-      dataset_version_id: DEFAULT_DATASET_VERSION,
+      dataset_id: datasetId,
+      dataset_version_id: datasetVersionId,
       initial_capital: String(config.capital),
       parameters,
       window: 20,
