@@ -39,6 +39,7 @@ export interface UserPreferencesState {
   theme: ThemeMode;
   colorblindMode: ColorblindMode;
   sidebarCollapsed: boolean;
+  soundAlerts: boolean;
 }
 
 export interface UserSessionState {
@@ -52,6 +53,12 @@ export interface UserPreferencesActions {
   toggleColorblindMode: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   toggleSidebar: () => void;
+  setSoundAlerts: (soundAlerts: boolean) => void;
+  toggleSoundAlerts: () => void;
+  hydrateRemotePreferences: (remote: {
+    theme?: string;
+    colorblind_mode?: boolean;
+  }) => void;
   resetPreferences: () => void;
 }
 
@@ -69,4 +76,5 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesState = {
   theme: 'dark',
   colorblindMode: 'none',
   sidebarCollapsed: false,
+  soundAlerts: true,
 };
