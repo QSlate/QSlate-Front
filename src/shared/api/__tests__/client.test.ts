@@ -1382,4 +1382,78 @@ describe('QslateApiClient', () => {
     expect(res.summaries).toHaveLength(2);
     expect(res.summaries[0].metrics.sharpe_ratio).toBe(2.1);
   });
+
+  it('handles identity recovery and email verification endpoints', async () => {
+    // 1. forgotPassword
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 202,
+      headers: new Headers(),
+      text: async () => '',
+    });
+
+    await client.forgotPassword('trader@quantfund.eu');
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/auth/forgot-password',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ email: 'trader@quantfund.eu' }),
+      })
+    );
+
+    // 2. resetPassword
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 204,
+      headers: new Headers(),
+    });
+
+    await client.resetPassword('secret-token-123', 'NewValidPassword123!');
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/auth/reset-password',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          token: 'secret-token-123',
+          password: 'NewValidPassword123!',
+        }),
+      })
+    );
+
+    // 3. verifyEmail
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 204,
+      headers: new Headers(),
+    });
+
+    await client.verifyEmail('verify-token-xyz');
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/auth/verify-email',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ token: 'verify-token-xyz' }),
+      })
+    );
+
+    // 4. getAuthProviders
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        providers: [
+          { id: 'google', display_name: 'Google', enabled: true },
+          { id: 'github', display_name: 'GitHub', enabled: true },
+        ],
+      }),
+    });
+
+    const providers = await client.getAuthProviders();
+    expect(providers.providers).toHaveLength(2);
+    expect(providers.providers[0].id).toBe('google');
+  });
 });

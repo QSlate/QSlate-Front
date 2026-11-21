@@ -1,6 +1,7 @@
 import type {
   APIKeyInputDto,
   APIKeysPageDto,
+  AuthProvidersResponse,
   AuthSession,
   BackendErrorResponse,
   BacktestArtifactPage,
@@ -188,6 +189,49 @@ export class QslateApiClient {
   public async refresh(): Promise<AuthSession> {
     return this.request<AuthSession>('/qslate/v1/auth/refresh', {
       method: 'POST',
+    });
+  }
+
+  /**
+   * Request a password recovery email.
+   * POST /qslate/v1/auth/forgot-password
+   */
+  public async forgotPassword(email: string): Promise<void> {
+    await this.request<void>('/qslate/v1/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email: email.trim().toLowerCase() }),
+    });
+  }
+
+  /**
+   * Submit a new password with a reset token.
+   * POST /qslate/v1/auth/reset-password
+   */
+  public async resetPassword(token: string, password: string): Promise<void> {
+    await this.request<void>('/qslate/v1/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    });
+  }
+
+  /**
+   * Confirm an email verification token.
+   * POST /qslate/v1/auth/verify-email
+   */
+  public async verifyEmail(token: string): Promise<void> {
+    await this.request<void>('/qslate/v1/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  }
+
+  /**
+   * Retrieve available OAuth identity providers.
+   * GET /qslate/v1/auth/providers
+   */
+  public async getAuthProviders(): Promise<AuthProvidersResponse> {
+    return this.request<AuthProvidersResponse>('/qslate/v1/auth/providers', {
+      method: 'GET',
     });
   }
 

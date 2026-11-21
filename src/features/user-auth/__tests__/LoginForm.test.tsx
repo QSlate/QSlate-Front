@@ -35,6 +35,7 @@ describe('LoginForm', () => {
 
     expect(screen.getByLabelText(/Email or Username/i)).toBeDefined();
     expect(screen.getByLabelText(/^Password/i)).toBeDefined();
+    expect(screen.getByText('Forgot password?')).toBeDefined();
     expect(
       screen.getByRole('button', { name: /Initialize Session/i })
     ).toBeDefined();
