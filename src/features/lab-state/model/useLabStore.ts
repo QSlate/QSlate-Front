@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 
 import { MOCK_STRATEGIES } from '@/entities/strategy';
+import type { Diagnostic, StrategyVersion } from '@/shared/api';
 
 export type LabTab = 'workspace' | 'ide' | 'marketplace' | 'runs' | 'settings';
 
@@ -23,6 +24,16 @@ export interface LabState {
   marketplaceCategory: string;
   toast: ToastNotice | null;
 
+  // Live strategy state & versioning
+  strategyId: string | null;
+  versionId: string | null;
+  strategyRevision: number;
+  strategyName: string;
+  strategyDiagnostics: Diagnostic[];
+  isLinting: boolean;
+  isVersionDrawerOpen: boolean;
+  strategyVersions: StrategyVersion[];
+
   setActiveTab: (tab: LabTab) => void;
   setAddWidgetDrawerOpen: (open: boolean) => void;
   toggleAddWidgetDrawer: () => void;
@@ -35,6 +46,18 @@ export interface LabState {
   clearToast: () => void;
   applyAiPrompt: (promptText?: string) => Promise<void>;
   loadStrategyFiles: (strategyId: string) => void;
+
+  setStrategyDiagnostics: (diagnostics: Diagnostic[]) => void;
+  setIsLinting: (isLinting: boolean) => void;
+  setStrategyMeta: (meta: {
+    id?: string | null;
+    version_id?: string | null;
+    revision?: number;
+    name?: string;
+  }) => void;
+  setVersionDrawerOpen: (open: boolean) => void;
+  toggleVersionDrawer: () => void;
+  setStrategyVersions: (versions: StrategyVersion[]) => void;
 }
 
 const DEFAULT_STRATEGY_ID = 'momentum-eth';
@@ -55,6 +78,15 @@ export const useLabStore = create<LabState>((set, get) => ({
   marketplaceCategory: 'All',
   toast: null,
 
+  strategyId: null,
+  versionId: null,
+  strategyRevision: 1,
+  strategyName: 'Momentum_ETH_4h',
+  strategyDiagnostics: [],
+  isLinting: false,
+  isVersionDrawerOpen: false,
+  strategyVersions: [],
+
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   setAddWidgetDrawerOpen: (open) => set({ isAddWidgetDrawerOpen: open }),
@@ -67,7 +99,6 @@ export const useLabStore = create<LabState>((set, get) => ({
   updateIdeFileContent: (file, content) =>
     set((state) => ({
       ideFiles: { ...state.ideFiles, [file]: content },
-      ideAstStatus: 'valid',
     })),
 
   toggleIdeSplitView: () =>
@@ -76,6 +107,33 @@ export const useLabStore = create<LabState>((set, get) => ({
   setMarketplaceSearch: (query) => set({ marketplaceSearch: query }),
 
   setMarketplaceCategory: (category) => set({ marketplaceCategory: category }),
+
+  setStrategyDiagnostics: (diagnostics) =>
+    set({
+      strategyDiagnostics: diagnostics,
+      ideAstStatus: diagnostics.some((d) => d.severity === 'error')
+        ? 'invalid'
+        : 'valid',
+    }),
+
+  setIsLinting: (isLinting) => set({ isLinting }),
+
+  setStrategyMeta: (meta) =>
+    set((state) => ({
+      strategyId: meta.id !== undefined ? meta.id : state.strategyId,
+      versionId:
+        meta.version_id !== undefined ? meta.version_id : state.versionId,
+      strategyRevision:
+        meta.revision !== undefined ? meta.revision : state.strategyRevision,
+      strategyName: meta.name !== undefined ? meta.name : state.strategyName,
+    })),
+
+  setVersionDrawerOpen: (open) => set({ isVersionDrawerOpen: open }),
+
+  toggleVersionDrawer: () =>
+    set((state) => ({ isVersionDrawerOpen: !state.isVersionDrawerOpen })),
+
+  setStrategyVersions: (versions) => set({ strategyVersions: versions }),
 
   showToast: (message, type = 'success') => {
     const id = Math.random().toString(36).slice(2, 9);
