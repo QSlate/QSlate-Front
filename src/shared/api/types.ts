@@ -445,3 +445,54 @@ export interface CustomDatasetValidationJob {
   status: string;
   error?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Market Data History & Symbols (/qslate/v1/data/symbols, /qslate/v1/data/history)
+// ---------------------------------------------------------------------------
+
+export interface MarketSymbol {
+  symbol: string;
+  name: string;
+  dataset_id?: string;
+  version_id?: string;
+  live: boolean;
+}
+
+export interface MarketSymbolsPage {
+  items: MarketSymbol[];
+  next_cursor?: string | null;
+}
+
+export interface MarketCandle {
+  time: string;
+  open: string;
+  high: string;
+  low: string;
+  close: string;
+  volume: string;
+}
+
+export interface MarketHistory {
+  symbol: string;
+  resolution: string;
+  items: MarketCandle[];
+  next_cursor?: string | null;
+}
+
+export interface MarketHistoryParams {
+  symbol: string;
+  resolution: string;
+  start: string;
+  end: string;
+  cursor?: string;
+  limit?: number;
+  version_id?: string;
+}
+
+export interface MarketTick {
+  id: string;
+  symbol: string;
+  time: string;
+  price: string;
+  quantity: string;
+}

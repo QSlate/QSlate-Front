@@ -4,7 +4,7 @@ import type { ChartOptions, DeepPartial } from 'lightweight-charts';
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 
-import { generateMockCandles, MARKET_TICKERS } from '@/entities/market';
+import { MARKET_TICKERS, useMarketCandles } from '@/entities/market';
 import { useBacktest } from '@/features/run-backtest/BacktestProvider';
 import { useAppearance } from '@/shared/theme';
 import { ChartSkeleton } from '@/shared/ui/charts/ChartSkeleton';
@@ -47,10 +47,8 @@ export function EquityWidget() {
   const isLight = theme === 'light';
   const isColorblind = colorblindMode === 'orange-blue';
 
-  // Candlestick Data for selected ticker & interval
-  const candles = useMemo(() => {
-    return generateMockCandles(selectedTicker, candleInterval, 90);
-  }, [selectedTicker, candleInterval]);
+  // Candlestick Data for selected ticker & interval from Market Data Service & Live Tick Stream
+  const { candles, isLive } = useMarketCandles(selectedTicker, candleInterval);
 
   const currentTickerInfo = useMemo(() => {
     return (
@@ -185,6 +183,12 @@ export function EquityWidget() {
               >
                 {currentTickerInfo.exchange} · {candleInterval}
               </span>
+              {isLive && (
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  LIVE
+                </span>
+              )}
               <span className="text-zinc-400">·</span>
               <span
                 className={`font-medium ${

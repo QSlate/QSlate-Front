@@ -5,11 +5,13 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
 } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { useUserStore } from '@/entities/user/model';
 import { BacktestProvider } from '@/features/run-backtest/BacktestProvider';
+import { apiClient } from '@/shared/api';
 
 import { ResultControlsProvider } from '../model/ResultControls';
 import { EquityToolbar } from '../ui/EquityToolbar';
@@ -124,6 +126,31 @@ describe('TradingView Candlestick and Ticker Selection in Lab', () => {
       });
 
       expect(handleSelect).toHaveBeenCalledWith('BABA');
+    });
+
+    it('integrates dynamic market symbols from getMarketSymbols', async () => {
+      vi.spyOn(apiClient, 'getMarketSymbols').mockResolvedValueOnce({
+        items: [
+          {
+            symbol: 'custom:ds-alpha',
+            name: 'Alpha Custom Feed',
+            dataset_id: 'ds-alpha',
+            live: true,
+          },
+        ],
+      });
+
+      render(<TickerSelector selectedTicker="ETH/USDT" onSelect={vi.fn()} />);
+
+      const triggerBtn = screen.getByTitle('Select instrument / ticker');
+      act(() => {
+        fireEvent.click(triggerBtn);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('custom:ds-alpha')).toBeDefined();
+        expect(screen.getByText('Custom Lab')).toBeDefined();
+      });
     });
   });
 

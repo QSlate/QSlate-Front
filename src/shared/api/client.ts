@@ -21,6 +21,8 @@ import type {
   DiagnosticsResponse,
   InstalledWidgetsPage,
   LoginPayload,
+  MarketHistory,
+  MarketHistoryParams,
   MarketplaceCategoriesPage,
   MarketplaceFilter,
   MarketplaceInstallation,
@@ -31,6 +33,7 @@ import type {
   MarketplaceReview,
   MarketplaceReviewInput,
   MarketplaceReviewsPage,
+  MarketSymbolsPage,
   NewAPIKeyDto,
   OptimizationBatch,
   RegisterPayload,
@@ -1116,6 +1119,56 @@ export class QslateApiClient {
         headers: {
           'Idempotency-Key': key,
         },
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Fetches searchable catalog of tradable and custom dataset symbols.
+   * GET /qslate/v1/data/symbols
+   */
+  public async getMarketSymbols(
+    params?: { q?: string; cursor?: string; limit?: number },
+    token?: string | null
+  ): Promise<MarketSymbolsPage> {
+    const searchParams = new URLSearchParams();
+    if (params?.q) searchParams.set('q', params.q);
+    if (params?.cursor) searchParams.set('cursor', params.cursor);
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const qs = searchParams.toString();
+
+    return this.request<MarketSymbolsPage>(
+      `/qslate/v1/data/symbols${qs ? `?${qs}` : ''}`,
+      {
+        method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Fetches historical OHLCV candlestick series for a symbol and resolution.
+   * GET /qslate/v1/data/history
+   */
+  public async getMarketHistory(
+    params: MarketHistoryParams,
+    token?: string | null
+  ): Promise<MarketHistory> {
+    const searchParams = new URLSearchParams();
+    searchParams.set('symbol', params.symbol);
+    searchParams.set('resolution', params.resolution);
+    searchParams.set('start', params.start);
+    searchParams.set('end', params.end);
+    if (params.cursor) searchParams.set('cursor', params.cursor);
+    if (params.limit) searchParams.set('limit', String(params.limit));
+    if (params.version_id) searchParams.set('version_id', params.version_id);
+    const qs = searchParams.toString();
+
+    return this.request<MarketHistory>(
+      `/qslate/v1/data/history${qs ? `?${qs}` : ''}`,
+      {
+        method: 'GET',
         ...(token ? { token } : {}),
       }
     );
