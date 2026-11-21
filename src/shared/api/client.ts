@@ -1,8 +1,15 @@
 import type {
   AuthSession,
   BackendErrorResponse,
+  DiagnosticsResponse,
   LoginPayload,
   RegisterPayload,
+  Strategy,
+  StrategyInput,
+  StrategyPage,
+  StrategyRestoreInput,
+  StrategyUpdateInput,
+  StrategyVersionsPage,
   User,
   UserPreferencesDTO,
   UserPreferencesPatchDTO,
@@ -182,6 +189,161 @@ export class QslateApiClient {
     return this.request<UserPreferencesDTO>('/qslate/v1/users/me/preferences', {
       method: 'PATCH',
       body: JSON.stringify(patch),
+      ...(token ? { token } : {}),
+    });
+  }
+
+  /**
+   * Run static Python AST syntax diagnostics.
+   * POST /qslate/v1/strategies/lint
+   */
+  public async lintStrategy(
+    source: string,
+    language: string = 'python',
+    token?: string | null
+  ): Promise<DiagnosticsResponse> {
+    return this.request<DiagnosticsResponse>('/qslate/v1/strategies/lint', {
+      method: 'POST',
+      body: JSON.stringify({ source, language }),
+      ...(token ? { token } : {}),
+    });
+  }
+
+  /**
+   * List owned strategies.
+   * GET /qslate/v1/strategies
+   */
+  public async getStrategies(
+    params?: { limit?: number; cursor?: string },
+    token?: string | null
+  ): Promise<StrategyPage> {
+    const query = new URLSearchParams();
+    if (params?.limit) query.set('limit', String(params.limit));
+    if (params?.cursor) query.set('cursor', params.cursor);
+    const qs = query.toString();
+    const endpoint = `/qslate/v1/strategies${qs ? `?${qs}` : ''}`;
+    return this.request<StrategyPage>(endpoint, {
+      method: 'GET',
+      ...(token ? { token } : {}),
+    });
+  }
+
+  /**
+   * Create a new draft strategy.
+   * POST /qslate/v1/strategies
+   */
+  public async createStrategy(
+    input: StrategyInput,
+    token?: string | null
+  ): Promise<Strategy> {
+    return this.request<Strategy>('/qslate/v1/strategies', {
+      method: 'POST',
+      body: JSON.stringify(input),
+      ...(token ? { token } : {}),
+    });
+  }
+
+  /**
+   * Read strategy detail and current source.
+   * GET /qslate/v1/strategies/{strategyId}
+   */
+  public async getStrategy(
+    strategyId: string,
+    token?: string | null
+  ): Promise<Strategy> {
+    return this.request<Strategy>(
+      `/qslate/v1/strategies/${encodeURIComponent(strategyId)}`,
+      {
+        method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Commit a new revision of a strategy.
+   * PUT /qslate/v1/strategies/{strategyId}
+   */
+  public async updateStrategy(
+    strategyId: string,
+    input: StrategyUpdateInput,
+    token?: string | null
+  ): Promise<Strategy> {
+    return this.request<Strategy>(
+      `/qslate/v1/strategies/${encodeURIComponent(strategyId)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(input),
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * List strategy revision history.
+   * GET /qslate/v1/strategies/{strategyId}/versions
+   */
+  public async getStrategyVersions(
+    strategyId: string,
+    params?: { limit?: number; cursor?: string },
+    token?: string | null
+  ): Promise<StrategyVersionsPage> {
+    const query = new URLSearchParams();
+    if (params?.limit) query.set('limit', String(params.limit));
+    if (params?.cursor) query.set('cursor', params.cursor);
+    const qs = query.toString();
+    const endpoint = `/qslate/v1/strategies/${encodeURIComponent(strategyId)}/versions${qs ? `?${qs}` : ''}`;
+    return this.request<StrategyVersionsPage>(endpoint, {
+      method: 'GET',
+      ...(token ? { token } : {}),
+    });
+  }
+
+  /**
+   * Restore a previous strategy version as a new revision.
+   * POST /qslate/v1/strategies/{strategyId}/restore
+   */
+  public async restoreStrategyVersion(
+    strategyId: string,
+    input: StrategyRestoreInput,
+    token?: string | null
+  ): Promise<Strategy> {
+    return this.request<Strategy>(
+      `/qslate/v1/strategies/${encodeURIComponent(strategyId)}/restore`,
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Import a Python strategy file.
+   * POST /qslate/v1/strategies/import
+   */
+  public async importStrategy(
+    file: File | Blob,
+    name?: string,
+    token?: string | null
+  ): Promise<Strategy> {
+    const formData = new FormData();
+    const filename =
+      file instanceof File ? file.name : name ? `${name}.py` : 'strategy.py';
+    formData.append(
+      'file',
+      file,
+      filename.endsWith('.py') ? filename : `${filename}.py`
+    );
+    if (name) {
+      formData.append('name', name);
+    } else if (file instanceof File) {
+      formData.append('name', file.name.replace(/\.py$/, ''));
+    }
+
+    return this.request<Strategy>('/qslate/v1/strategies/import', {
+      method: 'POST',
+      body: formData,
       ...(token ? { token } : {}),
     });
   }
