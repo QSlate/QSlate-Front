@@ -4,6 +4,7 @@ import type {
   AuthSession,
   BackendErrorResponse,
   BacktestArtifactPage,
+  BacktestComparisonResponse,
   BacktestJob,
   BacktestLogItem,
   BacktestLogsPage,
@@ -838,6 +839,24 @@ export class QslateApiClient {
       `/qslate/v1/backtests/${encodeURIComponent(backtestId)}/summary`,
       {
         method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Compares 2 to 20 completed backtest runs.
+   * POST /qslate/v1/backtests/compare
+   */
+  public async compareBacktests(
+    backtestIds: string[],
+    token?: string | null
+  ): Promise<BacktestComparisonResponse> {
+    return this.request<BacktestComparisonResponse>(
+      '/qslate/v1/backtests/compare',
+      {
+        method: 'POST',
+        body: JSON.stringify({ backtest_ids: backtestIds }),
         ...(token ? { token } : {}),
       }
     );

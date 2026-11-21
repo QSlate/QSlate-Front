@@ -205,4 +205,56 @@ describe('BacktestRunsView', () => {
 
     expect(container).toBeDefined();
   });
+
+  it('enables Compare button when 2 runs are selected and opens BacktestComparisonModal', async () => {
+    vi.spyOn(apiClient, 'compareBacktests').mockResolvedValueOnce({
+      summaries: [
+        {
+          backtest_id: 'bt-9021',
+          strategy_version_id: 's-v1',
+          dataset_version_id: 'd-v1',
+          metrics: { total_return: 0.29, sharpe_ratio: 2.41 },
+        },
+        {
+          backtest_id: 'bt-9020',
+          strategy_version_id: 's-v2',
+          dataset_version_id: 'd-v1',
+          metrics: { total_return: 0.15, sharpe_ratio: 1.2 },
+        },
+      ],
+    });
+
+    vi.spyOn(apiClient, 'getBacktestEquityCurve').mockResolvedValue({
+      items: [
+        { timestamp: 1, equity: 100000 },
+        { timestamp: 2, equity: 120000 },
+      ],
+    } as unknown as { items: [] });
+
+    render(<BacktestRunsView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('bt-9021')).toBeDefined();
+    });
+
+    const compareBtn = screen.getByTitle(
+      'Select at least 2 runs below to compare'
+    );
+    expect(compareBtn).toBeDefined();
+
+    // Select all runs via header checkbox
+    const selectAllCheckbox = screen.getByLabelText('Select all runs');
+    fireEvent.click(selectAllCheckbox);
+
+    // Now button should say Compare Selected (2)
+    const activeCompareBtn = screen.getByText('Compare Selected (2)');
+    expect(activeCompareBtn).toBeDefined();
+
+    fireEvent.click(activeCompareBtn);
+
+    // Modal should now be open
+    await waitFor(() => {
+      expect(screen.getByText('Backtest Run Comparison')).toBeDefined();
+    });
+  });
 });

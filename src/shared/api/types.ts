@@ -540,3 +540,29 @@ export interface DashboardLayoutUpdatePayload {
   revision: number;
   items: DashboardLayoutItem[];
 }
+
+// ---------------------------------------------------------------------------
+// Backtest Run Comparison (/qslate/v1/backtests/compare)
+// ---------------------------------------------------------------------------
+
+export interface BacktestComparisonItem {
+  backtest_id: string;
+  strategy_version_id?: string;
+  dataset_version_id?: string;
+  metrics: {
+    total_return?: number;
+    sharpe_ratio?: number;
+    max_drawdown?: number;
+    win_rate?: number;
+    profit_factor?: number;
+    total_trades?: number;
+    cagr?: number;
+    sortino_ratio?: number;
+    volatility?: number;
+    [key: string]: unknown;
+  };
+}
+
+export interface BacktestComparisonResponse {
+  summaries: BacktestComparisonItem[];
+}
