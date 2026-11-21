@@ -1183,4 +1183,145 @@ describe('QslateApiClient', () => {
       expect.objectContaining({ method: 'GET' })
     );
   });
+
+  it('manages workspace multi-dashboards and server-side layout sync lifecycle', async () => {
+    // 1. getDashboards
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        items: [
+          {
+            id: 'dash-1',
+            title: 'Default Workspace',
+            description: 'Core backtest layout',
+            tags: ['default'],
+            revision: 1,
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-01T00:00:00Z',
+          },
+        ],
+      }),
+    });
+
+    const dashboards = await client.getDashboards();
+    expect(dashboards.items).toHaveLength(1);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/dashboards',
+      expect.objectContaining({ method: 'GET' })
+    );
+
+    // 2. createDashboard
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 201,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        id: 'dash-2',
+        title: 'Crypto Scalp',
+        description: 'High freq',
+        tags: ['crypto'],
+        revision: 1,
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-01T00:00:00Z',
+        widgets: [],
+        layout: [],
+      }),
+    });
+
+    const created = await client.createDashboard({
+      title: 'Crypto Scalp',
+      description: 'High freq',
+      tags: ['crypto'],
+    });
+    expect(created.id).toBe('dash-2');
+
+    // 3. getDashboard
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => created,
+    });
+
+    const retrieved = await client.getDashboard('dash-2');
+    expect(retrieved.title).toBe('Crypto Scalp');
+
+    // 4. updateDashboard
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({ ...created, title: 'Crypto Scalp Renamed' }),
+    });
+
+    const updated = await client.updateDashboard('dash-2', {
+      title: 'Crypto Scalp Renamed',
+    });
+    expect(updated.title).toBe('Crypto Scalp Renamed');
+
+    // 5. duplicateDashboard
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 201,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        ...created,
+        id: 'dash-3',
+        title: 'Crypto Scalp (Copy)',
+      }),
+    });
+
+    const duplicated = await client.duplicateDashboard('dash-2');
+    expect(duplicated.id).toBe('dash-3');
+
+    // 6. updateDashboardLayout
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        ...created,
+        revision: 2,
+        layout: [
+          { instance_id: 'equity-curve', x: 0, y: 0, width: 8, height: 7 },
+        ],
+      }),
+    });
+
+    const layoutSaved = await client.updateDashboardLayout('dash-2', {
+      revision: 1,
+      items: [{ instance_id: 'equity-curve', x: 0, y: 0, width: 8, height: 7 }],
+    });
+    expect(layoutSaved.revision).toBe(2);
+
+    // 7. resetDashboardLayout
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        ...created,
+        revision: 3,
+        layout: [],
+      }),
+    });
+
+    const reset = await client.resetDashboardLayout('dash-2');
+    expect(reset.revision).toBe(3);
+
+    // 8. deleteDashboard
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 204,
+      headers: new Headers(),
+    });
+
+    await client.deleteDashboard('dash-2');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/dashboards/dash-2',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+  });
 });
