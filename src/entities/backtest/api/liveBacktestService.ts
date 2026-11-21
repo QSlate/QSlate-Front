@@ -20,17 +20,119 @@ const DEFAULT_VERSION_ID = 'Kazk9Z7E-NzcqT9_XM2Nl-8logVhbBsGuVcDeEPufYw';
 const DEFAULT_DATASET_ID = 'binance-eth-4h';
 const DEFAULT_DATASET_VERSION = 'v1';
 
+const DEFAULT_STRATEGY_SOURCE = `from simulator import Strategy, Context
+
+
+class RsiTrendStrategy(Strategy):
+    """Example modular strategy using indicators, parameters, and stop management."""
+
+    rsi_period: int = 14
+    sma_period: int = 50
+    rsi_oversold: float = 30.0
+    rsi_overbought: float = 70.0
+    allocation_usd: float = 1500.0
+    stop_loss_pct: float = 2.0
+    take_profit_pct: float = 5.0
+    timeout_bars: int = 48
+
+    def on_init(self, ctx: Context) -> None:
+        pass
+
+    def on_bar(self, ctx: Context) -> None:
+        rsi_series = ctx.indicators.rsi(self.rsi_period)
+        sma_series = ctx.indicators.sma(self.sma_period)
+
+        if len(rsi_series) < max(self.rsi_period, self.sma_period) + 1:
+            return
+
+        current_rsi = rsi_series.iloc[-1]
+        current_sma = sma_series.iloc[-1]
+        current_price = ctx.price
+
+        ctx.record(rsi_val=float(current_rsi), sma_val=float(current_sma))
+
+        if not ctx.has_position:
+            if current_rsi < self.rsi_oversold and current_price > current_sma:
+                sl_price = current_price * (1.0 - self.stop_loss_pct / 100.0)
+                tp_price = current_price * (1.0 + self.take_profit_pct / 100.0)
+                ctx.buy(
+                    usd_amount=self.allocation_usd,
+                    stop_loss=sl_price,
+                    take_profit=tp_price,
+                    timeout_bars=self.timeout_bars,
+                )
+        elif ctx.has_position:
+            if current_rsi > self.rsi_overbought:
+                ctx.close_all(reason="RSI Overbought")
+
+    def on_stop(self, ctx: Context) -> None:
+        pass
+`;
+
 export class LiveBacktestService implements BacktestService {
   public async run(
     config: BacktestConfig,
     signal?: AbortSignal
   ): Promise<BacktestResult> {
-    const token = useAuthStore.getState().accessToken;
+    const token = useAuthStore.getState().accessToken ?? apiClient.getToken();
     const labState = useLabStore.getState();
 
     // Strategy parameters and version resolution
-    const strategyId = labState.strategyId || DEFAULT_STRATEGY_ID;
-    const versionId = labState.versionId || DEFAULT_VERSION_ID;
+    let strategyId = labState.strategyId;
+    let versionId = labState.versionId;
+
+    if (token) {
+      try {
+        const userStrategies = await apiClient.getStrategies(
+          { limit: 5 },
+          token
+        );
+        if (userStrategies.items && userStrategies.items.length > 0) {
+          const matching = userStrategies.items.find(
+            (s) => s.id === strategyId
+          );
+          if (matching) {
+            versionId = matching.version_id;
+          } else {
+            strategyId = userStrategies.items[0].id;
+            versionId = userStrategies.items[0].version_id;
+          }
+          labState.setStrategyMeta({
+            id: strategyId,
+            version_id: versionId,
+          });
+        } else {
+          const created = await apiClient.createStrategy(
+            {
+              name: 'RsiTrendStrategy',
+              source: DEFAULT_STRATEGY_SOURCE,
+              parameters: {
+                rsi_period: 14,
+                sma_period: 50,
+                rsi_oversold: 30,
+                rsi_overbought: 70,
+                allocation_usd: 1500,
+                stop_loss_pct: 2,
+                take_profit_pct: 5,
+                timeout_bars: 48,
+              },
+            },
+            token
+          );
+          strategyId = created.id;
+          versionId = created.version_id;
+          labState.setStrategyMeta({
+            id: strategyId,
+            version_id: versionId,
+          });
+        }
+      } catch {
+        // fallback to default IDs
+      }
+    }
+
+    strategyId = strategyId || DEFAULT_STRATEGY_ID;
+    versionId = versionId || DEFAULT_VERSION_ID;
     const parameters = labState.activeStrategyParameters || {};
 
     const customDs = labState.selectedCustomDataset;

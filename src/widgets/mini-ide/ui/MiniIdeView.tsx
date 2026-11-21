@@ -172,11 +172,18 @@ export function MiniIdeView() {
     if (isSaving) return;
     setIsSaving(true);
     try {
+      // Ensure only Python strategy code is saved as backend source, never config.json
+      const pythonFileKey =
+        Object.keys(files).find((k) => k.endsWith('.py')) || 'strategy.py';
+      const strategySource = activeFile.endsWith('.py')
+        ? currentContent
+        : files[pythonFileKey]?.content || currentContent;
+
       if (!strategyId || !versionId) {
         // First-time strategy creation
         const created = await apiClient.createStrategy({
           name: strategyName || 'Momentum_ETH_4h',
-          source: currentContent,
+          source: strategySource,
         });
         setStrategyMeta({
           id: created.id,
@@ -192,7 +199,7 @@ export function MiniIdeView() {
         // Commit new revision
         const updated = await apiClient.updateStrategy(strategyId, {
           base_version_id: versionId,
-          source: currentContent,
+          source: strategySource,
           name: strategyName || 'My Strategy',
         });
         setStrategyMeta({
