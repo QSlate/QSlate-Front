@@ -8,6 +8,7 @@ import type {
   BacktestLogItem,
   BacktestLogsPage,
   BacktestOptimizeInput,
+  BacktestRunInput,
   BacktestRunsPage,
   BacktestSummary,
   CustomWidget,
@@ -910,6 +911,91 @@ export class QslateApiClient {
       body: JSON.stringify(input),
       ...(token ? { token } : {}),
     });
+  }
+
+  /**
+   * Dispatches a live backtest run execution on the Lab service.
+   * POST /qslate/v1/backtests/run
+   */
+  public async runBacktest(
+    payload: BacktestRunInput,
+    idempotencyKey?: string,
+    token?: string | null
+  ): Promise<BacktestJob> {
+    const key =
+      idempotencyKey ||
+      `run-${crypto.randomUUID().replace(/-/g, '')}-${Date.now()}`;
+    return this.request<BacktestJob>('/qslate/v1/backtests/run', {
+      method: 'POST',
+      headers: {
+        'Idempotency-Key': key,
+      },
+      body: JSON.stringify(payload),
+      ...(token ? { token } : {}),
+    });
+  }
+
+  /**
+   * Cancels an active or pending backtest execution.
+   * POST /qslate/v1/backtests/{backtestId}/cancel
+   */
+  public async cancelBacktest(
+    backtestId: string,
+    token?: string | null
+  ): Promise<void> {
+    return this.request<void>(
+      `/qslate/v1/backtests/${encodeURIComponent(backtestId)}/cancel`,
+      {
+        method: 'POST',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Gets the real-time execution status of a backtest run.
+   * GET /qslate/v1/backtests/{backtestId}/status
+   */
+  public async getBacktestStatus(
+    backtestId: string,
+    token?: string | null
+  ): Promise<BacktestJob> {
+    return this.request<BacktestJob>(
+      `/qslate/v1/backtests/${encodeURIComponent(backtestId)}/status`,
+      {
+        method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Fetches real trade executions for a completed backtest run.
+   * GET /qslate/v1/backtests/{backtestId}/trades
+   */
+  public async getBacktestTrades<T = unknown>(
+    backtestId: string,
+    params?: { cursor?: string; limit?: number },
+    token?: string | null
+  ): Promise<BacktestArtifactPage<T>> {
+    return this.getBacktestArtifact<T>(backtestId, 'trades', params, token);
+  }
+
+  /**
+   * Fetches authentic equity curve points for a completed backtest run.
+   * GET /qslate/v1/backtests/{backtestId}/equity-curve
+   */
+  public async getBacktestEquityCurve<T = unknown>(
+    backtestId: string,
+    params?: { cursor?: string; limit?: number },
+    token?: string | null
+  ): Promise<BacktestArtifactPage<T>> {
+    return this.getBacktestArtifact<T>(
+      backtestId,
+      'equity-curve',
+      params,
+      token
+    );
   }
 }
 

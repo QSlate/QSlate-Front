@@ -863,5 +863,128 @@ describe('QslateApiClient', () => {
         }),
       })
     );
+
+    // 8. runBacktest
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 202,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        backtest_id: 'bt-live-1',
+        status: 'queued',
+        progress: 0,
+        input: {
+          strategy_id: 'strat-1',
+          dataset_id: 'data-1',
+        },
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-01T00:00:00Z',
+      }),
+    });
+
+    const job = await client.runBacktest(
+      {
+        strategy_id: 'strat-1',
+        strategy_version_id: 'v1',
+        dataset_id: 'data-1',
+        dataset_version_id: 'v1',
+        initial_capital: '100000',
+      },
+      'idemp-1234567890',
+      'test-token'
+    );
+
+    expect(job.backtest_id).toBe('bt-live-1');
+    expect(job.status).toBe('queued');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/backtests/run',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.any(Headers),
+        body: JSON.stringify({
+          strategy_id: 'strat-1',
+          strategy_version_id: 'v1',
+          dataset_id: 'data-1',
+          dataset_version_id: 'v1',
+          initial_capital: '100000',
+        }),
+      })
+    );
+
+    // 9. cancelBacktest
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 204,
+      headers: new Headers(),
+    });
+
+    await expect(
+      client.cancelBacktest('bt-live-1', 'test-token')
+    ).resolves.toBeUndefined();
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/backtests/bt-live-1/cancel',
+      expect.objectContaining({ method: 'POST' })
+    );
+
+    // 10. getBacktestStatus
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        backtest_id: 'bt-live-1',
+        status: 'completed',
+        progress: 100,
+        input: {
+          strategy_id: 'strat-1',
+          dataset_id: 'data-1',
+        },
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-01T00:00:00Z',
+      }),
+    });
+
+    const btStatus = await client.getBacktestStatus('bt-live-1', 'test-token');
+    expect(btStatus.status).toBe('completed');
+    expect(btStatus.progress).toBe(100);
+
+    // 11. getBacktestTrades
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        items: [
+          {
+            id: 'trade-1',
+            symbol: 'ETH',
+            side: 'BUY',
+            entry_price: 2200,
+            exit_price: 2250,
+            pnl_usd: 50,
+          },
+        ],
+        next_cursor: null,
+      }),
+    });
+
+    const trades = await client.getBacktestTrades('bt-live-1');
+    expect(trades.items).toHaveLength(1);
+
+    // 12. getBacktestEquityCurve
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        items: [
+          { time: 1704067200, equity: 100000, drawdown: 0 },
+          { time: 1704081600, equity: 100500, drawdown: 0 },
+        ],
+      }),
+    });
+
+    const equity = await client.getBacktestEquityCurve('bt-live-1');
+    expect(equity.items).toHaveLength(2);
   });
 });
