@@ -12,6 +12,7 @@ import { useHydratedStore } from '@/shared/lib/store';
 import { Toast } from '@/shared/ui/toast';
 import { AddWidgetDrawer } from '@/widgets/add-widget-drawer';
 import { ResultControlsProvider } from '@/widgets/backtest-results';
+import { ExecutionLogsConsole } from '@/widgets/execution-logs';
 import { LabSidebar } from '@/widgets/lab-sidebar/LabSidebar';
 import { LabToolbar } from '@/widgets/lab-toolbar/LabToolbar';
 
@@ -44,6 +45,7 @@ function ShellInner({ children }: { children: ReactNode }) {
         {children}
       </main>
       <AddWidgetDrawer />
+      <ExecutionLogsConsole />
       <Toast />
     </div>
   );

@@ -7,6 +7,7 @@ import {
   LoaderCircle,
   Play,
   Plus,
+  Terminal,
 } from 'lucide-react';
 import {
   useEffect,
@@ -23,6 +24,7 @@ import {
   validateBacktestFields,
 } from '@/entities/backtest';
 import { useUserStore } from '@/entities/user/model';
+import { useLabStore } from '@/features/lab-state';
 import { useBacktest } from '@/features/run-backtest/BacktestProvider';
 import { useHydratedStore } from '@/shared/lib/store';
 
@@ -38,6 +40,8 @@ export function LabToolbar({ onAddWidget }: { onAddWidget: () => void }) {
     'none'
   );
   const toggleColorblind = useUserStore((state) => state.toggleColorblindMode);
+  const isExecutionLogsOpen = useLabStore((state) => state.isExecutionLogsOpen);
+  const toggleExecutionLogs = useLabStore((state) => state.toggleExecutionLogs);
   const formRef = useRef<HTMLFormElement>(null);
   const running = status === 'running';
   const [submitted, setSubmitted] = useState(false);
@@ -170,6 +174,16 @@ export function LabToolbar({ onAddWidget }: { onAddWidget: () => void }) {
         <button className="lab-button" type="button" onClick={onAddWidget}>
           <Plus size={12} />
           <span>Add Widget</span>
+        </button>
+        <button
+          className="lab-button"
+          type="button"
+          onClick={toggleExecutionLogs}
+          aria-pressed={isExecutionLogsOpen}
+          aria-label="Toggle execution logs"
+        >
+          <Terminal size={12} />
+          <span>Logs</span>
         </button>
         <button
           className="lab-button lab-colorblind"

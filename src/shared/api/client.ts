@@ -5,6 +5,8 @@ import type {
   BackendErrorResponse,
   BacktestArtifactPage,
   BacktestJob,
+  BacktestLogItem,
+  BacktestLogsPage,
   BacktestRunsPage,
   BacktestSummary,
   CustomWidget,
@@ -867,6 +869,23 @@ export class QslateApiClient {
         method: 'GET',
         ...(token ? { token } : {}),
       }
+    );
+  }
+
+  /**
+   * Fetch backtest execution logs.
+   * GET /qslate/v1/backtests/{backtestId}/logs
+   */
+  public async getBacktestLogs(
+    backtestId: string,
+    params?: { limit?: number; cursor?: string },
+    token?: string | null
+  ): Promise<BacktestLogsPage> {
+    return this.getBacktestArtifact<BacktestLogItem>(
+      backtestId,
+      'logs',
+      params,
+      token
     );
   }
 }

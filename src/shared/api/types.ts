@@ -351,3 +351,12 @@ export interface BacktestArtifactPage<T = unknown> {
   items: T[];
   next_cursor?: string;
 }
+
+export interface BacktestLogItem {
+  message: string;
+}
+
+export interface BacktestLogsPage {
+  items: BacktestLogItem[];
+  next_cursor?: string;
+}
