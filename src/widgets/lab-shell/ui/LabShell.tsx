@@ -34,13 +34,25 @@ function ShellInner({ children }: { children: ReactNode }) {
         {error ? (
           <div className="lab-error" role="alert">
             <span>{error}</span>
-            <button
-              type="button"
-              onClick={() => void run()}
-              disabled={status === 'running'}
-            >
-              Try again
-            </button>
+            {error.toLowerCase().includes('token') ||
+            error.toLowerCase().includes('session') ||
+            error.toLowerCase().includes('reconnecter') ||
+            error.toLowerCase().includes('authentif') ? (
+              <a
+                href="/login"
+                className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium no-underline inline-flex items-center transition-colors shadow-xs"
+              >
+                Se connecter
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void run()}
+                disabled={status === 'running'}
+              >
+                Try again
+              </button>
+            )}
           </div>
         ) : null}
         {children}

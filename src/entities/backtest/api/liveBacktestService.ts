@@ -2,6 +2,7 @@ import { useAuthStore } from '@/entities/user/model';
 import { useLabStore } from '@/features/lab-state';
 import {
   apiClient,
+  ApiError,
   type BacktestJob,
   type BacktestRunInput,
 } from '@/shared/api';
@@ -126,7 +127,13 @@ export class LiveBacktestService implements BacktestService {
             version_id: versionId,
           });
         }
-      } catch {
+      } catch (err) {
+        if (err instanceof ApiError && err.statusCode === 401) {
+          useAuthStore.getState().clearAuth();
+          throw new Error(
+            'Session expirée ou non valide. Veuillez vous reconnecter pour exécuter ce backtest.'
+          );
+        }
         // fallback to default IDs
       }
     }
@@ -156,6 +163,12 @@ export class LiveBacktestService implements BacktestService {
       job = await apiClient.runBacktest(payload, undefined, token);
     } catch (err) {
       if (token) {
+        if (err instanceof ApiError && err.statusCode === 401) {
+          useAuthStore.getState().clearAuth();
+          throw new Error(
+            'Session expirée ou non valide. Veuillez vous reconnecter pour exécuter ce backtest.'
+          );
+        }
         const message =
           err instanceof Error
             ? err.message
