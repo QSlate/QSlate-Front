@@ -208,6 +208,12 @@ export function LoginForm() {
               >
                 Password
               </label>
+              <Link
+                href="/forgot-password"
+                className="text-xs text-zinc-400 hover:text-[#00ffb2] transition-colors"
+              >
+                Forgot password?
+              </Link>
             </div>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">

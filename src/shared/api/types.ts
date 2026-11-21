@@ -566,3 +566,17 @@ export interface BacktestComparisonItem {
 export interface BacktestComparisonResponse {
   summaries: BacktestComparisonItem[];
 }
+
+// ---------------------------------------------------------------------------
+// Identity & Recovery Flow (/qslate/v1/auth/*)
+// ---------------------------------------------------------------------------
+
+export interface AuthProvider {
+  id: string;
+  display_name: string;
+  enabled?: boolean;
+}
+
+export interface AuthProvidersResponse {
+  providers: AuthProvider[];
+}
