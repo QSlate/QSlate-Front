@@ -73,4 +73,25 @@ describe('Next.js route guard middleware', () => {
     const regRes = middleware(regReq);
     expect(regRes.status).toBe(200);
   });
+
+  it('redirects expired JWT users from /lab to /login and clears expired cookie', () => {
+    // expired token with exp in the past (1600000000)
+    const expiredToken =
+      'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MDAwMDAwMDB9.signature';
+    const req = createMockRequest('http://localhost:3000/lab', expiredToken);
+    const res = middleware(req);
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get('location')).toContain('/login?redirect=%2Flab');
+    expect(res.cookies.get(AUTH_TOKEN_COOKIE)?.value).toBe('');
+  });
+
+  it('allows users with expired JWT to access /login to re-authenticate', () => {
+    const expiredToken =
+      'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MDAwMDAwMDB9.signature';
+    const req = createMockRequest('http://localhost:3000/login', expiredToken);
+    const res = middleware(req);
+
+    expect(res.status).toBe(200);
+  });
 });

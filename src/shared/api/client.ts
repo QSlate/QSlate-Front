@@ -66,11 +66,15 @@ export class ApiError extends Error {
 
 export interface RequestOptions extends RequestInit {
   token?: string | null;
+  _isRetry?: boolean;
 }
 
 export class QslateApiClient {
   private readonly baseUrl: string;
   private tokenProvider: (() => string | null) | null = null;
+  private onSessionRefreshed: ((session: AuthSession) => void) | null = null;
+  private onUnauthorized: (() => void) | null = null;
+  private refreshPromise: Promise<AuthSession> | null = null;
 
   constructor(baseUrl?: string) {
     this.baseUrl = (
@@ -82,6 +86,16 @@ export class QslateApiClient {
 
   public setTokenProvider(provider: () => string | null): void {
     this.tokenProvider = provider;
+  }
+
+  public setSessionRefreshedHandler(
+    handler: (session: AuthSession) => void
+  ): void {
+    this.onSessionRefreshed = handler;
+  }
+
+  public setUnauthorizedHandler(handler: () => void): void {
+    this.onUnauthorized = handler;
   }
 
   public getToken(): string | null {
@@ -134,6 +148,34 @@ export class QslateApiClient {
           }
         } catch {
           // fallback to default message
+        }
+      }
+
+      // If token expired (401), attempt a silent refresh once (except for auth endpoints)
+      if (
+        response.status === 401 &&
+        !options._isRetry &&
+        !endpoint.includes('/auth/login') &&
+        !endpoint.includes('/auth/register') &&
+        !endpoint.includes('/auth/refresh')
+      ) {
+        try {
+          if (!this.refreshPromise) {
+            this.refreshPromise = this.refresh().finally(() => {
+              this.refreshPromise = null;
+            });
+          }
+          const session = await this.refreshPromise;
+          if (session?.access_token) {
+            this.onSessionRefreshed?.(session);
+            return await this.request<T>(endpoint, {
+              ...options,
+              _isRetry: true,
+              token: session.access_token,
+            });
+          }
+        } catch {
+          this.onUnauthorized?.();
         }
       }
 

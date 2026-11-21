@@ -123,8 +123,22 @@ export const useAuthStore = create<AuthStore>()(
             try {
               const { user: remoteUser } = await apiClient.getMe(cookieToken);
               get().updateUser(remoteUser);
-            } catch {
-              // Token might be invalid or network error
+            } catch (err) {
+              if (
+                typeof err === 'object' &&
+                err !== null &&
+                'statusCode' in err &&
+                (err as { statusCode: number }).statusCode === 401
+              ) {
+                try {
+                  const refreshed = await apiClient.refresh();
+                  get().setAuth(refreshed);
+                  return;
+                } catch {
+                  get().clearAuth();
+                  return;
+                }
+              }
             }
 
             try {
@@ -162,7 +176,13 @@ export const useAuthStore = create<AuthStore>()(
   )
 );
 
-// Wire API client token injection to auth store with fallback to session cookie
+// Wire API client token injection and auth lifecycle to auth store
 apiClient.setTokenProvider(
   () => useAuthStore.getState().accessToken ?? getAuthTokenFromCookie()
 );
+apiClient.setSessionRefreshedHandler((session) => {
+  useAuthStore.getState().setAuth(session);
+});
+apiClient.setUnauthorizedHandler(() => {
+  useAuthStore.getState().clearAuth();
+});

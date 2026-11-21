@@ -6,7 +6,8 @@ export const AUTH_USER_COOKIE = 'qslate_user';
 export function setAuthCookies(session: AuthSession): void {
   if (typeof document === 'undefined') return;
 
-  const maxAge = Math.max(session.expires_in, 86400 * 30);
+  const maxAge = Math.max(session.expires_in, 900);
+  const userMaxAge = 86400 * 30;
   const secure = window.location.protocol === 'https:' ? '; Secure' : '';
 
   document.cookie = `${AUTH_TOKEN_COOKIE}=${encodeURIComponent(
@@ -17,7 +18,7 @@ export function setAuthCookies(session: AuthSession): void {
     const serializedUser = JSON.stringify(session.user);
     document.cookie = `${AUTH_USER_COOKIE}=${encodeURIComponent(
       serializedUser
-    )}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+    )}; path=/; max-age=${userMaxAge}; SameSite=Lax${secure}`;
   } catch {
     // Ignore JSON serialization errors
   }
