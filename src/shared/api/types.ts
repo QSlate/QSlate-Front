@@ -217,3 +217,48 @@ export interface MarketplaceFilter {
   cursor?: string;
   limit?: number;
 }
+
+// ---------------------------------------------------------------------------
+// Widgets Service Types & DTOs (/qslate/v1/widgets/*)
+// ---------------------------------------------------------------------------
+
+export type InstalledWidgetKind = 'core' | 'custom' | 'marketplace';
+
+export interface InstalledWidget {
+  id: string;
+  version_id: string;
+  kind: InstalledWidgetKind;
+  name: string;
+  language: string;
+  created_at: string;
+  updated_at: string;
+  category?: string;
+  subtitle?: string;
+  min_w?: number;
+  min_h?: number;
+  default_w?: number;
+  default_h?: number;
+}
+
+export interface InstalledWidgetsPage {
+  items: InstalledWidget[];
+  next_cursor?: string;
+}
+
+export interface CustomWidgetInput {
+  name: string;
+  language: string;
+  source: string;
+  configuration?: Record<string, unknown>;
+}
+
+export interface CustomWidget extends InstalledWidget {
+  source: string;
+  configuration: Record<string, unknown>;
+}
+
+export interface DashboardAddWidgetInput {
+  widget_id: string;
+  widget_version_id?: string;
+  configuration?: Record<string, unknown>;
+}

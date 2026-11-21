@@ -15,7 +15,15 @@ export interface LayoutState {
 
 export interface LayoutActions {
   setLayout: (layout: Layout) => void;
-  addWidget: (widgetId: string) => void;
+  addWidget: (
+    widgetId: string,
+    customDimensions?: {
+      w?: number;
+      h?: number;
+      minW?: number;
+      minH?: number;
+    }
+  ) => void;
   removeWidget: (widgetId: string) => void;
   updateWidget: (
     widgetId: LayoutItem['i'],

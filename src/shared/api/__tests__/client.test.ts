@@ -457,4 +457,95 @@ describe('QslateApiClient', () => {
       })
     );
   });
+
+  it('fetches installed widgets catalogue, manages custom widgets, and mounts to dashboard', async () => {
+    // 1. getInstalledWidgets
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        items: [
+          {
+            id: 'custom-widget-1',
+            version_id: 'ver-w1',
+            kind: 'custom',
+            name: 'Order Flow Imbalance',
+            language: 'python',
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-01T00:00:00Z',
+          },
+        ],
+      }),
+    });
+
+    const installed = await client.getInstalledWidgets();
+    expect(installed.items[0].name).toBe('Order Flow Imbalance');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/widgets/installed',
+      expect.objectContaining({ method: 'GET' })
+    );
+
+    // 2. createCustomWidget
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 201,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        id: 'custom-widget-2',
+        version_id: 'ver-w2',
+        kind: 'custom',
+        name: 'Delta Neutral Monitor',
+        language: 'python',
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-01T00:00:00Z',
+        source: 'def render(): pass',
+        configuration: {},
+      }),
+    });
+
+    const created = await client.createCustomWidget({
+      name: 'Delta Neutral Monitor',
+      language: 'python',
+      source: 'def render(): pass',
+    });
+    expect(created.id).toBe('custom-widget-2');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/widgets/custom',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          name: 'Delta Neutral Monitor',
+          language: 'python',
+          source: 'def render(): pass',
+        }),
+      })
+    );
+
+    // 3. addDashboardWidget
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 201,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({ instance_id: 'inst-1' }),
+    });
+
+    const res = await client.addDashboardWidget('dash-1', {
+      widget_id: 'custom-widget-2',
+      widget_version_id: 'ver-w2',
+      configuration: {},
+    });
+    expect(res).toEqual({ instance_id: 'inst-1' });
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/dashboards/dash-1/widgets',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          widget_id: 'custom-widget-2',
+          widget_version_id: 'ver-w2',
+          configuration: {},
+        }),
+      })
+    );
+  });
 });

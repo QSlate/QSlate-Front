@@ -1,7 +1,11 @@
 import type {
   AuthSession,
   BackendErrorResponse,
+  CustomWidget,
+  CustomWidgetInput,
+  DashboardAddWidgetInput,
   DiagnosticsResponse,
+  InstalledWidgetsPage,
   LoginPayload,
   MarketplaceCategoriesPage,
   MarketplaceFilter,
@@ -557,6 +561,139 @@ export class QslateApiClient {
   ): Promise<MarketplaceReview> {
     return this.request<MarketplaceReview>(
       `/qslate/v1/marketplace/items/${encodeURIComponent(itemId)}/reviews`,
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Widgets Service Methods (/qslate/v1/widgets/* & /dashboards/*)
+  // -------------------------------------------------------------------------
+
+  /**
+   * List installed widgets (core, custom, and marketplace-installed).
+   * GET /qslate/v1/widgets/installed
+   */
+  public async getInstalledWidgets(
+    params?: { cursor?: string; limit?: number },
+    token?: string | null
+  ): Promise<InstalledWidgetsPage> {
+    const query = new URLSearchParams();
+    if (params?.cursor) query.set('cursor', params.cursor);
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString();
+    return this.request<InstalledWidgetsPage>(
+      `/qslate/v1/widgets/installed${qs ? `?${qs}` : ''}`,
+      {
+        method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * List custom widgets created by the user.
+   * GET /qslate/v1/widgets/custom
+   */
+  public async getCustomWidgets(
+    params?: { cursor?: string; limit?: number },
+    token?: string | null
+  ): Promise<InstalledWidgetsPage> {
+    const query = new URLSearchParams();
+    if (params?.cursor) query.set('cursor', params.cursor);
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString();
+    return this.request<InstalledWidgetsPage>(
+      `/qslate/v1/widgets/custom${qs ? `?${qs}` : ''}`,
+      {
+        method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Create a new custom widget.
+   * POST /qslate/v1/widgets/custom
+   */
+  public async createCustomWidget(
+    input: CustomWidgetInput,
+    token?: string | null
+  ): Promise<CustomWidget> {
+    return this.request<CustomWidget>('/qslate/v1/widgets/custom', {
+      method: 'POST',
+      body: JSON.stringify(input),
+      ...(token ? { token } : {}),
+    });
+  }
+
+  /**
+   * Retrieve a single custom widget definition.
+   * GET /qslate/v1/widgets/custom/{widgetId}
+   */
+  public async getCustomWidget(
+    widgetId: string,
+    token?: string | null
+  ): Promise<CustomWidget> {
+    return this.request<CustomWidget>(
+      `/qslate/v1/widgets/custom/${encodeURIComponent(widgetId)}`,
+      {
+        method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Update an existing custom widget.
+   * PUT /qslate/v1/widgets/custom/{widgetId}
+   */
+  public async updateCustomWidget(
+    widgetId: string,
+    input: CustomWidgetInput,
+    token?: string | null
+  ): Promise<CustomWidget> {
+    return this.request<CustomWidget>(
+      `/qslate/v1/widgets/custom/${encodeURIComponent(widgetId)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(input),
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Delete a custom widget.
+   * DELETE /qslate/v1/widgets/custom/{widgetId}
+   */
+  public async deleteCustomWidget(
+    widgetId: string,
+    token?: string | null
+  ): Promise<void> {
+    return this.request<void>(
+      `/qslate/v1/widgets/custom/${encodeURIComponent(widgetId)}`,
+      {
+        method: 'DELETE',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Mount a widget into a backend dashboard.
+   * POST /qslate/v1/dashboards/{dashboardId}/widgets
+   */
+  public async addDashboardWidget(
+    dashboardId: string,
+    input: DashboardAddWidgetInput,
+    token?: string | null
+  ): Promise<unknown> {
+    return this.request<unknown>(
+      `/qslate/v1/dashboards/${encodeURIComponent(dashboardId)}/widgets`,
       {
         method: 'POST',
         body: JSON.stringify(input),
