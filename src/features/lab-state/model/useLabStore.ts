@@ -39,6 +39,7 @@ export interface LabState {
   isLinting: boolean;
   isVersionDrawerOpen: boolean;
   strategyVersions: StrategyVersion[];
+  loadedBacktestId: string | null;
 
   setActiveTab: (tab: LabTab) => void;
   setAddWidgetDrawerOpen: (open: boolean) => void;
@@ -68,6 +69,7 @@ export interface LabState {
   setVersionDrawerOpen: (open: boolean) => void;
   toggleVersionDrawer: () => void;
   setStrategyVersions: (versions: StrategyVersion[]) => void;
+  setLoadedBacktestId: (id: string | null) => void;
 }
 
 const DEFAULT_STRATEGY_ID = 'momentum-eth';
@@ -98,6 +100,7 @@ export const useLabStore = create<LabState>((set, get) => ({
   isLinting: false,
   isVersionDrawerOpen: false,
   strategyVersions: [],
+  loadedBacktestId: null,
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
@@ -164,6 +167,8 @@ export const useLabStore = create<LabState>((set, get) => ({
     set((state) => ({ isVersionDrawerOpen: !state.isVersionDrawerOpen })),
 
   setStrategyVersions: (versions) => set({ strategyVersions: versions }),
+
+  setLoadedBacktestId: (id) => set({ loadedBacktestId: id }),
 
   showToast: (message, type = 'success') => {
     const id = Math.random().toString(36).slice(2, 9);
