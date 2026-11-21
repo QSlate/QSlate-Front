@@ -293,3 +293,61 @@ export interface NewAPIKeyDto {
 export interface APIKeysPageDto {
   items: APIKeyDto[];
 }
+
+// ---------------------------------------------------------------------------
+// Lab Service Backtest Runs & Telemetry (/qslate/v1/backtests/*)
+// ---------------------------------------------------------------------------
+
+export type BacktestStatus =
+  'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+
+export interface BacktestRunInput {
+  strategy_id: string;
+  strategy_version_id?: string;
+  dataset_id: string;
+  dataset_version_id?: string;
+  start_date?: string;
+  end_date?: string;
+  initial_cash?: number;
+  parameters?: Record<string, unknown>;
+  strategy_name?: string;
+}
+
+export interface BacktestJob {
+  backtest_id: string;
+  status: BacktestStatus;
+  progress: number;
+  input: BacktestRunInput;
+  optimization_id?: string;
+  created_at: string;
+  updated_at: string;
+  error?: string;
+}
+
+export interface BacktestRunsPage {
+  items: BacktestJob[];
+  next_cursor?: string;
+}
+
+export interface BacktestSummaryMetrics {
+  sharpe_ratio?: number;
+  total_return?: number;
+  max_drawdown?: number;
+  win_rate?: number;
+  trades_count?: number;
+  profit_factor?: number;
+  volatility?: number;
+  [key: string]: unknown;
+}
+
+export interface BacktestSummary {
+  backtest_id: string;
+  metrics: BacktestSummaryMetrics;
+  strategy_version_id?: string;
+  dataset_version_id?: string;
+}
+
+export interface BacktestArtifactPage<T = unknown> {
+  items: T[];
+  next_cursor?: string;
+}

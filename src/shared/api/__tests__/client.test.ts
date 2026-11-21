@@ -667,4 +667,114 @@ describe('QslateApiClient', () => {
       expect.objectContaining({ method: 'DELETE' })
     );
   });
+
+  it('supports lab backtests endpoints (list, get, summary, delete, artifact)', async () => {
+    // 1. getBacktests
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        items: [
+          {
+            backtest_id: 'bt-100',
+            status: 'completed',
+            progress: 100,
+            input: {
+              strategy_id: 'strat-1',
+              dataset_id: 'binance-btc-1h',
+            },
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-01T00:01:00Z',
+          },
+        ],
+        next_cursor: 'cursor-2',
+      }),
+    });
+
+    const page = await client.getBacktests({ limit: 10, cursor: 'cursor-1' });
+    expect(page.items).toHaveLength(1);
+    expect(page.items[0]?.backtest_id).toBe('bt-100');
+    expect(page.next_cursor).toBe('cursor-2');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/backtests?limit=10&cursor=cursor-1',
+      expect.objectContaining({ method: 'GET' })
+    );
+
+    // 2. getBacktest status
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        backtest_id: 'bt-100',
+        status: 'completed',
+        progress: 100,
+        input: { strategy_id: 'strat-1', dataset_id: 'binance-btc-1h' },
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-01T00:01:00Z',
+      }),
+    });
+
+    const status = await client.getBacktest('bt-100');
+    expect(status.backtest_id).toBe('bt-100');
+    expect(status.status).toBe('completed');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/backtests/bt-100/status',
+      expect.objectContaining({ method: 'GET' })
+    );
+
+    // 3. getBacktestSummary
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        backtest_id: 'bt-100',
+        metrics: {
+          sharpe_ratio: 2.15,
+          total_return: 0.285,
+          max_drawdown: 0.082,
+          trades_count: 142,
+        },
+      }),
+    });
+
+    const summary = await client.getBacktestSummary('bt-100');
+    expect(summary.metrics.sharpe_ratio).toBe(2.15);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/backtests/bt-100/summary',
+      expect.objectContaining({ method: 'GET' })
+    );
+
+    // 4. deleteBacktest
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 204,
+      headers: new Headers(),
+    });
+
+    await expect(client.deleteBacktest('bt-100')).resolves.toBeUndefined();
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/backtests/bt-100',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+
+    // 5. getBacktestArtifact
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        items: [{ timestamp: '2026-01-01T00:00:00Z', price: 50000 }],
+      }),
+    });
+
+    const artifact = await client.getBacktestArtifact('bt-100', 'trades');
+    expect(artifact.items).toHaveLength(1);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/backtests/bt-100/trades',
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
 });

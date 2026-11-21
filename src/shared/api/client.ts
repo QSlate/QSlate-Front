@@ -3,6 +3,10 @@ import type {
   APIKeysPageDto,
   AuthSession,
   BackendErrorResponse,
+  BacktestArtifactPage,
+  BacktestJob,
+  BacktestRunsPage,
+  BacktestSummary,
   CustomWidget,
   CustomWidgetInput,
   DashboardAddWidgetInput,
@@ -764,6 +768,103 @@ export class QslateApiClient {
       {
         method: 'POST',
         body: JSON.stringify(input),
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * List historical backtest runs.
+   * GET /qslate/v1/backtests
+   */
+  public async getBacktests(
+    params?: { limit?: number; cursor?: string },
+    token?: string | null
+  ): Promise<BacktestRunsPage> {
+    const query = new URLSearchParams();
+    if (params?.limit) query.set('limit', String(params.limit));
+    if (params?.cursor) query.set('cursor', params.cursor);
+    const qs = query.toString();
+    return this.request<BacktestRunsPage>(
+      `/qslate/v1/backtests${qs ? `?${qs}` : ''}`,
+      {
+        method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Fetch backtest status and configuration.
+   * GET /qslate/v1/backtests/{backtestId}/status
+   */
+  public async getBacktest(
+    backtestId: string,
+    token?: string | null
+  ): Promise<BacktestJob> {
+    return this.request<BacktestJob>(
+      `/qslate/v1/backtests/${encodeURIComponent(backtestId)}/status`,
+      {
+        method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Fetch backtest quantitative summary metrics.
+   * GET /qslate/v1/backtests/{backtestId}/summary
+   */
+  public async getBacktestSummary(
+    backtestId: string,
+    token?: string | null
+  ): Promise<BacktestSummary> {
+    return this.request<BacktestSummary>(
+      `/qslate/v1/backtests/${encodeURIComponent(backtestId)}/summary`,
+      {
+        method: 'GET',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Delete a completed, failed, or cancelled backtest run.
+   * DELETE /qslate/v1/backtests/{backtestId}
+   */
+  public async deleteBacktest(
+    backtestId: string,
+    token?: string | null
+  ): Promise<void> {
+    return this.request<void>(
+      `/qslate/v1/backtests/${encodeURIComponent(backtestId)}`,
+      {
+        method: 'DELETE',
+        ...(token ? { token } : {}),
+      }
+    );
+  }
+
+  /**
+   * Fetch backtest artifact pages (trades, equity-curve, logs).
+   * GET /qslate/v1/backtests/{backtestId}/{kind}
+   */
+  public async getBacktestArtifact<T = unknown>(
+    backtestId: string,
+    kind: 'trades' | 'equity-curve' | 'logs',
+    params?: { limit?: number; cursor?: string },
+    token?: string | null
+  ): Promise<BacktestArtifactPage<T>> {
+    const query = new URLSearchParams();
+    if (params?.limit) query.set('limit', String(params.limit));
+    if (params?.cursor) query.set('cursor', params.cursor);
+    const qs = query.toString();
+    return this.request<BacktestArtifactPage<T>>(
+      `/qslate/v1/backtests/${encodeURIComponent(backtestId)}/${kind}${
+        qs ? `?${qs}` : ''
+      }`,
+      {
+        method: 'GET',
         ...(token ? { token } : {}),
       }
     );

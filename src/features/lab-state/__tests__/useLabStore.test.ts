@@ -62,4 +62,12 @@ describe('useLabStore', () => {
     });
     expect(useLabStore.getState().toast).toBeNull();
   });
+
+  it('manages loadedBacktestId state and actions', () => {
+    expect(useLabStore.getState().loadedBacktestId).toBeNull();
+    useLabStore.getState().setLoadedBacktestId('bt-test-999');
+    expect(useLabStore.getState().loadedBacktestId).toBe('bt-test-999');
+    useLabStore.getState().setLoadedBacktestId(null);
+    expect(useLabStore.getState().loadedBacktestId).toBeNull();
+  });
 });
