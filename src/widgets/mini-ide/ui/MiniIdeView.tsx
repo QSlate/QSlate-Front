@@ -193,6 +193,7 @@ export function MiniIdeView() {
         const updated = await apiClient.updateStrategy(strategyId, {
           base_version_id: versionId,
           source: currentContent,
+          name: strategyName || 'My Strategy',
         });
         setStrategyMeta({
           id: updated.id,

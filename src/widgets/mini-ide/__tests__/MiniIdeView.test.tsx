@@ -139,6 +139,7 @@ describe('MiniIdeView', () => {
       expect(updateSpy).toHaveBeenCalledWith('strat-123', {
         base_version_id: 'ver-100',
         source: expect.any(String),
+        name: 'Momentum_ETH_4h',
       });
       expect(useLabStore.getState().strategyRevision).toBe(2);
       expect(useLabStore.getState().versionId).toBe('ver-101');
