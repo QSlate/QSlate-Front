@@ -158,7 +158,7 @@ describe('TradingView Candlestick and Ticker Selection in Lab', () => {
     it('switches between Candlesticks and Strategy NAV modes', () => {
       render(
         <BacktestProvider>
-          <ResultControlsProvider>
+          <ResultControlsProvider defaultMode="candles">
             <EquityToolbar />
             <EquityWidget />
           </ResultControlsProvider>
@@ -205,7 +205,7 @@ describe('TradingView Candlestick and Ticker Selection in Lab', () => {
 
       render(
         <BacktestProvider>
-          <ResultControlsProvider>
+          <ResultControlsProvider defaultMode="candles">
             <EquityWidget />
           </ResultControlsProvider>
         </BacktestProvider>

@@ -177,7 +177,7 @@ export function MiniIdeView() {
         Object.keys(files).find((k) => k.endsWith('.py')) || 'strategy.py';
       const strategySource = activeFile.endsWith('.py')
         ? currentContent
-        : files[pythonFileKey]?.content || currentContent;
+        : files[pythonFileKey] || currentContent;
 
       if (!strategyId || !versionId) {
         // First-time strategy creation

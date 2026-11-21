@@ -34,9 +34,15 @@ interface ResultControlsContextType {
 
 const RangeContext = createContext<ResultControlsContextType | null>(null);
 
-export function ResultControlsProvider({ children }: { children: ReactNode }) {
+export function ResultControlsProvider({
+  children,
+  defaultMode = 'nav',
+}: {
+  children: ReactNode;
+  defaultMode?: ChartDisplayMode;
+}) {
   const [range, setRange] = useState<EquityRange>('ALL');
-  const [chartMode, setChartMode] = useState<ChartDisplayMode>('candles');
+  const [chartMode, setChartMode] = useState<ChartDisplayMode>(defaultMode);
   const [selectedTicker, setSelectedTicker] = useState<string>('ETH/USDT');
   const [candleInterval, setCandleInterval] = useState<CandleInterval>('1D');
   const [showEMA21, setShowEMA21] = useState<boolean>(true);

@@ -125,23 +125,6 @@ export function EquityWidget() {
     [theme, range, candleInterval, currentTickerInfo.decimals]
   );
 
-  const seriesOptions = useMemo(
-    () => ({
-      color:
-        colorblindMode === 'orange-blue'
-          ? theme === 'dark'
-            ? '#65b8ff'
-            : '#155eb8'
-          : theme === 'dark'
-            ? '#527dff'
-            : '#305ad4',
-      lineWidth: 1,
-      priceLineVisible: false,
-      lastValueVisible: false,
-    }),
-    [theme, colorblindMode]
-  );
-
   const positiveColor = isColorblind ? '#38BDF8' : '#10B981';
   const negativeColor = isColorblind ? '#F59E0B' : '#F43F5E';
 
@@ -151,6 +134,51 @@ export function EquityWidget() {
     const to = result.equity[result.equity.length - 1].time;
     return { from: Math.max(result.equity[0].time, to - days * 86400), to };
   }, [result, range]);
+
+  const navStats = useMemo(() => {
+    if (!result.equity.length) return null;
+    const first = result.equity[0];
+    const last = result.equity[result.equity.length - 1];
+    const initialNav = first.nav || result.config.capital || 100_000;
+    const currentNav = last.nav;
+    const netPnl = currentNav - initialNav;
+    const returnPct = initialNav > 0 ? (netPnl / initialNav) * 100 : 0;
+    const initialBench = first.benchmark || initialNav;
+    const currentBench = last.benchmark || initialNav;
+    const benchReturnPct =
+      initialBench > 0
+        ? ((currentBench - initialBench) / initialBench) * 100
+        : 0;
+    const alphaPct = returnPct - benchReturnPct;
+
+    return {
+      currentNav,
+      netPnl,
+      returnPct,
+      benchReturnPct,
+      alphaPct,
+    };
+  }, [result.equity, result.config.capital]);
+
+  const navAreaOptions = useMemo(
+    () => ({
+      lineColor: isColorblind
+        ? '#38bdf8'
+        : theme === 'dark'
+          ? '#527dff'
+          : '#305ad4',
+      topColor: isColorblind
+        ? 'rgba(56, 189, 248, 0.28)'
+        : theme === 'dark'
+          ? 'rgba(82, 125, 255, 0.28)'
+          : 'rgba(48, 90, 212, 0.22)',
+      bottomColor: 'rgba(82, 125, 255, 0.00)',
+      lineWidth: 2,
+      priceLineVisible: false,
+      lastValueVisible: true,
+    }),
+    [theme, isColorblind]
+  );
 
   if (!result.equity.length)
     return <EmptyState message="No equity data for this backtest." />;
@@ -296,16 +324,114 @@ export function EquityWidget() {
           )}
         </div>
       ) : (
-        /* Standard NAV Legend */
-        <div className="lab-chart-legend">
-          <span>
-            <i />
-            Strategy NAV
-          </span>
-          <span>
-            <i />
-            Benchmark (SPX)
-          </span>
+        /* Strategy NAV Institutional Quant HUD */
+        <div
+          className={`flex items-center justify-between gap-3 pb-2 border-b flex-wrap font-mono ${
+            isLight ? 'border-zinc-200' : 'border-white/[0.04]'
+          }`}
+        >
+          {/* Left: Current NAV & Net PnL Pill */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-sans">
+                Portfolio NAV
+              </span>
+              <span
+                className={`text-sm font-semibold tracking-tight ${
+                  isLight ? 'text-zinc-900' : 'text-white'
+                }`}
+              >
+                $
+                {navStats
+                  ? navStats.currentNav.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })
+                  : '100,000.00'}
+              </span>
+            </div>
+
+            {navStats && (
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded font-medium flex items-center gap-1 ${
+                  navStats.returnPct >= 0
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                }`}
+              >
+                {navStats.returnPct >= 0 ? '+' : ''}$
+                {Math.abs(navStats.netPnl).toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{' '}
+                ({navStats.returnPct >= 0 ? '+' : ''}
+                {navStats.returnPct.toFixed(2)}%)
+              </span>
+            )}
+
+            <div className="hidden md:flex items-center gap-2 text-[10px] text-zinc-400">
+              <span>·</span>
+              <span>
+                Benchmark (SPX):{' '}
+                <strong className={isLight ? 'text-zinc-800' : 'text-zinc-200'}>
+                  {navStats && navStats.benchReturnPct >= 0 ? '+' : ''}
+                  {navStats ? navStats.benchReturnPct.toFixed(2) : '0.00'}%
+                </strong>
+              </span>
+              <span>·</span>
+              <span>
+                Alpha:{' '}
+                <strong
+                  className={
+                    navStats && navStats.alphaPct >= 0
+                      ? 'text-emerald-400'
+                      : 'text-rose-400'
+                  }
+                >
+                  {navStats && navStats.alphaPct >= 0 ? '+' : ''}
+                  {navStats ? navStats.alphaPct.toFixed(2) : '0.00'}%
+                </strong>
+              </span>
+            </div>
+          </div>
+
+          {/* Right: Key Performance Badges & Legend */}
+          <div className="flex items-center gap-3 text-[10px]">
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1 text-zinc-400">
+                <span className="w-2.5 h-0.5 bg-blue-500 rounded-full inline-block" />
+                Strategy NAV
+              </span>
+              <span className="flex items-center gap-1 text-zinc-500">
+                <span className="w-2.5 h-0.5 border-t border-dashed border-zinc-400 inline-block" />
+                SPX
+              </span>
+            </div>
+            <span
+              className={`px-1.5 py-0.5 rounded border ${
+                isLight
+                  ? 'bg-zinc-100 text-zinc-700 border-zinc-200'
+                  : 'bg-white/[0.04] text-zinc-300 border-white/10'
+              }`}
+            >
+              Sharpe:{' '}
+              <strong className="text-blue-400">
+                {result.metrics.sharpe.toFixed(2)}
+              </strong>
+            </span>
+            <span
+              className={`px-1.5 py-0.5 rounded border ${
+                isLight
+                  ? 'bg-zinc-100 text-zinc-700 border-zinc-200'
+                  : 'bg-white/[0.04] text-zinc-300 border-white/10'
+              }`}
+            >
+              Max DD:{' '}
+              <strong className="text-rose-400">
+                {result.metrics.maxDrawdown.toFixed(1)}%
+              </strong>
+            </span>
+          </div>
         </div>
       )}
 
@@ -323,10 +449,10 @@ export function EquityWidget() {
             comparisonData={series.benchmark}
             comparisonLabel="Benchmark (SPX)"
             visibleRange={visibleRange}
-            seriesType="line"
-            ariaLabel="Strategy NAV and SPX benchmark; latest 25 observations"
+            seriesType="area"
+            ariaLabel="Strategy NAV and SPX benchmark performance curve"
             options={options}
-            seriesOptions={seriesOptions}
+            seriesOptions={navAreaOptions}
           />
         )}
       </div>
