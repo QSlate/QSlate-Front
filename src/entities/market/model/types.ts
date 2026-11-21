@@ -1,6 +1,7 @@
 import type { OHLCData } from '@/shared/ui/charts/types';
 
-export type MarketCategory = 'Crypto' | 'Equity' | 'Futures' | 'Index';
+export type MarketCategory =
+  'Crypto' | 'Equity' | 'Futures' | 'Index' | 'Custom';
 
 export type CandleInterval = '15m' | '1h' | '4h' | '1D' | '1W';
 

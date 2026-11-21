@@ -1123,5 +1123,64 @@ describe('QslateApiClient', () => {
       'http://localhost:8080/qslate/v1/data/custom/ds-custom-1',
       expect.objectContaining({ method: 'DELETE' })
     );
+
+    // 7. getMarketSymbols
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        items: [
+          { symbol: 'ETH/USDT', name: 'Ethereum / Tether', live: true },
+          { symbol: 'BTC/USDT', name: 'Bitcoin / Tether', live: true },
+        ],
+        next_cursor: null,
+      }),
+    });
+
+    const symbols = await client.getMarketSymbols({ q: 'ETH', limit: 10 });
+    expect(symbols.items).toHaveLength(2);
+    expect(symbols.items[0].symbol).toBe('ETH/USDT');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:8080/qslate/v1/data/symbols?q=ETH&limit=10',
+      expect.objectContaining({ method: 'GET' })
+    );
+
+    // 8. getMarketHistory
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        symbol: 'ETH/USDT',
+        resolution: '1h',
+        items: [
+          {
+            time: '2024-01-01T00:00:00Z',
+            open: '2200',
+            high: '2250',
+            low: '2190',
+            close: '2240',
+            volume: '1500',
+          },
+        ],
+        next_cursor: null,
+      }),
+    });
+
+    const history = await client.getMarketHistory({
+      symbol: 'ETH/USDT',
+      resolution: '1h',
+      start: '2024-01-01T00:00:00Z',
+      end: '2024-01-02T00:00:00Z',
+    });
+    expect(history.symbol).toBe('ETH/USDT');
+    expect(history.items).toHaveLength(1);
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining(
+        '/qslate/v1/data/history?symbol=ETH%2FUSDT&resolution=1h'
+      ),
+      expect.objectContaining({ method: 'GET' })
+    );
   });
 });

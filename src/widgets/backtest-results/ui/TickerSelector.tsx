@@ -10,7 +10,13 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { MARKET_TICKERS } from '@/entities/market';
+import {
+  MARKET_TICKERS,
+  type MarketCategory,
+  type TickerInfo,
+} from '@/entities/market';
+import { useAuthStore } from '@/entities/user/model';
+import { apiClient } from '@/shared/api';
 import { useAppearance } from '@/shared/theme';
 
 interface TickerSelectorProps {
@@ -29,18 +35,57 @@ export function TickerSelector({
   const { theme, colorblindMode } = useAppearance();
   const isLight = theme === 'light';
   const isColorblind = colorblindMode === 'orange-blue';
+  const token = useAuthStore((state) => state.accessToken);
+  const [allTickers, setAllTickers] = useState<TickerInfo[]>(MARKET_TICKERS);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSymbols() {
+      try {
+        const res = await apiClient.getMarketSymbols({ limit: 50 }, token);
+        if (!cancelled && res.items && res.items.length > 0) {
+          const dynamicTickers: TickerInfo[] = res.items.map((item) => ({
+            symbol: item.symbol,
+            name: item.name || item.symbol,
+            category: (item.dataset_id ? 'Custom' : 'Crypto') as MarketCategory,
+            exchange: item.dataset_id ? 'Custom Lab' : 'Market Data',
+            basePrice: 100,
+            change24h: 0,
+            change24hPercent: 0,
+            volume24h: item.live ? 'Live Feed' : 'Historical',
+            high24h: 100,
+            low24h: 100,
+            decimals: 2,
+          }));
+
+          const existingSymbols = new Set(MARKET_TICKERS.map((t) => t.symbol));
+          const uniqueDynamic = dynamicTickers.filter(
+            (t) => !existingSymbols.has(t.symbol)
+          );
+          setAllTickers([...uniqueDynamic, ...MARKET_TICKERS]);
+        }
+      } catch {
+        // Fallback to static tickers
+      }
+    }
+    void loadSymbols();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   const currentTicker = useMemo(
     () =>
-      MARKET_TICKERS.find((t) => t.symbol === selectedTicker) ??
+      allTickers.find((t) => t.symbol === selectedTicker) ??
+      allTickers[0] ??
       MARKET_TICKERS[0],
-    [selectedTicker]
+    [selectedTicker, allTickers]
   );
 
-  const categories = ['All', 'Crypto', 'Equity', 'Index', 'Futures'];
+  const categories = ['All', 'Crypto', 'Equity', 'Index', 'Futures', 'Custom'];
 
   const filteredTickers = useMemo(() => {
-    return MARKET_TICKERS.filter((ticker) => {
+    return allTickers.filter((ticker) => {
       const matchesCategory =
         activeCategory === 'All' || ticker.category === activeCategory;
       const matchesSearch =
@@ -49,7 +94,7 @@ export function TickerSelector({
         ticker.exchange.toLowerCase().includes(search.toLowerCase());
       return matchesCategory && matchesSearch;
     });
-  }, [search, activeCategory]);
+  }, [allTickers, search, activeCategory]);
 
   useEffect(() => {
     if (!isOpen) return;
