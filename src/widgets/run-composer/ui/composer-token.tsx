@@ -77,7 +77,7 @@ export function ComposerSelectToken({
         aria-invalid={missing || undefined}
         disabled={disabled || empty}
         onChange={(event) => onChange(event.target.value)}
-        className="max-w-[170px] cursor-pointer appearance-none truncate border-0 bg-transparent p-0 pr-4 font-medium text-inherit outline-none disabled:cursor-not-allowed [&>option]:bg-raised [&>option]:text-fg"
+        className="max-w-[120px] cursor-pointer 2xl:max-w-[170px] appearance-none truncate border-0 bg-transparent p-0 pr-4 font-medium text-inherit outline-none disabled:cursor-not-allowed [&>option]:bg-raised [&>option]:text-fg"
       >
         {empty ? (
           <option value="">{emptyLabel}</option>
@@ -109,7 +109,7 @@ export function ComposerSelectToken({
         )}
       </select>
       {meta ? (
-        <span id={metaId} className={TOKEN_META_CLASS}>
+        <span id={metaId} className={cn(TOKEN_META_CLASS, 'max-2xl:sr-only')}>
           {meta}
         </span>
       ) : null}
