@@ -158,7 +158,7 @@ describe('RunComposer', () => {
   it('flags an invalid capital and blocks the run', async () => {
     mockCatalog([STRATEGY], [DATASET]);
     renderComposer();
-    const capital = await screen.findByRole('spinbutton', {
+    const capital = await screen.findByRole('textbox', {
       name: 'Capital initial en USD',
     });
     await screen.findByRole('option', { name: 'RSI Trend' });
@@ -171,6 +171,18 @@ describe('RunComposer', () => {
       screen.getByText("Le capital doit être d'au moins 0,01 USD.")
     ).toBeDefined();
     expect((await launchButton()).getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('shows the capital with a thousands separator outside editing', async () => {
+    mockCatalog([STRATEGY], [DATASET]);
+    renderComposer();
+    const capital = await screen.findByRole<HTMLInputElement>('textbox', {
+      name: 'Capital initial en USD',
+    });
+    fireEvent.focus(capital);
+    fireEvent.change(capital, { target: { value: '25000' } });
+    fireEvent.blur(capital);
+    expect(capital.value.replace(/\s/gu, ' ')).toBe('25 000');
   });
 
   it('runs the selection with Ctrl+Enter and with the Lancer button', async () => {

@@ -35,6 +35,18 @@ import {
 import { OptimizeDialog } from './optimize-dialog';
 import { RUN_COMPOSER_HINT_ID } from './run-composer-hint';
 
+const CAPITAL_FORMAT = new Intl.NumberFormat('fr-FR', {
+  maximumFractionDigits: 2,
+});
+
+/** "10 000", "10000,5" or "10000.5" → number; blank or invalid → null. */
+function parseCapital(text: string): number | null {
+  const raw = text.replace(/[\s\u00a0\u202f]/gu, '').replace(',', '.');
+  if (raw === '') return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 const subscribePlatform = () => () => {};
 const getPlatformShortcut = () =>
   /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘↵' : 'Ctrl↵';
@@ -52,6 +64,8 @@ export function RunComposer() {
   const model = useRunComposer();
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [optimizing, setOptimizing] = useState(false);
+  /** Raw text while the capital field has focus; formatted otherwise. */
+  const [capitalDraft, setCapitalDraft] = useState<string | null>(null);
   const {
     selection,
     strategies,
@@ -110,9 +124,8 @@ export function RunComposer() {
   }, []);
 
   const handleCapital = (event: ChangeEvent<HTMLInputElement>) => {
-    const raw = event.target.value.trim();
-    const parsed = Number(raw);
-    update({ capital: raw === '' || !Number.isFinite(parsed) ? null : parsed });
+    setCapitalDraft(event.target.value);
+    update({ capital: parseCapital(event.target.value) });
   };
 
   const capitalError = fieldErrors.capital;
@@ -228,17 +241,29 @@ export function RunComposer() {
         )}
       >
         <input
-          type="number"
+          type="text"
           inputMode="decimal"
-          min={0}
-          step="any"
+          autoComplete="off"
           aria-label="Capital initial en USD"
           aria-invalid={capitalError ? true : undefined}
           aria-describedby={capitalError ? RUN_COMPOSER_HINT_ID : undefined}
-          value={selection.capital ?? ''}
+          value={
+            capitalDraft ??
+            (selection.capital === null
+              ? ''
+              : CAPITAL_FORMAT.format(selection.capital))
+          }
+          onFocus={() =>
+            setCapitalDraft(
+              selection.capital === null
+                ? ''
+                : String(selection.capital).replace('.', ',')
+            )
+          }
+          onBlur={() => setCapitalDraft(null)}
           onChange={handleCapital}
           disabled={isRunning}
-          className="w-[92px] appearance-none border-0 bg-transparent p-0 text-right font-mono font-medium tabular-nums text-inherit outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          className="w-[92px] appearance-none border-0 bg-transparent p-0 text-right font-mono font-medium tabular-nums text-inherit outline-none"
         />
         <span aria-hidden="true" className={TOKEN_META_CLASS}>
           USD
