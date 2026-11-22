@@ -1,4 +1,11 @@
 export {
+  type Candle,
+  type CandleSeries,
+  fetchDatasetCandles,
+  MAX_CHART_CANDLES,
+  useDatasetCandles,
+} from './api/candle-queries';
+export {
   datasetKeys,
   useDatasets,
   useInvalidateDatasets,

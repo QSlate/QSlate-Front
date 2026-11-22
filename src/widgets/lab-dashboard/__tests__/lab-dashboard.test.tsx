@@ -38,6 +38,7 @@ const COMPONENTS: WidgetComponents = {
   sharpe: Empty,
   'win-rate': Empty,
   'capital-chart': Empty,
+  'price-chart': Empty,
   drawdowns: Empty,
   'monthly-returns': Empty,
   'trade-distribution': Empty,

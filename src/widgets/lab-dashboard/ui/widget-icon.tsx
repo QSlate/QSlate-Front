@@ -1,6 +1,7 @@
 import {
   CalendarDays,
   ChartArea,
+  ChartCandlestick,
   ChartColumn,
   ChartLine,
   Gauge,
@@ -18,6 +19,7 @@ const ICONS = {
   sharpe: Gauge,
   'win-rate': Target,
   'capital-chart': ChartLine,
+  'price-chart': ChartCandlestick,
   drawdowns: ChartArea,
   'monthly-returns': CalendarDays,
   'trade-distribution': ChartColumn,

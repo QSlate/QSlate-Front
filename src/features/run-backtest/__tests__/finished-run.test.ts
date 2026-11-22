@@ -12,6 +12,7 @@ describe('finishedRunFromJob', () => {
         input: {
           strategy_id: 's',
           dataset_id: 'd',
+          dataset_version_id: 'dv',
           initial_capital: '10000',
           commission_rate: 0.001,
         },
@@ -25,6 +26,7 @@ describe('finishedRunFromJob', () => {
       descriptor: {
         strategyId: 's',
         datasetId: 'd',
+        datasetVersionId: 'dv',
         initialCapital: 10000,
         commissionRate: 0.001,
       },

@@ -11,9 +11,9 @@ import {
 } from '../model/dashboard-layout';
 
 describe('dashboard layout', () => {
-  it('places every widget once by default without overlaps', () => {
+  it('places every widget but the opt-in price chart by default', () => {
     expect(DEFAULT_DASHBOARD_LAYOUT).toHaveLength(9);
-    expect(availableWidgets(DEFAULT_DASHBOARD_LAYOUT)).toEqual([]);
+    expect(availableWidgets(DEFAULT_DASHBOARD_LAYOUT)).toEqual(['price-chart']);
   });
 
   it('drops unknown, duplicate and malformed stored items', () => {

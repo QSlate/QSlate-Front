@@ -52,6 +52,8 @@ export interface ActiveRun {
 export interface RunDescriptor {
   readonly strategyId: string;
   readonly datasetId: string;
+  /** Dataset version the run read (null when the job did not record it). */
+  readonly datasetVersionId: string | null;
   readonly initialCapital: number | null;
   readonly commissionRate: number | null;
 }
@@ -70,6 +72,7 @@ function describeRequest(
     ? {
         strategyId: request.strategyId,
         datasetId: request.datasetId,
+        datasetVersionId: request.datasetVersionId,
         initialCapital: request.initialCapital,
         commissionRate: request.commissionRate,
       }
@@ -89,6 +92,7 @@ export function finishedRunFromJob(job: BacktestJob): FinishedRun | null {
     descriptor: {
       strategyId: job.input.strategy_id,
       datasetId: job.input.dataset_id,
+      datasetVersionId: job.input.dataset_version_id ?? null,
       initialCapital: Number.isFinite(capital) ? capital : null,
       commissionRate:
         typeof job.input.commission_rate === 'number'

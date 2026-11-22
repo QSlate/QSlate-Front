@@ -9,4 +9,5 @@ export {
   SharpeWidget,
   WinRateWidget,
 } from './ui/kpi-widgets';
+export { PriceChartWidget } from './ui/price-chart-widget';
 export { TradeDistributionWidget, TradesTableWidget } from './ui/trade-widgets';
