@@ -2,7 +2,6 @@ import './lab.css';
 
 import type { ReactNode } from 'react';
 
-import { CustomDatasetsDrawer } from '@/features/custom-datasets';
 import { StrategyOptimizationModal } from '@/features/optimize-strategy';
 import { BacktestProvider } from '@/features/run-backtest';
 import { Toast } from '@/shared/ui/toast';
@@ -26,7 +25,6 @@ export default function LabLayout({ children }: LabLayoutProps) {
         <main className="flex min-w-0 flex-col">{children}</main>
         <ExecutionLogsConsole />
         <StrategyOptimizationModal />
-        <CustomDatasetsDrawer />
         <Toast />
       </div>
     </BacktestProvider>

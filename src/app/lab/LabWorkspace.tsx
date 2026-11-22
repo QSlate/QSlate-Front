@@ -2,7 +2,9 @@
 
 import { FlaskConical, Terminal } from 'lucide-react';
 
+import { useHasBacktests } from '@/entities/backtest';
 import { useLabStore } from '@/features/lab-state';
+import { useBacktest } from '@/features/run-backtest';
 import { IconButton, Tooltip } from '@/shared/ui';
 import {
   CapitalChartWidget,
@@ -22,6 +24,7 @@ import {
   type WidgetComponents,
 } from '@/widgets/lab-dashboard';
 import { LabHeader, RunStatusStrip } from '@/widgets/lab-frame';
+import { LabWelcome } from '@/widgets/lab-welcome';
 import { RunComposer, RunComposerHint } from '@/widgets/run-composer';
 
 const WIDGET_COMPONENTS: WidgetComponents = {
@@ -43,6 +46,10 @@ export function LabWorkspace() {
   const openOptimization = useLabStore(
     (state) => state.setOptimizationModalOpen
   );
+  const hasBacktests = useHasBacktests();
+  const { status, result } = useBacktest();
+  const firstRun =
+    hasBacktests.data === false && status === 'idle' && result === null;
 
   return (
     <>
@@ -71,17 +78,23 @@ export function LabWorkspace() {
                 />
               )}
             </Tooltip>
-            <CustomizeDashboardButton />
+            {firstRun ? null : <CustomizeDashboardButton />}
           </>
         }
       >
         <RunComposer />
       </LabHeader>
       <RunComposerHint />
-      <RunStatusStrip>
-        <DashboardTabs />
-      </RunStatusStrip>
-      <LabDashboard components={WIDGET_COMPONENTS} />
+      {firstRun ? (
+        <LabWelcome />
+      ) : (
+        <>
+          <RunStatusStrip>
+            <DashboardTabs />
+          </RunStatusStrip>
+          <LabDashboard components={WIDGET_COMPONENTS} />
+        </>
+      )}
     </>
   );
 }

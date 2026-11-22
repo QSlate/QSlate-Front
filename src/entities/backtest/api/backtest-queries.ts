@@ -37,6 +37,17 @@ export async function fetchBacktestLogLines(
   return lines;
 }
 
+/** Whether the user has run at least one backtest (first-run welcome). */
+export function useHasBacktests() {
+  return useQuery({
+    queryKey: [...backtestKeys.list(), 'any'] as const,
+    queryFn: async () => {
+      const page = await apiClient.getBacktests({ limit: 1 });
+      return (page.items ?? []).length > 0;
+    },
+  });
+}
+
 /** Log history of a run over REST (used outside of the live stream). */
 export function useBacktestLogs(backtestId: string | null, enabled: boolean) {
   return useQuery({

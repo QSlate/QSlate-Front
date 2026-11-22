@@ -2,6 +2,7 @@ export {
   backtestKeys,
   fetchBacktestLogLines,
   useBacktestLogs,
+  useHasBacktests,
 } from './api/backtest-queries';
 export {
   abortableDelay,

@@ -1,29 +1,60 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { useLabStore } from '@/features/lab-state';
+import { apiClient } from '@/shared/api';
+import { renderWithQuery } from '@/shared/lib/test';
 
 import { DatasetsView } from '../ui/datasets-view';
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   vi.clearAllMocks();
-  useLabStore.getState().setCustomDatasetsDrawerOpen(false);
 });
 
 describe('DatasetsView', () => {
-  it('explains that guided import is upcoming and opens the datasets drawer', () => {
-    render(<DatasetsView />);
+  it('lists public datasets and the user datasets with their status', async () => {
+    vi.spyOn(apiClient, 'getMarketSymbols').mockResolvedValue({
+      items: [
+        {
+          symbol: 'BTC/USDT@1h',
+          name: 'Bitcoin / Tether — 1 hour',
+          dataset_id: 'public-btc-usdt-1h',
+          version_id: 'v1',
+          resolution: '1h',
+          live: false,
+        },
+      ],
+    });
+    vi.spyOn(apiClient, 'getCustomDatasets').mockResolvedValue({
+      items: [
+        {
+          id: 'a',
+          version_id: 'v',
+          name: 'Mon CSV',
+          status: 'failed',
+          format: 'csv',
+          columns: [],
+          row_count: 0,
+          symbol: 'custom:a',
+          error: 'high < low',
+          created_at: '2026-01-02T00:00:00Z',
+          updated_at: '',
+        },
+      ],
+    });
+    renderWithQuery(<DatasetsView />);
+    expect(await screen.findByText('BTC / USDT · 1 h')).toBeTruthy();
+    expect(await screen.findByText('Mon CSV')).toBeTruthy();
+    expect(screen.getByText('Échec')).toBeTruthy();
+    expect(screen.getByText('high < low')).toBeTruthy();
+  });
 
-    expect(
-      screen.getByText("L'import guidé de données arrive bientôt")
-    ).toBeDefined();
-
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Gérer mes jeux de données' })
-    );
-
-    expect(useLabStore.getState().isCustomDatasetsDrawerOpen).toBe(true);
+  it('shows an empty state without own datasets', async () => {
+    vi.spyOn(apiClient, 'getMarketSymbols').mockResolvedValue({ items: [] });
+    vi.spyOn(apiClient, 'getCustomDatasets').mockResolvedValue({ items: [] });
+    renderWithQuery(<DatasetsView />);
+    expect(await screen.findByText('Aucun fichier importé')).toBeTruthy();
   });
 });

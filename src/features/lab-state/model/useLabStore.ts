@@ -43,7 +43,6 @@ export interface LabState {
   isExecutionLogsOpen: boolean;
   isOptimizationModalOpen: boolean;
   activeStrategyParameters: Record<string, number>;
-  isCustomDatasetsDrawerOpen: boolean;
   customDatasets: CustomDataset[];
   selectedCustomDataset: CustomDataset | null;
 
@@ -82,8 +81,6 @@ export interface LabState {
   setOptimizationModalOpen: (open: boolean) => void;
   toggleOptimizationModal: () => void;
   setActiveStrategyParameters: (params: Record<string, number>) => void;
-  setCustomDatasetsDrawerOpen: (open: boolean) => void;
-  toggleCustomDatasetsDrawer: () => void;
   setCustomDatasets: (datasets: CustomDataset[]) => void;
   setSelectedCustomDataset: (dataset: CustomDataset | null) => void;
 }
@@ -123,7 +120,6 @@ export const useLabStore = create<LabState>((set, get) => ({
     slow_period: 26,
     signal_period: 9,
   },
-  isCustomDatasetsDrawerOpen: false,
   customDatasets: [],
   selectedCustomDataset: null,
 
@@ -208,14 +204,6 @@ export const useLabStore = create<LabState>((set, get) => ({
         ...state.activeStrategyParameters,
         ...params,
       },
-    })),
-
-  setCustomDatasetsDrawerOpen: (open) =>
-    set({ isCustomDatasetsDrawerOpen: open }),
-
-  toggleCustomDatasetsDrawer: () =>
-    set((state) => ({
-      isCustomDatasetsDrawerOpen: !state.isCustomDatasetsDrawerOpen,
     })),
 
   setCustomDatasets: (datasets) => set({ customDatasets: datasets }),
