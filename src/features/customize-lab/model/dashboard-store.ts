@@ -3,6 +3,8 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { useHydratedStore } from '@/shared/lib/store';
+
 import {
   type DashboardLayout,
   DEFAULT_DASHBOARD_LAYOUT,
@@ -92,4 +94,22 @@ export function layoutFor(
   key: string
 ): DashboardLayout {
   return layouts[key] ?? DEFAULT_DASHBOARD_LAYOUT;
+}
+
+const NO_LAYOUTS: Readonly<Record<string, DashboardLayout>> = {};
+
+/** Active dashboard id, null until the persisted store is hydrated. */
+export function useActiveDashboardId(): string | null {
+  return useHydratedStore(useDashboardStore, (state) => state.activeId, null);
+}
+
+/** Saved layouts, empty until the persisted store is hydrated. */
+export function useSavedDashboardLayouts(): Readonly<
+  Record<string, DashboardLayout>
+> {
+  return useHydratedStore(
+    useDashboardStore,
+    (state) => state.layouts,
+    NO_LAYOUTS
+  );
 }

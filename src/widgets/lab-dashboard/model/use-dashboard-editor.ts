@@ -12,9 +12,11 @@ import {
   LOCAL_DASHBOARD_KEY,
   removeDashboardWidget,
   sameLayout,
+  useActiveDashboardId,
   useDashboardActions,
   useDashboards,
   useDashboardStore,
+  useSavedDashboardLayouts,
 } from '@/features/customize-lab';
 import { useLabStore } from '@/features/lab-state';
 import type { DashboardSummary } from '@/shared/api';
@@ -41,8 +43,8 @@ export interface DashboardEditor {
 export function useDashboardEditor(): DashboardEditor {
   const dashboards = useDashboards();
   const actions = useDashboardActions();
-  const activeId = useDashboardStore((state) => state.activeId);
-  const layouts = useDashboardStore((state) => state.layouts);
+  const activeId = useActiveDashboardId();
+  const layouts = useSavedDashboardLayouts();
   const draft = useDashboardStore((state) => state.draft);
   const catalogOpen = useDashboardStore((state) => state.catalogOpen);
   const setActive = useDashboardStore((state) => state.setActive);

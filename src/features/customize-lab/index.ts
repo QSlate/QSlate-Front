@@ -26,5 +26,7 @@ export {
   DASHBOARD_STORAGE_KEY,
   layoutFor,
   LOCAL_DASHBOARD_KEY,
+  useActiveDashboardId,
   useDashboardStore,
+  useSavedDashboardLayouts,
 } from './model/dashboard-store';

@@ -5,9 +5,11 @@ import { type FormEvent, useEffect, useId, useRef, useState } from 'react';
 
 import {
   DEFAULT_DASHBOARD_TITLE,
+  useActiveDashboardId,
   useDashboardActions,
   useDashboards,
   useDashboardStore,
+  useSavedDashboardLayouts,
 } from '@/features/customize-lab';
 import { useLabStore } from '@/features/lab-state';
 import { cn, FOCUS_RING } from '@/shared/lib/class-names';
@@ -92,12 +94,12 @@ function TitleDialog({
 export function DashboardTabs() {
   const dashboards = useDashboards();
   const actions = useDashboardActions();
-  const activeId = useDashboardStore((state) => state.activeId);
+  const activeId = useActiveDashboardId();
   const setActive = useDashboardStore((state) => state.setActive);
   const editing = useDashboardStore((state) => state.draft !== null);
   const saveLayout = useDashboardStore((state) => state.saveLayout);
   const forgetLayout = useDashboardStore((state) => state.forgetLayout);
-  const layouts = useDashboardStore((state) => state.layouts);
+  const layouts = useSavedDashboardLayouts();
   const showToast = useLabStore((state) => state.showToast);
   const [dialog, setDialog] = useState<DialogState>(null);
   const [menuOpen, setMenuOpen] = useState(false);
