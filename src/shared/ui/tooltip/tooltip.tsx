@@ -1,15 +1,10 @@
 'use client';
 
 import { Info } from 'lucide-react';
-import {
-  type KeyboardEvent,
-  type ReactNode,
-  useEffect,
-  useId,
-  useState,
-} from 'react';
+import { type ReactNode, useEffect, useId, useState } from 'react';
 
 import { cn, FOCUS_RING } from '@/shared/lib/class-names';
+import { consumeEscape } from '@/shared/lib/dom';
 
 export type TooltipSide = 'top' | 'bottom' | 'right';
 
@@ -27,15 +22,20 @@ export interface TooltipProps {
   readonly className?: string | undefined;
 }
 
+// Each side also draws an invisible bridge (::before) over the gap between
+// trigger and bubble, so moving the pointer onto the bubble keeps it open.
 const SIDE_CLASSES: Readonly<Record<TooltipSide, string>> = {
-  bottom: 'left-1/2 top-[calc(100%+8px)] -translate-x-1/2',
-  top: 'bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2',
-  right: 'left-[calc(100%+10px)] top-1/2 -translate-y-1/2',
+  bottom:
+    'left-1/2 top-[calc(100%+8px)] -translate-x-1/2 before:inset-x-0 before:-top-2 before:h-2',
+  top: 'bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 before:inset-x-0 before:-bottom-2 before:h-2',
+  right:
+    'left-[calc(100%+10px)] top-1/2 -translate-y-1/2 before:inset-y-0 before:-left-2.5 before:w-2.5',
 };
 
 /**
  * Accessible tooltip (WCAG 1.4.13): opens on hover and keyboard focus,
- * stays open while hovered, and closes on blur, pointer leave or Escape.
+ * stays open while the pointer moves onto the bubble, and closes on blur,
+ * pointer leave or Escape (without closing an enclosing modal).
  */
 export function Tooltip({
   content,
@@ -46,21 +46,18 @@ export function Tooltip({
   const id = useId();
   const [open, setOpen] = useState(false);
 
+  // Single Escape handler, active only while open. It runs in the capture
+  // phase and consumes the key so an enclosing Dialog/Drawer stays open.
   useEffect(() => {
     if (!open) return;
-    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [open]);
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLSpanElement>) => {
-    if (event.key === 'Escape' && open) {
-      event.stopPropagation();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      consumeEscape(event);
       setOpen(false);
-    }
-  };
+    };
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [open]);
 
   return (
     <span
@@ -69,7 +66,6 @@ export function Tooltip({
       onPointerLeave={() => setOpen(false)}
       onFocus={() => setOpen(true)}
       onBlur={() => setOpen(false)}
-      onKeyDown={handleKeyDown}
     >
       {children({ 'aria-describedby': open ? id : undefined })}
       {open ? (
@@ -77,7 +73,7 @@ export function Tooltip({
           role="tooltip"
           id={id}
           className={cn(
-            'absolute z-40 w-max max-w-[250px] whitespace-normal rounded-[9px] bg-fg px-[11px] py-[9px] text-left text-xs font-normal leading-normal text-canvas shadow-pop',
+            'absolute z-40 w-max before:absolute max-w-[250px] whitespace-normal rounded-[9px] bg-fg px-[11px] py-[9px] text-left text-xs font-normal leading-normal text-canvas shadow-pop',
             SIDE_CLASSES[side]
           )}
         >

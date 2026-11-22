@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 import { type ReactNode, useEffect, useId, useRef } from 'react';
 
 import { cn } from '@/shared/lib/class-names';
-import { lockScroll } from '@/shared/lib/dom';
+import { isEscapeConsumed, lockScroll } from '@/shared/lib/dom';
 
 import { IconButton } from '../icon-button';
 
@@ -77,6 +77,8 @@ export function Dialog({
       aria-describedby={description ? descriptionId : undefined}
       onCancel={(event) => {
         event.preventDefault();
+        // Escape already closed a nested tooltip/popover: keep this open.
+        if (isEscapeConsumed()) return;
         onClose();
       }}
       onPointerDown={(event) => {
