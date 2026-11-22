@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useMemo } from 'react';
+import { Fragment, type ReactNode, useMemo } from 'react';
 
 import {
   type BacktestResult,
@@ -223,6 +223,12 @@ function heatColor(value: number, maxAbs: number): string {
   return `color-mix(in srgb, ${token} ${strength}%, var(--sunken))`;
 }
 
+function signOf(value: number): string {
+  if (value > 0) return '+';
+  if (value < 0) return '−';
+  return '';
+}
+
 function MonthlyHeatmap({ result }: { readonly result: BacktestResult }) {
   const months = useMemo(
     () => computeMonthlyReturns(result.equity),
@@ -242,70 +248,70 @@ function MonthlyHeatmap({ result }: { readonly result: BacktestResult }) {
     months.map((month) => [`${month.year}-${month.month}`, month])
   );
   return (
-    <table className="h-full w-full table-fixed border-separate border-spacing-1 font-mono text-[10px] text-fg-3">
-      <caption className="sr-only">
-        Rendement de chaque mois, en pourcentage
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col" className="w-[38px]">
-            <span className="sr-only">Année</span>
-          </th>
+    <>
+      {/* Compact grid (year rows × 12 months) like the mockup; the cells
+          keep a fixed height whatever the widget size, and the widget
+          scrolls when many years do not fit. Screen readers get the table. */}
+      <div className="@container h-full min-h-0 overflow-y-auto">
+        <div
+          aria-hidden="true"
+          className="grid min-h-full grid-cols-[34px_repeat(12,minmax(0,1fr))] content-center items-center gap-1 font-mono text-[10px] font-medium text-fg-3"
+        >
+          <span />
           {MONTH_LABELS.map((label) => (
-            <th key={label} scope="col" className="text-center font-medium">
-              {label.slice(0, 3)}
-            </th>
+            <span key={label} className="truncate text-center">
+              <span className="@[460px]:hidden">{label.charAt(0)}</span>
+              <span className="hidden @[460px]:inline">
+                {label.replace('.', '')}
+              </span>
+            </span>
           ))}
-        </tr>
-      </thead>
-      <tbody>
-        {years.map((year) => (
-          <tr key={year}>
-            <th scope="row" className="text-left font-medium text-fg-2">
-              {year}
-            </th>
-            {MONTH_LABELS.map((label, month) => {
-              const cell = byKey.get(`${year}-${month}`);
-              return (
-                <td
-                  key={label}
-                  className="h-[26px] rounded-md text-center text-[9.5px] text-fg"
-                  // The cell color encodes the return: a computed mix.
-                  style={
-                    cell
-                      ? { background: heatColor(cell.returnPct, maxAbs) }
-                      : undefined
-                  }
-                  title={
-                    cell
-                      ? `${label} ${year} : ${formatSignedPercent(cell.returnPct)}`
-                      : undefined
-                  }
-                >
-                  {cell ? (
-                    <>
-                      <span aria-hidden="true">
-                        {cell.returnPct > 0
-                          ? '+'
-                          : cell.returnPct < 0
-                            ? '−'
-                            : ''}
-                        {formatDecimal(Math.abs(cell.returnPct))}
+          {years.map((year) => (
+            <Fragment key={year}>
+              <span className="text-fg-2">{year}</span>
+              {MONTH_LABELS.map((label, month) => {
+                const cell = byKey.get(`${year}-${month}`);
+                return (
+                  <span
+                    key={label}
+                    title={
+                      cell
+                        ? `${label} ${year} : ${formatSignedPercent(cell.returnPct)}`
+                        : `${label} ${year} : pas de données`
+                    }
+                    className="grid h-[26px] min-w-0 place-items-center overflow-hidden rounded-md bg-sunken text-[9.5px] text-fg"
+                    // The cell color encodes the return: a computed mix.
+                    style={
+                      cell
+                        ? { background: heatColor(cell.returnPct, maxAbs) }
+                        : undefined
+                    }
+                  >
+                    {cell ? (
+                      <span>
+                        {signOf(cell.returnPct)}
+                        {/* Narrow widgets keep the sign (never color alone). */}
+                        <span className="hidden @[380px]:inline">
+                          {formatDecimal(Math.abs(cell.returnPct))}
+                        </span>
                       </span>
-                      <span className="sr-only">
-                        {formatSignedPercent(cell.returnPct)}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="sr-only">Pas de données</span>
-                  )}
-                </td>
-              );
-            })}
-          </tr>
-        ))}
-      </tbody>
-    </table>
+                    ) : null}
+                  </span>
+                );
+              })}
+            </Fragment>
+          ))}
+        </div>
+      </div>
+      <ChartDataTable
+        caption="Rendement de chaque mois, en pourcentage"
+        headers={['Mois', 'Rendement (%)']}
+        rows={months.map((month) => [
+          `${MONTH_LABELS[month.month]} ${month.year}`,
+          formatSignedPercent(month.returnPct),
+        ])}
+      />
+    </>
   );
 }
 
