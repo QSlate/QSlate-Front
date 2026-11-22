@@ -46,10 +46,6 @@ function sanitizePreferences(
       typeof value.sidebarCollapsed === 'boolean'
         ? value.sidebarCollapsed
         : fallback.sidebarCollapsed,
-    soundAlerts:
-      typeof value.soundAlerts === 'boolean'
-        ? value.soundAlerts
-        : fallback.soundAlerts,
   };
 }
 
@@ -57,9 +53,8 @@ function selectPersistedPreferences({
   theme,
   colorblindMode,
   sidebarCollapsed,
-  soundAlerts,
 }: UserStore): UserPreferencesState {
-  return { theme, colorblindMode, sidebarCollapsed, soundAlerts };
+  return { theme, colorblindMode, sidebarCollapsed };
 }
 
 export const useUserStore = create<UserStore>()(
@@ -103,18 +98,6 @@ export const useUserStore = create<UserStore>()(
             }),
             false,
             'user/toggleSidebar'
-          ),
-
-        setSoundAlerts: (soundAlerts: boolean) =>
-          set({ soundAlerts }, false, 'user/setSoundAlerts'),
-
-        toggleSoundAlerts: () =>
-          set(
-            (state) => ({
-              soundAlerts: !state.soundAlerts,
-            }),
-            false,
-            'user/toggleSoundAlerts'
           ),
 
         hydrateRemotePreferences: (remote: {
@@ -183,9 +166,6 @@ export const selectColorblindMode = (state: UserStore): ColorblindMode =>
 
 export const selectSidebarCollapsed = (state: UserStore): boolean =>
   state.sidebarCollapsed;
-
-export const selectSoundAlerts = (state: UserStore): boolean =>
-  state.soundAlerts;
 
 export const selectSession = (state: UserStore): UserSession | null =>
   state.session;

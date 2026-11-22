@@ -925,6 +925,10 @@ describe('QslateApiClient', () => {
       'http://localhost:8080/qslate/v1/backtests/bt-live-1/cancel',
       expect.objectContaining({ method: 'POST' })
     );
+    const cancelInit = mockFetch.mock.calls.at(-1)?.[1];
+    const cancelKey = new Headers(cancelInit?.headers).get('Idempotency-Key');
+    expect(cancelKey?.length).toBeGreaterThanOrEqual(16);
+    expect(cancelKey?.length).toBeLessThanOrEqual(128);
 
     // 10. getBacktestStatus
     mockFetch.mockResolvedValueOnce({

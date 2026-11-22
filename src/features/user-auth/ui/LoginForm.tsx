@@ -19,7 +19,7 @@ import {
   selectColorblindMode,
   useAuthStore,
   useUserStore,
-} from '@/entities/user/model';
+} from '@/entities/user';
 import { apiClient, ApiError } from '@/shared/api';
 import { useHydratedStore } from '@/shared/lib/store';
 

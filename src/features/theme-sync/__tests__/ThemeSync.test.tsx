@@ -7,7 +7,7 @@ import {
   DEFAULT_USER_PREFERENCES,
   useAuthStore,
   useUserStore,
-} from '@/entities/user/model';
+} from '@/entities/user';
 import { apiClient } from '@/shared/api';
 import { useAppearance } from '@/shared/theme';
 
@@ -26,6 +26,7 @@ describe('ThemeSync', () => {
       session: null,
     });
     document.documentElement.removeAttribute('data-theme');
+    document.documentElement.removeAttribute('data-colorblind');
   });
 
   afterEach(() => {
@@ -45,6 +46,32 @@ describe('ThemeSync', () => {
 
     await waitFor(() => {
       expect(document.documentElement.dataset.theme).toBe('light');
+    });
+  });
+
+  it('mirrors the daltonism mode on the document root', async () => {
+    render(<ThemeSync />);
+
+    expect(document.documentElement.hasAttribute('data-colorblind')).toBe(
+      false
+    );
+
+    act(() => {
+      useUserStore.getState().setColorblindMode('orange-blue');
+    });
+
+    await waitFor(() => {
+      expect(document.documentElement.dataset.colorblind).toBe('orange-blue');
+    });
+
+    act(() => {
+      useUserStore.getState().setColorblindMode('none');
+    });
+
+    await waitFor(() => {
+      expect(document.documentElement.hasAttribute('data-colorblind')).toBe(
+        false
+      );
     });
   });
 

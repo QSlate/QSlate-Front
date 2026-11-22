@@ -1,138 +1,190 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { apiClient } from '@/shared/api';
+import { apiClient, ApiError, type BacktestJob } from '@/shared/api';
 
-import { DEFAULT_BACKTEST_CONFIG } from '../../model/types';
-import { LiveBacktestService } from '../liveBacktestService';
+import type { BacktestRunRequest } from '../../model/run-request';
+import { LiveBacktestService, pollBacktest } from '../liveBacktestService';
+
+const REQUEST: BacktestRunRequest = {
+  strategyId: 'strat-1',
+  strategyVersionId: 'ver-1',
+  datasetId: 'ds-1',
+  datasetVersionId: 'dsv-1',
+  initialCapital: 100_000,
+  parameters: { rsi_period: 21 },
+  window: 30,
+  commissionRate: 0.001,
+  slippageBps: 5,
+  periodStart: null,
+  periodEnd: null,
+};
+
+function job(status: BacktestJob['status'], progress = 0): BacktestJob {
+  return {
+    backtest_id: 'bt-job-123',
+    status,
+    progress,
+    input: { strategy_id: 'strat-1', dataset_id: 'ds-1' },
+    created_at: '',
+    updated_at: '',
+  };
+}
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.useRealTimers();
+});
 
 describe('LiveBacktestService', () => {
-  it('dispatches runBacktest, polls status until completed, and aggregates backend artifacts', async () => {
-    const service = new LiveBacktestService();
+  it('submits exactly the request and never creates strategies', async () => {
+    const createSpy = vi.spyOn(apiClient, 'createStrategy');
+    const listSpy = vi.spyOn(apiClient, 'getStrategies');
+    const runSpy = vi
+      .spyOn(apiClient, 'runBacktest')
+      .mockResolvedValueOnce(job('pending'));
 
-    // 1. mock runBacktest
-    const runSpy = vi.spyOn(apiClient, 'runBacktest').mockResolvedValueOnce({
-      backtest_id: 'bt-job-123',
-      status: 'pending',
-      progress: 0,
-      input: {
-        strategy_id: 'strat-1',
-        dataset_id: 'binance-eth-4h',
-      },
-      created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-01T00:00:00Z',
+    const accepted = await new LiveBacktestService().submit(REQUEST);
+
+    expect(runSpy).toHaveBeenCalledWith({
+      strategy_id: 'strat-1',
+      strategy_version_id: 'ver-1',
+      dataset_id: 'ds-1',
+      dataset_version_id: 'dsv-1',
+      initial_capital: '100000',
+      parameters: { rsi_period: 21 },
+      window: 30,
+      commission_rate: 0.001,
+      slippage_bps: 5,
     });
+    expect(accepted).toEqual({
+      backtestId: 'bt-job-123',
+      status: 'queued',
+      progress: 0,
+      error: null,
+    });
+    expect(createSpy).not.toHaveBeenCalled();
+    expect(listSpy).not.toHaveBeenCalled();
+  });
 
-    // 2. mock getBacktestStatus (running then completed)
-    vi.spyOn(apiClient, 'getBacktestStatus')
-      .mockResolvedValueOnce({
-        backtest_id: 'bt-job-123',
-        status: 'running',
-        progress: 50,
-        input: { strategy_id: 'strat-1', dataset_id: 'binance-eth-4h' },
-        created_at: '2026-01-01T00:00:00Z',
-        updated_at: '2026-01-01T00:00:00Z',
-      })
-      .mockResolvedValueOnce({
-        backtest_id: 'bt-job-123',
-        status: 'completed',
-        progress: 100,
-        input: { strategy_id: 'strat-1', dataset_id: 'binance-eth-4h' },
-        created_at: '2026-01-01T00:00:00Z',
-        updated_at: '2026-01-01T00:00:00Z',
-      });
-
-    // 3. mock summary, trades, equity curve
+  it('loads every artifact page without inventing values', async () => {
     vi.spyOn(apiClient, 'getBacktestSummary').mockResolvedValueOnce({
       backtest_id: 'bt-job-123',
-      metrics: {
-        sharpe_ratio: 2.34,
-        return_pct: 28.5,
-        max_drawdown_pct: 6.1,
-        win_rate_pct: 62.0,
-        total_trades: 42,
-      },
+      metrics: { sharpe_ratio: 2.34, return_pct: '18.4' },
     });
+    const artifact = vi
+      .spyOn(apiClient, 'getBacktestArtifact')
+      .mockImplementation(async (_id, kind, params) => {
+        if (kind === 'trades') {
+          return {
+            items: [
+              {
+                id: 'POS_1',
+                side: 'long',
+                entry_date: '2024-04-16T13:30:00Z',
+                pnl_pct: -2.59,
+              },
+            ],
+          };
+        }
+        return params?.cursor
+          ? {
+              items: [
+                { time: '2024-01-02T00:00:00Z', equity: '102500', drawdown: 0 },
+              ],
+            }
+          : {
+              items: [
+                { time: '2024-01-01T00:00:00Z', equity: '100000', drawdown: 0 },
+                { time: '2024-01-01T01:00:00Z' },
+              ],
+              next_cursor: '2',
+            };
+      });
 
-    vi.spyOn(apiClient, 'getBacktestTrades').mockResolvedValueOnce({
-      items: [
-        {
-          id: 'trade-1',
-          symbol: 'ETH',
-          side: 'BUY',
-          quantity: 2.5,
-          entry_price: 2200,
-          exit_price: 2350,
-          pnl_usd: 375,
-          pnl_pct: 6.8,
-          slippage_ms: 0.3,
-          execution_hash: '0x1234abcd',
-        },
-      ],
-    });
+    const result = await new LiveBacktestService().fetchResult('bt-job-123');
 
-    vi.spyOn(apiClient, 'getBacktestEquityCurve').mockResolvedValueOnce({
-      items: [
-        { time: 1704067200, nav: 100000, benchmark: 100000 },
-        { time: 1704153600, nav: 102500, benchmark: 100800 },
-      ],
-    });
-
-    const result = await service.run(DEFAULT_BACKTEST_CONFIG);
-
-    expect(runSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        dataset_id: 'binance-eth-4h',
-        dataset_version_id: 'v1',
-      }),
-      undefined,
-      null
-    );
-
-    expect(result.source).toBe('backend');
-    expect(result.id).toBe('bt-job-123');
     expect(result.metrics.sharpe).toBe(2.34);
-    expect(result.metrics.trades).toBe(42);
-    expect(result.trades).toHaveLength(1);
-    expect(result.trades[0]?.ticker).toBe('ETH');
-    expect(result.equity).toHaveLength(2);
-  });
-
-  it('throws error without fallback to mock if runBacktest network request fails', async () => {
-    const service = new LiveBacktestService();
-
-    vi.spyOn(apiClient, 'runBacktest').mockRejectedValueOnce(
-      new Error('API offline')
-    );
-
-    await expect(service.run(DEFAULT_BACKTEST_CONFIG)).rejects.toThrow(
-      'API offline'
-    );
-  });
-
-  it('aborts backtest and calls cancelBacktest when AbortSignal triggers', async () => {
-    const service = new LiveBacktestService();
-    const abortController = new AbortController();
-
-    vi.spyOn(apiClient, 'runBacktest').mockResolvedValueOnce({
-      backtest_id: 'bt-abort-999',
-      status: 'pending',
-      progress: 0,
-      input: { strategy_id: 's', dataset_id: 'd' },
-      created_at: '',
-      updated_at: '',
+    expect(result.metrics.returnPct).toBe(18.4);
+    expect(result.metrics.profitFactor).toBeNull();
+    expect(result.equity).toEqual([
+      { time: 1704067200, equity: 100000, drawdownPct: 0 },
+      { time: 1704153600, equity: 102500, drawdownPct: 0 },
+    ]);
+    expect(result.trades[0]).toMatchObject({
+      id: 'POS_1',
+      pnlPct: -2.59,
+      entryPrice: null,
     });
+    expect(artifact).toHaveBeenCalledTimes(3);
+  });
 
+  it('cancels through the lab service', async () => {
     const cancelSpy = vi
       .spyOn(apiClient, 'cancelBacktest')
       .mockResolvedValueOnce(undefined);
+    await new LiveBacktestService().cancel('bt-job-123');
+    expect(cancelSpy).toHaveBeenCalledWith('bt-job-123');
+  });
+});
 
-    // trigger abort right away
-    abortController.abort();
+describe('pollBacktest', () => {
+  it('reports each snapshot and resolves on a terminal status', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(apiClient, 'getBacktestStatus')
+      .mockResolvedValueOnce(job('running', 40))
+      .mockResolvedValueOnce(job('completed', 100));
+    const onUpdate = vi.fn();
 
-    await expect(
-      service.run(DEFAULT_BACKTEST_CONFIG, abortController.signal)
-    ).rejects.toThrow('Backtest was cancelled by user');
+    const done = pollBacktest('bt-job-123', {
+      signal: new AbortController().signal,
+      onUpdate,
+    });
+    await vi.advanceTimersByTimeAsync(1_000);
 
-    expect(cancelSpy).toHaveBeenCalledWith('bt-abort-999', null);
+    await expect(done).resolves.toMatchObject({ status: 'completed' });
+    expect(onUpdate).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ status: 'running', progress: 40 })
+    );
+  });
+
+  it.each([401, 403, 404])(
+    'rethrows a %s immediately instead of retrying',
+    async (statusCode) => {
+      const spy = vi
+        .spyOn(apiClient, 'getBacktestStatus')
+        .mockRejectedValue(new ApiError(statusCode, 'x', 'x'));
+
+      await expect(
+        pollBacktest('bt', { signal: new AbortController().signal })
+      ).rejects.toMatchObject({ statusCode });
+      expect(spy).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it('retries network and 5xx failures a bounded number of times', async () => {
+    vi.useFakeTimers();
+    const spy = vi
+      .spyOn(apiClient, 'getBacktestStatus')
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockRejectedValue(new ApiError(503, 'execution_unavailable', 'x'));
+
+    const done = pollBacktest('bt', { signal: new AbortController().signal });
+    const assertion = expect(done).rejects.toMatchObject({ statusCode: 503 });
+    await vi.advanceTimersByTimeAsync(10_000);
+    await assertion;
+    expect(spy).toHaveBeenCalledTimes(6);
+  });
+
+  it('stops listening when aborted, without cancelling the job', async () => {
+    const cancelSpy = vi.spyOn(apiClient, 'cancelBacktest');
+    vi.spyOn(apiClient, 'getBacktestStatus').mockResolvedValue(job('running'));
+    const listen = new AbortController();
+
+    const done = pollBacktest('bt', { signal: listen.signal });
+    listen.abort();
+
+    await expect(done).rejects.toMatchObject({ name: 'AbortError' });
+    expect(cancelSpy).not.toHaveBeenCalled();
   });
 });

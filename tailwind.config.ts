@@ -11,8 +11,47 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        gain: '#00FFB2',
-        loss: '#FF4D6D',
+        gain: {
+          DEFAULT: 'var(--gain)',
+          soft: 'var(--gain-soft)',
+        },
+        loss: {
+          DEFAULT: 'var(--loss)',
+          soft: 'var(--loss-soft)',
+        },
+        canvas: 'var(--bg)',
+        surface: 'var(--surface)',
+        raised: 'var(--raised)',
+        sunken: 'var(--sunken)',
+        line: {
+          DEFAULT: 'var(--line)',
+          soft: 'var(--line-2)',
+          strong: 'var(--line-strong)',
+        },
+        fg: {
+          DEFAULT: 'var(--fg)',
+          2: 'var(--fg-2)',
+          3: 'var(--fg-3)',
+        },
+        a1: 'var(--a1)',
+        a2: 'var(--a2)',
+        brand: {
+          DEFAULT: 'var(--brand)',
+          soft: 'var(--brand-soft)',
+          line: 'var(--brand-line)',
+        },
+        warn: {
+          DEFAULT: 'var(--warn)',
+          soft: 'var(--warn-soft)',
+        },
+        vio: {
+          DEFAULT: 'var(--vio)',
+          soft: 'var(--vio-soft)',
+        },
+        amber: {
+          DEFAULT: 'var(--amber)',
+          soft: 'var(--amber-soft)',
+        },
         signal: '#00E5FF',
         foreground: '#FFFFFF',
         'muted-foreground': '#A1A1AA',
@@ -71,7 +110,15 @@ const config: Config = {
         muted: 'var(--text-muted)',
         inverse: 'var(--text-inverse)',
       },
-
+      boxShadow: {
+        card: 'var(--shadow-1)',
+        pop: 'var(--shadow-2)',
+        glow: '0 8px 22px -8px var(--glow)',
+      },
+      backgroundImage: {
+        'brand-gradient': 'linear-gradient(135deg, var(--a1), var(--a2))',
+        'card-hl': 'var(--card-hl)',
+      },
       screens: {
         sm: '640px',
         md: '768px',

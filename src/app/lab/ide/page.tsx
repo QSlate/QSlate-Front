@@ -1,25 +1,24 @@
-import '../lab.css';
-
 import type { Metadata } from 'next';
 
-import { LabShell } from '@/widgets/lab-shell';
+import { LabHeader } from '@/widgets/lab-frame';
 import { MiniIdeView } from '@/widgets/mini-ide';
 
 export const metadata: Metadata = {
-  title: 'Mini IDE & Builder · QSlate',
+  title: 'Stratégies · QSlate',
   description:
     'Institutional Python strategy development environment with gVisor sandbox',
 };
 
 export default function MiniIdePage() {
   return (
-    <LabShell>
+    <>
+      <LabHeader title="Stratégies" />
       <section
-        className="flex-1 w-full flex flex-col overflow-hidden"
-        aria-label="Mini IDE & Builder"
+        className="flex w-full flex-1 flex-col overflow-hidden"
+        aria-label="Éditeur de stratégies"
       >
         <MiniIdeView />
       </section>
-    </LabShell>
+    </>
   );
 }

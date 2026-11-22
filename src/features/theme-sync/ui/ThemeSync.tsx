@@ -5,10 +5,11 @@ import { type ReactNode, useEffect, useMemo, useRef } from 'react';
 import {
   DEFAULT_USER_PREFERENCES,
   selectColorblindMode,
+  selectTheme,
   useAuthStore,
   useUserStore,
   useUserTheme,
-} from '@/entities/user/model';
+} from '@/entities/user';
 import { apiClient } from '@/shared/api';
 import { useHydratedStore } from '@/shared/lib/store';
 import {
@@ -39,10 +40,24 @@ export function ThemeSync({ children }: { children?: ReactNode }) {
 
   const isInitialMount = useRef(true);
 
-  // Sync dataset attribute on document root
+  // Mirror appearance preferences on <html> so design tokens apply globally.
+  // Effects only run on the client, so they read the persisted store value
+  // directly (not the SSR-safe fallback) and never undo the boot script.
+  const storedTheme = useUserStore(selectTheme);
+  const storedColorblindMode = useUserStore(selectColorblindMode);
+
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
+    document.documentElement.dataset.theme = storedTheme;
+  }, [storedTheme]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (storedColorblindMode === 'none') {
+      delete root.dataset.colorblind;
+    } else {
+      root.dataset.colorblind = storedColorblindMode;
+    }
+  }, [storedColorblindMode]);
 
   // Hydrate preferences on login / mount
   useEffect(() => {

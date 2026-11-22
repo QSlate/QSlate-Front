@@ -78,6 +78,16 @@ export interface StrategyPage {
   next_cursor?: string;
 }
 
+/** Declared strategy parameter (StrategyParameter in the OpenAPI spec). */
+export interface StrategyParameterSchema {
+  name: string;
+  type: 'integer' | 'number' | 'boolean' | 'string';
+  default: unknown;
+  min?: number;
+  max?: number;
+  description: string;
+}
+
 export interface Strategy {
   id: string;
   version_id: string;
@@ -85,6 +95,7 @@ export interface Strategy {
   name: string;
   source: string;
   parameters: Record<string, unknown>;
+  parameter_schema?: StrategyParameterSchema[];
   created_at: string;
   updated_at: string;
   read_only?: boolean;
@@ -171,7 +182,7 @@ export interface MarketplaceReview {
 
 export interface MarketplaceReviewInput {
   rating: number;
-  comment: string;
+  comment?: string;
 }
 
 export interface MarketplaceReviewsPage {
@@ -299,7 +310,33 @@ export interface APIKeysPageDto {
 // ---------------------------------------------------------------------------
 
 export type BacktestStatus =
-  'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  'queued' | 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+
+/**
+ * Request body of POST /qslate/v1/backtests/run (RunInput in the OpenAPI
+ * contract). There is no date range or timeframe: the pinned dataset version
+ * defines them.
+ */
+export interface BacktestRunPayload {
+  strategy_id: string;
+  strategy_version_id: string;
+  dataset_id: string;
+  dataset_version_id: string;
+  /** Decimal amount encoded as a string, e.g. "10000.00". */
+  initial_capital: string;
+  /** Overrides merged by the backend over the strategy's saved parameters. */
+  parameters?: Record<string, string | number | boolean>;
+  /** Warm-up bars before the first signal (1–10000, default 20). */
+  window?: number;
+  /** Fee per trade as a fraction of the notional (0–0.1, 0.001 = 0.1 %). */
+  commission_rate?: number;
+  /** Slippage in basis points (0–1000). */
+  slippage_bps?: number;
+  /** Inclusive UTC start of the test period (with `period_end`). */
+  period_start?: string;
+  /** Exclusive UTC end of the test period, at most 366 days later. */
+  period_end?: string;
+}
 
 export interface BacktestRunInput {
   strategy_id: string;
@@ -314,6 +351,8 @@ export interface BacktestRunInput {
   execution_target?: string;
   window?: number;
   strategy_name?: string;
+  commission_rate?: number;
+  slippage_bps?: number;
 }
 
 export interface BacktestJob {
@@ -371,15 +410,7 @@ export interface BacktestLogsPage {
 export type OptimizationMethod = 'grid_search' | 'monte_carlo';
 
 export interface BacktestOptimizeInput {
-  run: {
-    strategy_id: string;
-    strategy_version_id: string;
-    dataset_id: string;
-    dataset_version_id: string;
-    initial_capital: string;
-    parameters?: Record<string, unknown>;
-    execution_target?: string;
-  };
+  run: BacktestRunPayload;
   method: OptimizationMethod;
   search_space: Record<string, number[]>;
   max_runs: number;
@@ -455,6 +486,7 @@ export interface MarketSymbol {
   name: string;
   dataset_id?: string;
   version_id?: string;
+  resolution?: '1h' | '1d';
   live: boolean;
 }
 

@@ -3,16 +3,12 @@ import {
   act,
   cleanup,
   fireEvent,
-  render as renderUI,
+  render,
   screen,
 } from '@testing-library/react';
-import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useUserStore } from '@/entities/user/model';
-import { ThemeSync } from '@/features/theme-sync';
-
-const render = (ui: ReactElement) => renderUI(ui, { wrapper: ThemeSync });
+import { type Appearance, AppearanceProvider } from '@/shared/theme';
 
 import { ChartSkeleton } from '../ChartSkeleton';
 import { LightweightChart } from '../LightweightChart';
@@ -69,7 +65,6 @@ class MockResizeObserver {
 beforeEach(() => {
   vi.clearAllMocks();
   mockResizeCallback = null;
-  useUserStore.getState().resetPreferences();
   global.ResizeObserver =
     MockResizeObserver as unknown as typeof ResizeObserver;
 });
@@ -234,18 +229,19 @@ describe('LightweightChart Colorblind & Theme Integration', () => {
     );
   });
 
-  it('reactively updates series colors when store toggles colorblind mode', () => {
-    render(
-      <LightweightChart
-        data={mockLineData}
-        seriesType="line"
-        ariaLabel="Dynamic Colorblind Chart"
-      />
+  it('reactively updates series colors when the colorblind mode changes', () => {
+    const chart = (colorblindMode: Appearance['colorblindMode']) => (
+      <AppearanceProvider value={{ theme: 'dark', colorblindMode }}>
+        <LightweightChart
+          data={mockLineData}
+          seriesType="line"
+          ariaLabel="Dynamic Colorblind Chart"
+        />
+      </AppearanceProvider>
     );
+    const { rerender } = render(chart('none'));
 
-    act(() => {
-      useUserStore.getState().toggleColorblindMode();
-    });
+    rerender(chart('orange-blue'));
 
     expect(mockSeriesInstance.applyOptions).toHaveBeenLastCalledWith(
       expect.objectContaining({

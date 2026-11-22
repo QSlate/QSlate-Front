@@ -152,6 +152,124 @@ html.dark {
   --segment-bg: rgba(0, 0, 0, 0.05);
 }
 
+/*
+ * QSlate design tokens (Lab v3).
+ * Dark is the default theme; `data-theme="light"` and
+ * `data-colorblind="orange-blue"` on <html> override them.
+ * Legacy variables above stay until every consumer is migrated.
+ */
+:root {
+  --bg: #06070b;
+  --surface: #0d1016;
+  --raised: #12161e;
+  --sunken: #0a0c11;
+  --line: rgba(255, 255, 255, 0.07);
+  --line-2: rgba(255, 255, 255, 0.045);
+  --line-strong: rgba(255, 255, 255, 0.12);
+  --fg: #eef1f7;
+  --fg-2: #a1a9ba;
+  --fg-3: #636b7d;
+  --a1: #4d8dff;
+  --a2: #22d3ee;
+  --brand: #5b96ff;
+  --brand-soft: rgba(77, 141, 255, 0.12);
+  --brand-line: rgba(77, 141, 255, 0.38);
+  --glow: rgba(77, 141, 255, 0.45);
+  --gain: #2ee6a6;
+  --gain-soft: rgba(46, 230, 166, 0.1);
+  --loss: #ff5c7a;
+  --loss-soft: rgba(255, 92, 122, 0.1);
+  --warn: #fbbf24;
+  --warn-soft: rgba(251, 191, 36, 0.1);
+  --vio: #a78bfa;
+  --vio-soft: rgba(167, 139, 250, 0.12);
+  --amber: #fbbf24;
+  --amber-soft: rgba(251, 191, 36, 0.12);
+  --card-hl: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.035),
+    rgba(255, 255, 255, 0) 40%
+  );
+  --shadow-1:
+    0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+  --shadow-2: 0 32px 64px -16px rgba(0, 0, 0, 0.75);
+  --amb1: rgba(77, 141, 255, 0.16);
+  --amb2: rgba(34, 211, 238, 0.07);
+  --scrim: rgba(3, 4, 8, 0.6);
+}
+
+[data-theme='light'] {
+  --bg: #f3f5fa;
+  --surface: #ffffff;
+  --raised: #ffffff;
+  --sunken: #eef1f7;
+  --line: #e3e7ef;
+  --line-2: #edf0f5;
+  --line-strong: #d2d8e3;
+  --fg: #0b0f19;
+  --fg-2: #545e72;
+  --fg-3: #8892a6;
+  --a1: #2563eb;
+  --a2: #0891b2;
+  --brand: #2563eb;
+  --brand-soft: #e9f0ff;
+  --brand-line: #bfd3ff;
+  --glow: rgba(37, 99, 235, 0.28);
+  --gain: #059669;
+  --gain-soft: #e3f7ef;
+  --loss: #e11d48;
+  --loss-soft: #fde8ee;
+  --warn: #b45309;
+  --warn-soft: #fef3e2;
+  --vio: #7c3aed;
+  --vio-soft: #f1ebfe;
+  --amber: #d97706;
+  --amber-soft: #fef4e4;
+  --card-hl: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0)
+  );
+  --shadow-1:
+    0 1px 2px rgba(15, 23, 42, 0.05), 0 2px 6px -2px rgba(15, 23, 42, 0.06);
+  --shadow-2:
+    0 24px 48px -16px rgba(15, 23, 42, 0.22),
+    0 8px 16px -8px rgba(15, 23, 42, 0.1);
+  --amb1: rgba(37, 99, 235, 0.09);
+  --amb2: rgba(8, 145, 178, 0.06);
+  --scrim: rgba(15, 23, 42, 0.28);
+}
+
+[data-colorblind='orange-blue'] {
+  --gain: #38bdf8;
+  --gain-soft: rgba(56, 189, 248, 0.12);
+  --loss: #fb923c;
+  --loss-soft: rgba(251, 146, 60, 0.12);
+}
+
+[data-theme='light'][data-colorblind='orange-blue'],
+[data-theme='light'] [data-colorblind='orange-blue'] {
+  --gain: #0284c7;
+  --gain-soft: #e4f3fb;
+  --loss: #ea580c;
+  --loss-soft: #fdeee4;
+}
+
+@keyframes qs-shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+@keyframes qs-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
 .perspective-1200 {
   perspective: 1200px;
 }
@@ -162,6 +280,29 @@ html.dark {
 
 .backface-hidden {
   backface-visibility: hidden;
+}
+
+.qs-dashboard-editing .react-grid-item.resizing,
+.qs-dashboard-editing .react-grid-item.react-draggable-dragging {
+  z-index: 6;
+}
+
+button:not(:disabled),
+select:not(:disabled) {
+  cursor: pointer;
+}
+
+/* Dashboard resize corner: always visible, inset from the card edge. */
+.react-grid-item > .react-resizable-handle.qs-resize-corner {
+  right: 6px;
+  bottom: 6px;
+  width: 14px;
+  height: 14px;
+  opacity: 1;
+}
+
+.react-grid-item > .react-resizable-handle.qs-resize-corner::after {
+  content: none;
 }
 
 .react-grid-placeholder {

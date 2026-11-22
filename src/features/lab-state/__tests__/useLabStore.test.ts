@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useLabStore } from '../model/useLabStore';
 
@@ -8,66 +8,22 @@ describe('useLabStore', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     useLabStore.setState({
-      activeTab: 'workspace',
-      isAddWidgetDrawerOpen: false,
-      ideActiveFile: 'strategy.py',
-      ideAstStatus: 'valid',
-      marketplaceSearch: '',
-      marketplaceCategory: 'All',
       toast: null,
+      isExecutionLogsOpen: false,
     });
   });
 
-  it('toggles the Add Widget drawer', () => {
-    expect(useLabStore.getState().isAddWidgetDrawerOpen).toBe(false);
-    act(() => {
-      useLabStore.getState().toggleAddWidgetDrawer();
-    });
-    expect(useLabStore.getState().isAddWidgetDrawerOpen).toBe(true);
-    act(() => {
-      useLabStore.getState().toggleAddWidgetDrawer();
-    });
-    expect(useLabStore.getState().isAddWidgetDrawerOpen).toBe(false);
-  });
+  afterEach(() => vi.useRealTimers());
 
-  it('updates ide files and resets AST status', () => {
-    act(() => {
-      useLabStore
-        .getState()
-        .updateIdeFileContent('strategy.py', '# Updated code');
-    });
-    expect(useLabStore.getState().ideFiles['strategy.py']).toBe(
-      '# Updated code'
-    );
-    expect(useLabStore.getState().ideAstStatus).toBe('valid');
-  });
-
-  it('handles marketplace search and category filtering', () => {
-    act(() => {
-      useLabStore.getState().setMarketplaceSearch('Monte Carlo');
-      useLabStore.getState().setMarketplaceCategory('Risk Analytics');
-    });
-    expect(useLabStore.getState().marketplaceSearch).toBe('Monte Carlo');
-    expect(useLabStore.getState().marketplaceCategory).toBe('Risk Analytics');
-  });
-
-  it('shows and automatically dismisses toast notifications', () => {
-    act(() => {
-      useLabStore.getState().showToast('Test notification', 'success');
-    });
-    expect(useLabStore.getState().toast?.message).toBe('Test notification');
-
-    act(() => {
-      vi.advanceTimersByTime(3600);
-    });
+  it('shows a toast then clears it after a delay', () => {
+    act(() => useLabStore.getState().showToast('Enregistré'));
+    expect(useLabStore.getState().toast?.message).toBe('Enregistré');
+    act(() => vi.advanceTimersByTime(3_600));
     expect(useLabStore.getState().toast).toBeNull();
   });
 
-  it('manages loadedBacktestId state and actions', () => {
-    expect(useLabStore.getState().loadedBacktestId).toBeNull();
-    useLabStore.getState().setLoadedBacktestId('bt-test-999');
-    expect(useLabStore.getState().loadedBacktestId).toBe('bt-test-999');
-    useLabStore.getState().setLoadedBacktestId(null);
-    expect(useLabStore.getState().loadedBacktestId).toBeNull();
+  it('toggles the logs console', () => {
+    act(() => useLabStore.getState().toggleExecutionLogs());
+    expect(useLabStore.getState().isExecutionLogsOpen).toBe(true);
   });
 });

@@ -1,0 +1,297 @@
+import { describe, expect, it } from 'vitest';
+
+import { toBacktestRunPayload } from '@/entities/backtest';
+import type { RunDataset } from '@/entities/dataset';
+import type { StrategySummary } from '@/shared/api';
+
+import {
+  buildRunRequest,
+  countAdvancedChanges,
+  validateComposerFields,
+} from '../model/build-run-request';
+import {
+  type ComposerSelection,
+  DEFAULT_COMPOSER_SELECTION,
+} from '../model/composer-store';
+import {
+  commissionPercentToRate,
+  commissionRateToPercent,
+} from '../model/cost-units';
+import {
+  describeParameters,
+  effectiveOverrides,
+  humanizeParameterName,
+  parameterErrors,
+} from '../model/strategy-parameters';
+
+const STRATEGY: StrategySummary = {
+  id: 'strat-a',
+  version_id: 'ver-a3',
+  revision: 3,
+  name: 'RSI Trend',
+  created_at: '',
+  updated_at: '',
+};
+
+const DATASET: RunDataset = {
+  id: 'ds-eth',
+  versionId: 'dsv-1',
+  name: 'ETH 4h',
+  symbol: 'custom:ds-eth',
+  resolution: null,
+  source: 'custom',
+};
+
+const DEFAULTS = {
+  rsi_period: 14,
+  use_stop: true,
+  mode: 'long',
+  bands: [1, 2],
+};
+
+function selection(patch: Partial<ComposerSelection> = {}): ComposerSelection {
+  return { ...DEFAULT_COMPOSER_SELECTION, ...patch };
+}
+
+describe('cost units', () => {
+  it('converts the fee percentage to the backend fraction and back', () => {
+    expect(commissionPercentToRate(0.1)).toBe(0.001);
+    expect(commissionPercentToRate(0.07)).toBe(0.0007);
+    expect(commissionPercentToRate(10)).toBe(0.1);
+    expect(commissionPercentToRate(0)).toBe(0);
+    expect(commissionRateToPercent(0.001)).toBe(0.1);
+  });
+});
+
+describe('strategy parameters', () => {
+  it('types editable fields by their default value and skips non scalars', () => {
+    expect(
+      describeParameters(DEFAULTS).map(
+        ({ key, kind, defaultValue, label }) => ({
+          key,
+          kind,
+          defaultValue,
+          label,
+        })
+      )
+    ).toEqual([
+      {
+        key: 'rsi_period',
+        kind: 'number',
+        defaultValue: 14,
+        label: 'RSI period',
+      },
+      {
+        key: 'use_stop',
+        kind: 'boolean',
+        defaultValue: true,
+        label: 'Use stop',
+      },
+      { key: 'mode', kind: 'string', defaultValue: 'long', label: 'Mode' },
+    ]);
+  });
+
+  it('uses the declared schema for bounds, integers and descriptions', () => {
+    const schema = [
+      {
+        name: 'rsi_period',
+        type: 'integer' as const,
+        default: 14,
+        min: 2,
+        max: 50,
+        description: 'Fenêtre du RSI',
+      },
+    ];
+    const [field] = describeParameters({ rsi_period: 21 }, schema);
+    expect(field).toMatchObject({
+      defaultValue: 21,
+      integer: true,
+      min: 2,
+      max: 50,
+      description: 'Fenêtre du RSI',
+    });
+    expect(
+      parameterErrors({ rsi_period: 21 }, { rsi_period: 60 }, schema)
+    ).toEqual({
+      rsi_period: 'Maximum 50.',
+    });
+    expect(
+      parameterErrors({ rsi_period: 21 }, { rsi_period: 2.5 }, schema)
+    ).toEqual({
+      rsi_period: 'Saisis un nombre entier.',
+    });
+    expect(humanizeParameterName('take_profit_pct')).toBe('Take profit (%)');
+  });
+
+  it('keeps only overrides that change a known parameter with the same type', () => {
+    expect(
+      effectiveOverrides(DEFAULTS, {
+        rsi_period: 21,
+        use_stop: true,
+        mode: 3,
+        unknown: 1,
+      })
+    ).toEqual({ rsi_period: 21 });
+  });
+});
+
+describe('buildRunRequest', () => {
+  it('produces the exact POST /backtests/run body from the composer state', () => {
+    const result = buildRunRequest({
+      selection: selection({
+        strategyId: 'strat-a',
+        datasetId: 'ds-eth',
+        capital: 25_000.5,
+        commissionPercent: 0.1,
+        slippageBps: 5,
+        window: 50,
+        parameterOverrides: {
+          'strat-a': { rsi_period: 21, mode: 'long' },
+          'strat-b': { rsi_period: 99 },
+        },
+      }),
+      strategies: [STRATEGY],
+      datasets: [DATASET],
+      strategyDefaults: DEFAULTS,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(toBacktestRunPayload(result.request)).toEqual({
+      strategy_id: 'strat-a',
+      strategy_version_id: 'ver-a3',
+      dataset_id: 'ds-eth',
+      dataset_version_id: 'dsv-1',
+      initial_capital: '25000.5',
+      parameters: { rsi_period: 21 },
+      window: 50,
+      commission_rate: 0.001,
+      slippage_bps: 5,
+    });
+  });
+
+  it('uses the backend defaults and omits parameters when nothing changed', () => {
+    const result = buildRunRequest({
+      selection: selection(),
+      strategies: [STRATEGY],
+      datasets: [DATASET],
+      strategyDefaults: null,
+    });
+
+    expect(result.ok && toBacktestRunPayload(result.request)).toEqual({
+      strategy_id: 'strat-a',
+      strategy_version_id: 'ver-a3',
+      dataset_id: 'ds-eth',
+      dataset_version_id: 'dsv-1',
+      initial_capital: '10000',
+      window: 200,
+      commission_rate: 0,
+      slippage_bps: 0,
+    });
+  });
+
+  it('defaults to the first strategy and dataset only when nothing is selected', () => {
+    const result = buildRunRequest({
+      selection: selection(),
+      strategies: [STRATEGY, { ...STRATEGY, id: 'strat-b' }],
+      datasets: [DATASET],
+      strategyDefaults: null,
+    });
+
+    expect(result.ok && result.request.strategyId).toBe('strat-a');
+    expect(result.ok && result.request.datasetId).toBe('ds-eth');
+  });
+
+  it('reports a stored selection that no longer exists instead of replacing it', () => {
+    const result = buildRunRequest({
+      selection: selection({ strategyId: 'deleted', datasetId: 'gone' }),
+      strategies: [STRATEGY],
+      datasets: [DATASET],
+      strategyDefaults: null,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      blockers: [{ kind: 'missing-strategy' }, { kind: 'missing-dataset' }],
+    });
+  });
+
+  it('lists every blocker when nothing can run', () => {
+    const result = buildRunRequest({
+      selection: selection({ capital: 0, window: 2.5 }),
+      strategies: [],
+      datasets: [],
+      strategyDefaults: null,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      blockers: [
+        { kind: 'no-strategy' },
+        { kind: 'no-dataset' },
+        { kind: 'invalid-field', field: 'capital' },
+        { kind: 'invalid-field', field: 'window' },
+      ],
+    });
+  });
+});
+
+describe('validateComposerFields', () => {
+  it('explains invalid values in French', () => {
+    expect(
+      validateComposerFields(
+        selection({
+          capital: null,
+          commissionPercent: 12,
+          slippageBps: -1,
+          window: 0,
+        })
+      )
+    ).toEqual({
+      capital: "Le capital doit être d'au moins 0,01 USD.",
+      commissionPercent: 'Les frais doivent être compris entre 0 et 10 %.',
+      slippageBps: expect.stringContaining('Le glissement'),
+      window: expect.stringContaining("L'historique de chauffe"),
+    });
+  });
+});
+
+describe('countAdvancedChanges', () => {
+  it('counts modified parameters, costs and warm-up', () => {
+    expect(countAdvancedChanges(selection(), 'strat-a', DEFAULTS)).toBe(0);
+    expect(
+      countAdvancedChanges(
+        selection({
+          commissionPercent: 0.1,
+          window: 30,
+          parameterOverrides: { 'strat-a': { rsi_period: 21, use_stop: true } },
+        }),
+        'strat-a',
+        DEFAULTS
+      )
+    ).toBe(3);
+  });
+});
+
+describe('capital encoding', () => {
+  it('keeps small capitals as typed instead of rounding them to 0.00', () => {
+    const result = buildRunRequest({
+      selection: selection({ capital: 0.015 }),
+      strategies: [STRATEGY],
+      datasets: [DATASET],
+      strategyDefaults: null,
+    });
+    expect(
+      result.ok && toBacktestRunPayload(result.request).initial_capital
+    ).toBe('0.015');
+  });
+
+  it('rejects capitals below 0.01 USD', () => {
+    expect(validateComposerFields(selection({ capital: 0.009 })).capital).toBe(
+      "Le capital doit être d'au moins 0,01 USD."
+    );
+    expect(
+      validateComposerFields(selection({ capital: 0.01 })).capital
+    ).toBeUndefined();
+  });
+});

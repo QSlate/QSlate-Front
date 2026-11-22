@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { QueryClientProvider } from '@tanstack/react-query';
 import {
   act,
   cleanup,
@@ -7,193 +8,295 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  type BacktestJobSnapshot,
   type BacktestResult,
+  type BacktestRunRequest,
   type BacktestService,
-  EMPTY_BACKTEST_RESULT,
+  type BacktestWatchOptions,
+  EMPTY_METRICS,
+  useLoadedBacktestStore,
 } from '@/entities/backtest';
+import { useAuthStore } from '@/entities/user';
+import { apiClient, ApiError } from '@/shared/api';
+import { createTestQueryClient } from '@/shared/lib/test';
 
 import { BacktestProvider, useBacktest } from '../BacktestProvider';
 
-afterEach(cleanup);
-
-const SAMPLE_RESULT: BacktestResult = {
-  ...EMPTY_BACKTEST_RESULT,
-  id: 'test-run-1',
-  equity: [{ time: 1000, nav: 100000, benchmark: 100000 }],
+const REQUEST: BacktestRunRequest = {
+  strategyId: 'strat-a',
+  strategyVersionId: 'ver-a',
+  datasetId: 'ds-a',
+  datasetVersionId: 'dsv-a',
+  initialCapital: 50_000,
+  parameters: {},
+  window: 20,
+  commissionRate: 0.001,
+  slippageBps: 0,
+  periodStart: null,
+  periodEnd: null,
 };
 
+function result(id: string): BacktestResult {
+  return {
+    id,
+    metrics: EMPTY_METRICS,
+    equity: [{ time: 1000, equity: 50_000, drawdownPct: 0 }],
+    trades: [],
+    truncated: false,
+  };
+}
+
+function snapshot(
+  status: BacktestJobSnapshot['status'],
+  backtestId = 'bt-1'
+): BacktestJobSnapshot {
+  return { backtestId, status, progress: null, error: null };
+}
+
+interface Deferred<T> {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (reason: unknown) => void;
+}
+
+function deferred<T>(): Deferred<T> {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+/** Service whose every step is resolved by the test. */
+function controlledService() {
+  const submit = deferred<BacktestJobSnapshot>();
+  const watch = deferred<BacktestJobSnapshot>();
+  const watchCalls: { id: string; options: BacktestWatchOptions }[] = [];
+  const service = {
+    submit: vi.fn(() => submit.promise),
+    watch: vi.fn((id: string, options: BacktestWatchOptions) => {
+      watchCalls.push({ id, options });
+      return new Promise<BacktestJobSnapshot>((resolve, reject) => {
+        options.signal.addEventListener('abort', () =>
+          reject(new DOMException('detached', 'AbortError'))
+        );
+        watch.promise.then(resolve, reject);
+      });
+    }),
+    cancel: vi.fn(() => Promise.resolve()),
+    fetchResult: vi.fn((id: string) => Promise.resolve(result(id))),
+  } satisfies BacktestService;
+  return { service, submit, watch, watchCalls };
+}
+
 function Controls() {
-  const { config, setConfig, run, status, error, result } = useBacktest();
+  const { run, retry, cancel, status, error, result, canRetry, activeRun } =
+    useBacktest();
   return (
     <>
-      <button
-        onClick={() => {
-          void run();
-        }}
-      >
-        Run
+      <button onClick={() => void run(REQUEST)}>Run</button>
+      <button onClick={() => void retry()} disabled={!canRetry}>
+        Retry
       </button>
-      <button onClick={() => setConfig({ ...config, capital: 0 })}>
-        Invalid
-      </button>
-      <button onClick={() => setConfig({ ...config, capital: 50000 })}>
-        Change
-      </button>
+      <button onClick={cancel}>Cancel</button>
       <span data-testid="status">{status}</span>
-      <span data-testid="result">{result.config.capital}</span>
-      {error ? <p role="alert">{error}</p> : null}
+      <span data-testid="active">{activeRun?.backtestId ?? 'none'}</span>
+      <span data-testid="result">{result?.id ?? 'none'}</span>
+      {error ? (
+        <p role="alert" data-action={error.action}>
+          {error.message}
+        </p>
+      ) : null}
     </>
   );
 }
 
-describe('backtest execution', () => {
-  it('validates before calling the service and keeps the last result', () => {
-    const service: BacktestService = { run: vi.fn() };
-    render(
+function renderProvider(service: BacktestService) {
+  return render(
+    <QueryClientProvider client={createTestQueryClient()}>
       <BacktestProvider service={service}>
         <Controls />
       </BacktestProvider>
-    );
-    fireEvent.click(screen.getByText('Invalid'));
+    </QueryClientProvider>
+  );
+}
+
+const status = () => screen.getByTestId('status').textContent;
+
+beforeEach(() => {
+  localStorage.clear();
+  useLoadedBacktestStore.setState({ loadedBacktestId: null });
+  useAuthStore.setState({ accessToken: null });
+});
+
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
+
+describe('BacktestProvider', () => {
+  it('runs the request once, follows the job and loads the result on completion', async () => {
+    const { service, submit, watch } = controlledService();
+    renderProvider(service);
+
     fireEvent.click(screen.getByText('Run'));
-    expect(service.run).not.toHaveBeenCalled();
-    expect(screen.getByRole('alert').textContent).toContain(
-      'greater than zero'
-    );
-    expect(screen.getByTestId('result').textContent).toBe('100000');
+    fireEvent.click(screen.getByText('Run'));
+    expect(service.submit).toHaveBeenCalledTimes(1);
+    expect(service.submit).toHaveBeenCalledWith(REQUEST);
+    expect(status()).toBe('running');
+
+    await act(async () => submit.resolve(snapshot('queued')));
+    expect(screen.getByTestId('active').textContent).toBe('bt-1');
+    // Not "loaded" while running: the restore effect must not touch it.
+    expect(useLoadedBacktestStore.getState().loadedBacktestId).toBeNull();
+    expect(service.fetchResult).not.toHaveBeenCalled();
+
+    await act(async () => watch.resolve(snapshot('completed')));
+
+    expect(status()).toBe('success');
+    expect(screen.getByTestId('result').textContent).toBe('bt-1');
+    expect(service.fetchResult).toHaveBeenCalledTimes(1);
+    expect(useLoadedBacktestStore.getState().loadedBacktestId).toBe('bt-1');
+    expect(screen.getByTestId('active').textContent).toBe('none');
   });
 
-  it('submits a configuration snapshot once and commits results on completion', async () => {
-    let complete!: (value: typeof SAMPLE_RESULT) => void;
-    const service: BacktestService = {
-      run: vi.fn(
-        () =>
-          new Promise<typeof SAMPLE_RESULT>((resolve) => {
-            complete = resolve;
-          })
-      ),
-    };
-    render(
-      <BacktestProvider service={service}>
-        <Controls />
-      </BacktestProvider>
-    );
-    fireEvent.click(screen.getByText('Change'));
-    fireEvent.click(screen.getByText('Run'));
-    fireEvent.click(screen.getByText('Run'));
-    expect(service.run).toHaveBeenCalledTimes(1);
-    expect(service.run).toHaveBeenCalledWith(
-      expect.objectContaining({ capital: 50000 }),
-      expect.any(AbortSignal)
-    );
-    expect(screen.getByTestId('status').textContent).toBe('running');
-    expect(screen.getByTestId('result').textContent).toBe('100000');
-    await act(async () =>
-      complete({
-        ...SAMPLE_RESULT,
-        config: { ...SAMPLE_RESULT.config, capital: 50000 },
-      })
-    );
-    expect(screen.getByTestId('status').textContent).toBe('success');
-    expect(screen.getByTestId('result').textContent).toBe('50000');
-  });
-
-  it('clears a previous validation error when the configuration is edited', () => {
-    const service: BacktestService = { run: vi.fn() };
-    render(
-      <BacktestProvider service={service}>
-        <Controls />
-      </BacktestProvider>
-    );
-    fireEvent.click(screen.getByText('Invalid'));
-    fireEvent.click(screen.getByText('Run'));
-    expect(screen.getByRole('alert')).toBeTruthy();
-    fireEvent.click(screen.getByText('Change'));
-    expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.getByTestId('status').textContent).toBe('idle');
-  });
-
-  it('aborts an in-flight execution when the provider unmounts', async () => {
-    let signal: AbortSignal | undefined;
-    let complete!: (value: typeof SAMPLE_RESULT) => void;
-    const service: BacktestService = {
-      run: vi.fn((_config, requestSignal) => {
-        signal = requestSignal;
-        return new Promise<typeof SAMPLE_RESULT>((resolve) => {
-          complete = resolve;
-        });
-      }),
-    };
-    const { unmount } = render(
-      <BacktestProvider service={service}>
-        <Controls />
-      </BacktestProvider>
-    );
-    fireEvent.click(screen.getByText('Run'));
-    expect(signal?.aborted).toBe(false);
-    unmount();
-    expect(signal?.aborted).toBe(true);
-    await act(async () => complete(SAMPLE_RESULT));
-  });
-
-  it('reports a service error and supports retry', async () => {
-    const service: BacktestService = {
-      run: vi
-        .fn()
-        .mockRejectedValueOnce(new Error('Simulation failed'))
-        .mockResolvedValue(SAMPLE_RESULT),
-    };
-    render(
-      <BacktestProvider service={service}>
-        <Controls />
-      </BacktestProvider>
-    );
-    fireEvent.click(screen.getByText('Run'));
-    await waitFor(() =>
-      expect(screen.getByRole('alert').textContent).toBe('Simulation failed')
-    );
-    fireEvent.click(screen.getByText('Run'));
-    await waitFor(() =>
-      expect(screen.getByTestId('status').textContent).toBe('success')
-    );
-    expect(screen.queryByRole('alert')).toBeNull();
-  });
-
-  it('cancels an in-flight execution when cancel() is called', () => {
-    let signal: AbortSignal | undefined;
-    const service: BacktestService = {
-      run: vi.fn((_config, requestSignal) => {
-        signal = requestSignal;
-        return new Promise<BacktestResult>(() => {}); // pending
-      }),
-    };
-
-    function CancelableControls() {
-      const { run, cancel, status } = useBacktest();
-      return (
-        <>
-          <button onClick={() => void run()}>Run</button>
-          <button onClick={cancel}>Cancel</button>
-          <span data-testid="status">{status}</span>
-        </>
-      );
-    }
-
-    render(
-      <BacktestProvider service={service}>
-        <CancelableControls />
-      </BacktestProvider>
-    );
+  it('cancels as soon as the job id arrives when stopped early', async () => {
+    const { service, submit } = controlledService();
+    renderProvider(service);
 
     fireEvent.click(screen.getByText('Run'));
-    expect(screen.getByTestId('status').textContent).toBe('running');
-    expect(signal?.aborted).toBe(false);
-
     fireEvent.click(screen.getByText('Cancel'));
-    expect(screen.getByTestId('status').textContent).toBe('idle');
-    expect(signal?.aborted).toBe(true);
+    expect(status()).toBe('cancelling');
+    fireEvent.click(screen.getByText('Run'));
+    expect(service.submit).toHaveBeenCalledTimes(1);
+
+    await act(async () => submit.resolve(snapshot('queued')));
+
+    expect(service.cancel).toHaveBeenCalledWith('bt-1');
+    expect(service.watch).not.toHaveBeenCalled();
+    expect(status()).toBe('idle');
+  });
+
+  it('surfaces a failed cancel and keeps following the run', async () => {
+    const { service, submit } = controlledService();
+    service.cancel.mockRejectedValueOnce(
+      new ApiError(409, 'state_conflict', 'x')
+    );
+    renderProvider(service);
+
+    fireEvent.click(screen.getByText('Run'));
+    await act(async () => submit.resolve(snapshot('running')));
+    await act(async () => fireEvent.click(screen.getByText('Cancel')));
+
+    expect(screen.getByRole('alert').textContent).toContain(
+      "Impossible d'arrêter le backtest"
+    );
+    expect(status()).toBe('running');
+    expect(screen.getByTestId('active').textContent).toBe('bt-1');
+  });
+
+  it('detaches on unmount without cancelling, then re-attaches on remount', async () => {
+    const first = controlledService();
+    const { unmount } = renderProvider(first.service);
+    fireEvent.click(screen.getByText('Run'));
+    await act(async () => first.submit.resolve(snapshot('running', 'bt-9')));
+
+    unmount();
+
+    expect(first.watchCalls[0]?.options.signal.aborted).toBe(true);
+    expect(first.service.cancel).not.toHaveBeenCalled();
+
+    const second = controlledService();
+    renderProvider(second.service);
+
+    await waitFor(() =>
+      expect(second.service.watch).toHaveBeenCalledWith(
+        'bt-9',
+        expect.anything()
+      )
+    );
+    expect(status()).toBe('running');
+    await act(async () => second.watch.resolve(snapshot('completed', 'bt-9')));
+    expect(screen.getByTestId('result').textContent).toBe('bt-9');
+  });
+
+  it('never lets a slow restore overwrite a newer run result', async () => {
+    const { service, submit, watch } = controlledService();
+    const slowRestore = deferred<BacktestResult>();
+    service.fetchResult.mockImplementationOnce(() => slowRestore.promise);
+    useLoadedBacktestStore.setState({ loadedBacktestId: 'bt-old' });
+    renderProvider(service);
+
+    fireEvent.click(screen.getByText('Run'));
+    await act(async () => submit.resolve(snapshot('running', 'bt-new')));
+    await act(async () => watch.resolve(snapshot('completed', 'bt-new')));
+    expect(screen.getByTestId('result').textContent).toBe('bt-new');
+
+    await act(async () => slowRestore.resolve(result('bt-old')));
+
+    expect(screen.getByTestId('result').textContent).toBe('bt-new');
+  });
+
+  it('loads a restored result once across effect re-runs', async () => {
+    const { service } = controlledService();
+    const pending = deferred<BacktestResult>();
+    service.fetchResult.mockImplementationOnce(() => pending.promise);
+    vi.spyOn(apiClient, 'getBacktestStatus').mockRejectedValue(
+      new ApiError(404, 'not_found', 'missing')
+    );
+    useLoadedBacktestStore.setState({ loadedBacktestId: 'bt-done' });
+    renderProvider(service);
+
+    // A token refresh re-runs the restore while the first load is in flight.
+    act(() => useAuthStore.setState({ accessToken: 'refreshed' }));
+    await act(async () => pending.resolve(result('bt-done')));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('result').textContent).toBe('bt-done')
+    );
+    expect(service.fetchResult).toHaveBeenCalledTimes(1);
+  });
+
+  it('describes a rejected run in French and retries the same request', async () => {
+    const { service } = controlledService();
+    service.submit
+      .mockRejectedValueOnce(
+        new ApiError(503, 'execution_unavailable', 'execution unavailable')
+      )
+      .mockResolvedValueOnce(snapshot('queued'));
+    renderProvider(service);
+
+    fireEvent.click(screen.getByText('Run'));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain(
+      "L'exécution des backtests est désactivée"
+    );
+    expect(alert.dataset.action).toBe('retry');
+
+    fireEvent.click(screen.getByText('Retry'));
+    await waitFor(() => expect(service.submit).toHaveBeenCalledTimes(2));
+    expect(service.submit).toHaveBeenLastCalledWith(REQUEST);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('asks to reconnect and clears the session on 401 while following', async () => {
+    const clearAuth = vi.spyOn(useAuthStore.getState(), 'clearAuth');
+    const { service, submit, watch } = controlledService();
+    renderProvider(service);
+
+    fireEvent.click(screen.getByText('Run'));
+    await act(async () => submit.resolve(snapshot('running')));
+    await act(async () =>
+      watch.reject(new ApiError(401, 'unauthorized', 'session'))
+    );
+
+    expect(screen.getByRole('alert').dataset.action).toBe('reconnect');
+    expect(clearAuth).toHaveBeenCalled();
+    expect(status()).toBe('error');
   });
 });

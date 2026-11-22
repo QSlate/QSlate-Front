@@ -9,7 +9,7 @@ import {
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useAuthStore } from '@/entities/user/model';
+import { useAuthStore } from '@/entities/user';
 import { apiClient, ApiError } from '@/shared/api';
 
 import { RegisterForm } from '../ui/RegisterForm';

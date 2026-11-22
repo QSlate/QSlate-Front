@@ -216,17 +216,7 @@ describe('useUserStore', () => {
     });
   });
 
-  describe('sound alerts & remote hydration', () => {
-    it('manages soundAlerts state and toggling', () => {
-      const { setSoundAlerts, toggleSoundAlerts } = useUserStore.getState();
-
-      expect(useUserStore.getState().soundAlerts).toBe(true);
-      toggleSoundAlerts();
-      expect(useUserStore.getState().soundAlerts).toBe(false);
-      setSoundAlerts(true);
-      expect(useUserStore.getState().soundAlerts).toBe(true);
-    });
-
+  describe('remote hydration', () => {
     it('hydrates remote preferences from backend DTO', () => {
       const { hydrateRemotePreferences } = useUserStore.getState();
 
