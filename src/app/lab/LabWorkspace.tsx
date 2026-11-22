@@ -1,40 +1,34 @@
 'use client';
 
 import {
-  Activity,
-  BarChart3,
-  CandlestickChart,
   ChartNoAxesCombined,
-  Cpu,
   FlaskConical,
-  Layers,
-  List,
   Plus,
-  Table2,
   Terminal,
 } from 'lucide-react';
+import type { ComponentType } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { DEFAULT_LAYOUT, useLayoutStore } from '@/entities/layout';
+import { LAB_WIDGETS, type LabWidgetType } from '@/entities/widget';
 import { useLabStore } from '@/features/lab-state';
 import { useHydratedStore } from '@/shared/lib/store';
 import { Button, EmptyState, IconButton, Tooltip } from '@/shared/ui';
 import { Dialog } from '@/shared/ui/dialog';
 import {
-  MonteCarloWidget,
-  OrderBookWidget,
-  VolatilityFilterWidget,
-} from '@/widgets/additional-widgets';
-import {
-  DrawdownWidget,
-  EquityToolbar,
-  EquityWidget,
-  MetricsWidget,
-  TradeLogWidget,
-  TradeToolbar,
+  CapitalChartWidget,
+  DrawdownChartWidget,
+  MaxDrawdownWidget,
+  MonthlyReturnsWidget,
+  NetReturnWidget,
+  SharpeWidget,
+  TradeDistributionWidget,
+  TradesTableWidget,
+  WinRateWidget,
 } from '@/widgets/backtest-results';
 import {
   DynamicGridWrapper,
+  type WidgetComponentProps,
   type WidgetDefinition,
 } from '@/widgets/dynamic-grid';
 import { LabHeader, RunStatusStrip } from '@/widgets/lab-frame';
@@ -42,68 +36,30 @@ import { RunComposer, RunComposerHint } from '@/widgets/run-composer';
 
 import { LabWorkspaceHeader } from './LabWorkspaceHeader';
 
-const widgets: Record<string, WidgetDefinition & { description: string }> = {
-  'equity-curve': {
-    id: 'equity-curve',
-    title: 'Portfolio Equity Curve',
-    description: 'Strategy NAV and benchmark performance.',
-    component: EquityWidget,
-    icon: <ChartNoAxesCombined size={13} />,
-    toolbar: EquityToolbar,
-  },
-  drawdown: {
-    id: 'drawdown',
-    title: 'Drawdown & Regime Waterfall',
-    description: 'Monthly returns and drawdown duration.',
-    component: DrawdownWidget,
-    icon: <BarChart3 size={13} />,
-  },
-  'execution-metrics': {
-    id: 'execution-metrics',
-    title: 'Executive Quant Metrics',
-    description: 'Risk, returns and execution statistics.',
-    component: MetricsWidget,
-    icon: <Table2 size={13} />,
-  },
-  'trade-log': {
-    id: 'trade-log',
-    title: 'Trade Execution Log',
-    description: 'Inspect entries, exits and individual trades.',
-    component: TradeLogWidget,
-    icon: <List size={13} />,
-    toolbar: TradeToolbar,
-  },
-  'monte-carlo': {
-    id: 'monte-carlo',
-    title: 'Monte Carlo 10k Simulator',
-    description: '10,000 randomized path projection with confidence fans.',
-    component: MonteCarloWidget,
-    icon: <Activity size={13} />,
-  },
-  'order-book': {
-    id: 'order-book',
-    title: 'Order Book Heatmap L2',
-    description: 'Market depth liquidity matrix & real-time bid/ask pressure.',
-    component: OrderBookWidget,
-    icon: <Layers size={13} />,
-  },
-  'volatility-filter': {
-    id: 'volatility-filter',
-    title: 'Regime-Aware Volatility Filter',
-    description: 'Gaussian Mixture Model volatility state classification.',
-    component: VolatilityFilterWidget,
-    icon: <Cpu size={13} />,
-  },
-  'tradingview-candles': {
-    id: 'tradingview-candles',
-    title: 'TradingView Market Terminal',
-    description:
-      'Institutional OHLC candlesticks with multi-asset ticker selector.',
-    component: EquityWidget,
-    icon: <CandlestickChart size={13} />,
-    toolbar: EquityToolbar,
-  },
+const COMPONENTS: Readonly<
+  Record<LabWidgetType, ComponentType<WidgetComponentProps>>
+> = {
+  'net-return': NetReturnWidget,
+  'max-drawdown': MaxDrawdownWidget,
+  sharpe: SharpeWidget,
+  'win-rate': WinRateWidget,
+  'capital-chart': CapitalChartWidget,
+  drawdowns: DrawdownChartWidget,
+  'monthly-returns': MonthlyReturnsWidget,
+  'trade-distribution': TradeDistributionWidget,
+  trades: TradesTableWidget,
 };
+
+const widgets: Record<string, WidgetDefinition> = Object.fromEntries(
+  LAB_WIDGETS.map((widget) => [
+    widget.type,
+    {
+      id: widget.type,
+      title: widget.title,
+      component: COMPONENTS[widget.type],
+    },
+  ])
+);
 
 export function LabWorkspace() {
   const layout = useHydratedStore(
@@ -142,7 +98,6 @@ export function LabWorkspace() {
   );
   const expandedWidget = expanded ? widgets[expanded] : null;
   const ExpandedComponent = expandedWidget?.component;
-  const ExpandedToolbar = expandedWidget?.toolbar;
 
   return (
     <>
@@ -220,11 +175,6 @@ export function LabWorkspace() {
           className="lab-expanded-dialog"
           onClose={() => setExpanded(null)}
         >
-          {ExpandedToolbar ? (
-            <div className="lab-expanded-toolbar">
-              <ExpandedToolbar />
-            </div>
-          ) : null}
           <div className="lab-expanded-content">
             <ExpandedComponent id={expandedWidget.id} />
           </div>

@@ -33,11 +33,9 @@ describe('useLayoutStore', () => {
     it('exposes all core quantitative widgets in the default layout', () => {
       const layout = useLayoutStore.getState().layout;
 
-      expect(layout.find((item) => item.i === 'equity-curve')).toBeDefined();
-      expect(layout.find((item) => item.i === 'drawdown')).toBeDefined();
-      expect(
-        layout.find((item) => item.i === 'execution-metrics')
-      ).toBeDefined();
+      expect(layout.find((item) => item.i === 'capital-chart')).toBeDefined();
+      expect(layout.find((item) => item.i === 'drawdowns')).toBeDefined();
+      expect(layout.find((item) => item.i === 'monthly-returns')).toBeDefined();
     });
   });
 
@@ -45,8 +43,8 @@ describe('useLayoutStore', () => {
     it('replaces the complete grid layout', () => {
       const { setLayout } = useLayoutStore.getState();
       const nextLayout = [
-        { i: 'order-book', x: 0, y: 0, w: 4, h: 4 },
-        { i: 'trades', x: 4, y: 0, w: 8, h: 4 },
+        { i: 'win-rate', x: 0, y: 0, w: 4, h: 4 },
+        { i: 'sharpe', x: 4, y: 0, w: 8, h: 4 },
       ];
 
       setLayout(nextLayout);
@@ -57,14 +55,14 @@ describe('useLayoutStore', () => {
     it('preserves QSlate widget metadata omitted by grid callbacks', () => {
       const { setLayout, toggleWidgetPin } = useLayoutStore.getState();
 
-      toggleWidgetPin('equity-curve');
-      setLayout([{ i: 'equity-curve', x: 2, y: 3, w: 7, h: 5 }]);
+      toggleWidgetPin('capital-chart');
+      setLayout([{ i: 'capital-chart', x: 2, y: 3, w: 7, h: 5 }]);
 
       expect(
-        selectWidgetLayout('equity-curve')(useLayoutStore.getState())
+        selectWidgetLayout('capital-chart')(useLayoutStore.getState())
       ).toEqual({
         ...DEFAULT_LAYOUT[0],
-        i: 'equity-curve',
+        i: 'capital-chart',
         x: 2,
         y: 3,
         w: 7,
@@ -78,20 +76,20 @@ describe('useLayoutStore', () => {
     it('updates coordinates without modifying other widgets', () => {
       const { updateWidget } = useLayoutStore.getState();
 
-      updateWidget('equity-curve', { x: 2, y: 3 });
+      updateWidget('capital-chart', { x: 2, y: 3 });
 
       const state = useLayoutStore.getState();
-      expect(selectWidgetLayout('equity-curve')(state)?.x).toBe(2);
-      expect(selectWidgetLayout('equity-curve')(state)?.y).toBe(3);
-      expect(selectWidgetLayout('drawdown')(state)).toEqual(DEFAULT_LAYOUT[1]);
+      expect(selectWidgetLayout('capital-chart')(state)?.x).toBe(2);
+      expect(selectWidgetLayout('capital-chart')(state)?.y).toBe(3);
+      expect(selectWidgetLayout('drawdowns')(state)).toEqual(DEFAULT_LAYOUT[1]);
     });
 
     it('updates dimensions while preserving existing attributes', () => {
       const { updateWidget } = useLayoutStore.getState();
 
-      updateWidget('execution-metrics', { w: 6, h: 5 });
+      updateWidget('monthly-returns', { w: 6, h: 5 });
 
-      const updated = selectWidgetLayout('execution-metrics')(
+      const updated = selectWidgetLayout('monthly-returns')(
         useLayoutStore.getState()
       );
       expect(updated?.w).toBe(6);
@@ -116,17 +114,17 @@ describe('useLayoutStore', () => {
       const { toggleWidgetPin } = useLayoutStore.getState();
 
       expect(
-        selectIsWidgetPinned('equity-curve')(useLayoutStore.getState())
+        selectIsWidgetPinned('capital-chart')(useLayoutStore.getState())
       ).toBe(false);
 
-      toggleWidgetPin('equity-curve');
+      toggleWidgetPin('capital-chart');
       expect(
-        selectIsWidgetPinned('equity-curve')(useLayoutStore.getState())
+        selectIsWidgetPinned('capital-chart')(useLayoutStore.getState())
       ).toBe(true);
 
-      toggleWidgetPin('equity-curve');
+      toggleWidgetPin('capital-chart');
       expect(
-        selectIsWidgetPinned('equity-curve')(useLayoutStore.getState())
+        selectIsWidgetPinned('capital-chart')(useLayoutStore.getState())
       ).toBe(false);
     });
 
@@ -134,17 +132,17 @@ describe('useLayoutStore', () => {
       const { toggleWidgetMinimize } = useLayoutStore.getState();
 
       expect(
-        selectIsWidgetMinimized('drawdown')(useLayoutStore.getState())
+        selectIsWidgetMinimized('drawdowns')(useLayoutStore.getState())
       ).toBe(false);
 
-      toggleWidgetMinimize('drawdown');
+      toggleWidgetMinimize('drawdowns');
       expect(
-        selectIsWidgetMinimized('drawdown')(useLayoutStore.getState())
+        selectIsWidgetMinimized('drawdowns')(useLayoutStore.getState())
       ).toBe(true);
 
-      toggleWidgetMinimize('drawdown');
+      toggleWidgetMinimize('drawdowns');
       expect(
-        selectIsWidgetMinimized('drawdown')(useLayoutStore.getState())
+        selectIsWidgetMinimized('drawdowns')(useLayoutStore.getState())
       ).toBe(false);
     });
 
@@ -164,7 +162,7 @@ describe('useLayoutStore', () => {
     it('restores the default layout preset', () => {
       const { resetLayout, updateWidget } = useLayoutStore.getState();
 
-      updateWidget('equity-curve', { x: 10, y: 20 });
+      updateWidget('capital-chart', { x: 10, y: 20 });
       resetLayout();
 
       const state = useLayoutStore.getState();
@@ -197,12 +195,12 @@ describe('useLayoutStore', () => {
 
       expect(selectLayout(state)).toBe(state.layout);
       expect(selectActivePreset(state)).toBe('default');
-      expect(selectWidgetLayout('equity-curve')(state)).toEqual(
+      expect(selectWidgetLayout('capital-chart')(state)).toEqual(
         DEFAULT_LAYOUT[0]
       );
       expect(selectWidgetLayout('non-existent')(state)).toBeUndefined();
-      expect(selectIsWidgetPinned('equity-curve')(state)).toBe(false);
-      expect(selectIsWidgetMinimized('equity-curve')(state)).toBe(false);
+      expect(selectIsWidgetPinned('capital-chart')(state)).toBe(false);
+      expect(selectIsWidgetMinimized('capital-chart')(state)).toBe(false);
     });
   });
 });
@@ -218,12 +216,12 @@ describe('Lab layout persistence', () => {
     try {
       expect(() => {
         useLayoutStore.getState().resetLayout();
-        useLayoutStore.getState().toggleWidgetMinimize('equity-curve');
-        useLayoutStore.getState().removeWidget('trade-log');
+        useLayoutStore.getState().toggleWidgetMinimize('capital-chart');
+        useLayoutStore.getState().removeWidget('trades');
       }).not.toThrow();
       expect(useLayoutStore.getState().layout).toHaveLength(3);
       expect(
-        selectIsWidgetMinimized('equity-curve')(useLayoutStore.getState())
+        selectIsWidgetMinimized('capital-chart')(useLayoutStore.getState())
       ).toBe(true);
     } finally {
       storageWrite.mockRestore();
@@ -234,10 +232,10 @@ describe('Lab layout persistence', () => {
   it('closes and restores widgets without allowing duplicates', () => {
     const store = useLayoutStore.getState();
     store.resetLayout();
-    store.removeWidget('trade-log');
+    store.removeWidget('trades');
     expect(useLayoutStore.getState().layout).toHaveLength(3);
-    store.addWidget('trade-log');
-    store.addWidget('trade-log');
+    store.addWidget('trades');
+    store.addWidget('trades');
     expect(useLayoutStore.getState().layout).toHaveLength(4);
     store.addWidget('unknown');
     expect(useLayoutStore.getState().layout).toHaveLength(4);
@@ -246,15 +244,15 @@ describe('Lab layout persistence', () => {
   it('rehydrates saved geometry, minimized state and closed widgets', async () => {
     const store = useLayoutStore.getState();
     store.resetLayout();
-    store.updateWidget('equity-curve', { w: 7, h: 8, isMinimized: true });
-    store.removeWidget('trade-log');
+    store.updateWidget('capital-chart', { w: 7, h: 8, isMinimized: true });
+    store.removeWidget('trades');
     const saved = localStorage.getItem('qslate_lab_layout');
     store.resetLayout();
     localStorage.setItem('qslate_lab_layout', saved!);
     await useLayoutStore.persist.rehydrate();
     expect(useLayoutStore.getState().layout).toHaveLength(3);
     expect(
-      selectWidgetLayout('equity-curve')(useLayoutStore.getState())
+      selectWidgetLayout('capital-chart')(useLayoutStore.getState())
     ).toMatchObject({ w: 7, h: 8, isMinimized: true });
   });
 
@@ -293,7 +291,7 @@ describe('Lab layout persistence', () => {
         updated_at: '2026-01-01',
         widgets: [],
         layout: [
-          { instance_id: 'equity-curve', x: 0, y: 0, width: 8, height: 6 },
+          { instance_id: 'capital-chart', x: 0, y: 0, width: 8, height: 6 },
         ],
       });
 
@@ -305,7 +303,7 @@ describe('Lab layout persistence', () => {
         'Macro Overview'
       );
       expect(useLayoutStore.getState().layout[0]).toMatchObject({
-        i: 'equity-curve',
+        i: 'capital-chart',
         w: 8,
         h: 6,
       });

@@ -1,7 +1,12 @@
-export { ResultControlsProvider } from './model/ResultControls';
-export { DrawdownWidget } from './ui/DrawdownWidget';
-export { EquityToolbar } from './ui/EquityToolbar';
-export { EquityWidget } from './ui/EquityWidget';
-export { MetricsWidget } from './ui/MetricsWidget';
-export { TradeLogWidget } from './ui/TradeLogWidget';
-export { TradeToolbar } from './ui/TradeToolbar';
+export {
+  CapitalChartWidget,
+  DrawdownChartWidget,
+  MonthlyReturnsWidget,
+} from './ui/chart-widgets';
+export {
+  MaxDrawdownWidget,
+  NetReturnWidget,
+  SharpeWidget,
+  WinRateWidget,
+} from './ui/kpi-widgets';
+export { TradeDistributionWidget, TradesTableWidget } from './ui/trade-widgets';

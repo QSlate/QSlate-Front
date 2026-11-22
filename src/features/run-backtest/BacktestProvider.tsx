@@ -19,7 +19,6 @@ import {
   type BacktestRunRequest,
   type BacktestService,
   describeRunError,
-  EMPTY_BACKTEST_RESULT,
   liveBacktestService,
   MAX_RUN_LOG_LINES,
 } from '@/entities/backtest';
@@ -33,8 +32,6 @@ import {
   type PersistedActiveRun,
   readActiveRun,
 } from './model/active-run-storage';
-
-const LAST_RESULT_STORAGE_KEY = 'qslate_last_backtest_result';
 
 export type BacktestStatus =
   'idle' | 'running' | 'cancelling' | 'success' | 'error';
@@ -56,8 +53,13 @@ export interface FinishedRun {
   readonly finishedAt: number;
 }
 
+/** Loading state of the displayed result. */
+export type ResultStatus = 'empty' | 'loading' | 'ready' | 'error';
+
 interface BacktestContextValue {
-  result: BacktestResult;
+  /** Result shown by the dashboard; null until one is loaded. */
+  result: BacktestResult | null;
+  resultStatus: ResultStatus;
   status: BacktestStatus;
   error: BacktestRunError | null;
   activeRun: ActiveRun | null;
@@ -75,42 +77,6 @@ interface BacktestContextValue {
 
 const BacktestContext = createContext<BacktestContextValue | null>(null);
 
-function persistResult(result: BacktestResult) {
-  try {
-    localStorage.setItem(LAST_RESULT_STORAGE_KEY, JSON.stringify(result));
-  } catch {
-    // Storage may be full or unavailable (private mode): keep it in memory.
-  }
-}
-
-function readPersistedResult(): BacktestResult {
-  if (typeof window === 'undefined') return EMPTY_BACKTEST_RESULT;
-  try {
-    const saved = localStorage.getItem(LAST_RESULT_STORAGE_KEY);
-    if (!saved) return EMPTY_BACKTEST_RESULT;
-    const parsed = JSON.parse(saved) as BacktestResult;
-    if (
-      parsed &&
-      parsed.source === 'backend' &&
-      parsed.id &&
-      Array.isArray(parsed.equity) &&
-      parsed.equity.length > 0
-    ) {
-      return {
-        ...parsed,
-        initialCapital:
-          typeof parsed.initialCapital === 'number'
-            ? parsed.initialCapital
-            : null,
-      };
-    }
-    localStorage.removeItem(LAST_RESULT_STORAGE_KEY);
-  } catch {
-    // Corrupted entry: start from an empty result.
-  }
-  return EMPTY_BACKTEST_RESULT;
-}
-
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError';
 }
@@ -124,7 +90,8 @@ export function BacktestProvider({
   children: ReactNode;
   service?: BacktestService;
 }) {
-  const [result, setResult] = useState<BacktestResult>(readPersistedResult);
+  const [result, setResult] = useState<BacktestResult | null>(null);
+  const [resultStatus, setResultStatus] = useState<ResultStatus>('empty');
   const [status, setStatusState] = useState<BacktestStatus>('idle');
   const [error, setError] = useState<BacktestRunError | null>(null);
   const [activeRun, setActiveRun] = useState<ActiveRun | null>(null);
@@ -142,7 +109,7 @@ export function BacktestProvider({
   const activeIdRef = useRef<string | null>(null);
   /** Bumped on every committed result; stale restores are discarded. */
   const resultVersionRef = useRef(0);
-  const resultIdRef = useRef<string>(result.id);
+  const resultIdRef = useRef<string | null>(null);
 
   const loadedBacktestId = useLabStore((state) => state.loadedBacktestId);
   const setLoadedBacktestId = useLabStore((state) => state.setLoadedBacktestId);
@@ -157,7 +124,7 @@ export function BacktestProvider({
     resultVersionRef.current += 1;
     resultIdRef.current = next.id;
     setResult(next);
-    persistResult(next);
+    setResultStatus('ready');
   }, []);
 
   const fail = useCallback(
@@ -219,10 +186,8 @@ export function BacktestProvider({
             final.error
           );
         }
-        const next = await service.fetchResult(
-          run.backtestId,
-          run.request?.initialCapital ?? null
-        );
+        setResultStatus('loading');
+        const next = await service.fetchResult(run.backtestId);
         if (runToken !== runTokenRef.current) return;
         commitResult(next);
         // Only a completed run becomes the "loaded" backtest (logs, restore).
@@ -238,6 +203,13 @@ export function BacktestProvider({
       } catch (cause) {
         // Detached (unmount) or superseded by a cancel: nothing to report.
         if (isAbortError(cause) || runToken !== runTokenRef.current) return;
+        setResultStatus((current) =>
+          current === 'loading'
+            ? resultIdRef.current
+              ? 'ready'
+              : 'error'
+            : current
+        );
         fail(cause);
         endRun();
       }
@@ -365,12 +337,18 @@ export function BacktestProvider({
           targetId === resultIdRef.current
         )
           return;
-        const loaded = await service.fetchResult(targetId, null);
+        setResultStatus((current) =>
+          current === 'empty' ? 'loading' : current
+        );
+        const loaded = await service.fetchResult(targetId);
         if (!cancelled && version === resultVersionRef.current) {
           commitResult(loaded);
         }
       } catch {
-        // Restoring is best effort: keep the current result.
+        // Restoring is best effort: keep the current result, if any.
+        if (!cancelled && version === resultVersionRef.current) {
+          setResultStatus(resultIdRef.current ? 'ready' : 'error');
+        }
       }
     })();
 
@@ -382,6 +360,7 @@ export function BacktestProvider({
   const value = useMemo(
     () => ({
       result,
+      resultStatus,
       status,
       error,
       activeRun,
@@ -394,6 +373,7 @@ export function BacktestProvider({
     }),
     [
       result,
+      resultStatus,
       status,
       error,
       activeRun,

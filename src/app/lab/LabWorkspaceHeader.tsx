@@ -155,7 +155,7 @@ export function LabWorkspaceHeader() {
             </>
           )}
         </div>
-        {result.id ? <span className="lab-demo-badge">BACKTEST</span> : null}
+        {result?.id ? <span className="lab-demo-badge">BACKTEST</span> : null}
         <span className="lab-run-status" role="status">
           {status === 'running'
             ? 'Backtest en cours…'

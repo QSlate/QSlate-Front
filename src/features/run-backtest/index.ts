@@ -3,5 +3,6 @@ export {
   BacktestProvider,
   type BacktestStatus,
   type FinishedRun,
+  type ResultStatus,
   useBacktest,
 } from './BacktestProvider';

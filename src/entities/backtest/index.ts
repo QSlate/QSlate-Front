@@ -5,6 +5,7 @@ export {
 } from './api/backtest-queries';
 export {
   abortableDelay,
+  fetchAllArtifactItems,
   fetchBacktestArtifacts,
   isTransientError,
   LiveBacktestService,
@@ -12,13 +13,22 @@ export {
   pollBacktest,
   toJobSnapshot,
 } from './api/liveBacktestService';
-export {
-  INITIAL_MOCK_RESULT,
-  type MockBacktestResult,
-  type MockBacktestService,
-  mockBacktestService,
-} from './api/mockBacktestService';
 export { type StreamWatchDeps, watchBacktestStream } from './api/stream-watch';
+export {
+  type BacktestMetrics,
+  type BacktestResult,
+  computeMonthlyReturns,
+  computeReturnHistogram,
+  EMPTY_METRICS,
+  type EquityPoint,
+  type HistogramBin,
+  type MonthlyReturn,
+  parseEquityPoints,
+  parseMetrics,
+  parseTrades,
+  toFiniteNumber,
+  type Trade,
+} from './model/result';
 export {
   BacktestJobError,
   type BacktestRunError,

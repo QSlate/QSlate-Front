@@ -15,7 +15,7 @@ import {
   type BacktestRunRequest,
   type BacktestService,
   type BacktestWatchOptions,
-  EMPTY_BACKTEST_RESULT,
+  EMPTY_METRICS,
 } from '@/entities/backtest';
 import { useAuthStore } from '@/entities/user/model';
 import { useLabStore } from '@/features/lab-state';
@@ -39,10 +39,11 @@ const REQUEST: BacktestRunRequest = {
 
 function result(id: string): BacktestResult {
   return {
-    ...EMPTY_BACKTEST_RESULT,
     id,
-    initialCapital: 50_000,
-    equity: [{ time: 1000, nav: 50_000, benchmark: 50_000 }],
+    metrics: EMPTY_METRICS,
+    equity: [{ time: 1000, equity: 50_000, drawdownPct: 0 }],
+    trades: [],
+    truncated: false,
   };
 }
 
@@ -103,7 +104,7 @@ function Controls() {
       <button onClick={cancel}>Cancel</button>
       <span data-testid="status">{status}</span>
       <span data-testid="active">{activeRun?.backtestId ?? 'none'}</span>
-      <span data-testid="result">{result.id || 'none'}</span>
+      <span data-testid="result">{result?.id ?? 'none'}</span>
       {error ? (
         <p role="alert" data-action={error.action}>
           {error.message}

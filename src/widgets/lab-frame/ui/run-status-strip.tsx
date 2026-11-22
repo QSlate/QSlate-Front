@@ -96,7 +96,7 @@ export function RunStatusStrip({ children }: RunStatusStripProps) {
         {summary ? <span className="min-w-0 truncate">{summary}</span> : null}
       </>
     );
-  } else if (result.id) {
+  } else if (result?.id) {
     content = <StatusPill tone="ok">Dernier backtest chargé</StatusPill>;
   } else {
     content = (

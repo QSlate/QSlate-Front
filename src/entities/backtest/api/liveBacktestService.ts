@@ -1,6 +1,12 @@
 import { apiClient, ApiError, type BacktestJob } from '@/shared/api';
 import { connectBacktestStream } from '@/shared/api/websocket';
 
+import {
+  type BacktestResult,
+  parseEquityPoints,
+  parseMetrics,
+  parseTrades,
+} from '../model/result';
 import { BacktestJobError } from '../model/run-error';
 import {
   type BacktestRunRequest,
@@ -9,13 +15,9 @@ import {
 import {
   type BacktestJobSnapshot,
   type BacktestJobStatus,
-  type BacktestResult,
   type BacktestService,
   type BacktestWatchOptions,
-  type EquityPoint,
   isTerminalStatus,
-  type MonthlyReturn,
-  type Trade,
 } from '../model/types';
 import {
   backtestStreamUrl,
@@ -140,150 +142,56 @@ export class LiveBacktestService implements BacktestService {
     await apiClient.cancelBacktest(backtestId);
   }
 
-  public fetchResult(
-    backtestId: string,
-    initialCapital: number | null
-  ): Promise<BacktestResult> {
-    return fetchBacktestArtifacts(backtestId, initialCapital);
+  public fetchResult(backtestId: string): Promise<BacktestResult> {
+    return fetchBacktestArtifacts(backtestId);
   }
 }
 
-export async function fetchBacktestArtifacts(
+/** Artifact page size and bound (an hourly year is ~8 800 points). */
+const ARTIFACT_PAGE_SIZE = 1_000;
+const MAX_ARTIFACT_PAGES = 100;
+
+type ArtifactKind = 'trades' | 'equity-curve';
+
+/** Reads every page of an artifact by following `next_cursor`. */
+export async function fetchAllArtifactItems(
   backtestId: string,
-  initialCapital: number | null,
-  token?: string | null
+  kind: ArtifactKind
+): Promise<{ readonly items: unknown[]; readonly truncated: boolean }> {
+  const items: unknown[] = [];
+  let cursor: string | undefined;
+  for (let page = 0; page < MAX_ARTIFACT_PAGES; page += 1) {
+    const result = await apiClient.getBacktestArtifact<unknown>(
+      backtestId,
+      kind,
+      { limit: ARTIFACT_PAGE_SIZE, ...(cursor ? { cursor } : {}) }
+    );
+    items.push(...(result.items ?? []));
+    cursor = result.next_cursor ?? undefined;
+    if (!cursor) return { items, truncated: false };
+  }
+  return { items, truncated: true };
+}
+
+/**
+ * Loads a completed backtest: summary metrics, the full equity curve and
+ * every trade. Missing values stay null; nothing is invented.
+ */
+export async function fetchBacktestArtifacts(
+  backtestId: string
 ): Promise<BacktestResult> {
-  // Fetch summary metrics, trades and equity curve
-  const [summaryRes, tradesRes, equityRes] = await Promise.allSettled([
-    apiClient.getBacktestSummary(backtestId, token),
-    apiClient.getBacktestTrades(backtestId, { limit: 100 }, token),
-    apiClient.getBacktestEquityCurve(backtestId, undefined, token),
+  const [summary, equity, trades] = await Promise.all([
+    apiClient.getBacktestSummary(backtestId),
+    fetchAllArtifactItems(backtestId, 'equity-curve'),
+    fetchAllArtifactItems(backtestId, 'trades'),
   ]);
-
-  const summary = summaryRes.status === 'fulfilled' ? summaryRes.value : null;
-  const tradesPage = tradesRes.status === 'fulfilled' ? tradesRes.value : null;
-  const equityPage = equityRes.status === 'fulfilled' ? equityRes.value : null;
-
-  const metrics = summary?.metrics || {};
-
-  // Transform backend trades to frontend Trade schema
-  const rawTrades = Array.isArray(tradesPage?.items)
-    ? (tradesPage.items as Record<string, unknown>[])
-    : [];
-  const trades: Trade[] = rawTrades.map((t, index) => ({
-    id: String(t.id || `trade-${index + 1}`),
-    timestamp: t.timestamp
-      ? new Date(String(t.timestamp)).getTime() / 1000
-      : Date.now() / 1000 - (rawTrades.length - index) * 3600,
-    ticker: String(t.symbol || 'ETH'),
-    side: (String(t.side || 'BUY').toUpperCase() === 'SELL'
-      ? 'SELL'
-      : 'BUY') as 'BUY' | 'SELL',
-    quantity: Number(t.quantity || t.amount || 1),
-    entry: Number(t.entry_price || t.price || 2200),
-    exit: Number(t.exit_price || t.entry_price || 2250),
-    pnl: Number(t.pnl_usd || t.pnl || 0),
-    pnlPercent: Number(t.pnl_pct || t.pnl_percent || 0),
-    slippageMs: Number(t.slippage_ms || 0.4),
-    executionHash: String(
-      t.execution_hash || `0x${(index * 7919).toString(16).padStart(8, '0')}`
-    ),
-  }));
-
-  // Transform backend equity points or synthesize from start to end
-  const rawEquity = Array.isArray(equityPage?.items)
-    ? (equityPage.items as Record<string, unknown>[])
-    : [];
-  const parsedEquity: EquityPoint[] =
-    rawEquity.length > 0
-      ? rawEquity
-          .map((p) => {
-            const parsedTime =
-              typeof p.time === 'number'
-                ? p.time
-                : Math.floor(
-                    new Date(String(p.timestamp || p.time)).getTime() / 1000
-                  );
-            const nav = Number(p.nav ?? p.equity);
-            const benchmark = Number(p.benchmark ?? initialCapital ?? nav);
-            return {
-              time: Number.isFinite(parsedTime) ? parsedTime : 0,
-              nav,
-              benchmark: Number.isFinite(benchmark) ? benchmark : nav,
-            };
-          })
-          .filter((p) => p.time > 0 && Number.isFinite(p.nav))
-      : [];
-
-  const equity: EquityPoint[] = parsedEquity;
-
   return {
     id: backtestId,
-    source: 'backend',
-    initialCapital,
-    equity,
-    monthlyReturns: computeMonthlyReturns(equity),
-    trades,
-    metrics: {
-      sharpe: Number(metrics.sharpe_ratio ?? 0),
-      sortino: Number(metrics.sortino_ratio ?? 0),
-      maxDrawdown: Number(metrics.max_drawdown_pct ?? 0),
-      winRate: Number(metrics.win_rate_pct ?? 0),
-      profitFactor:
-        metrics.profit_factor !== undefined
-          ? Number(metrics.profit_factor)
-          : null,
-      calmar:
-        metrics.calmar_ratio !== undefined
-          ? Number(metrics.calmar_ratio)
-          : null,
-      volatility: Number(metrics.volatility ?? 0),
-      beta: Number(metrics.beta ?? 0),
-      alpha: Number(metrics.alpha ?? 0),
-      trades: Number(metrics.total_trades ?? trades.length),
-    },
-    oosReturn: Number(metrics.return_pct ?? 0),
-    longestDrawdownDays: Number(metrics.max_drawdown_days ?? 0),
+    metrics: parseMetrics(summary.metrics),
+    equity: parseEquityPoints(equity.items),
+    trades: parseTrades(trades.items),
+    truncated: equity.truncated || trades.truncated,
   };
-}
-
-export function computeMonthlyReturns(equity: EquityPoint[]): MonthlyReturn[] {
-  if (!equity || equity.length < 2) return [];
-  const monthlyBuckets = new Map<
-    string,
-    { firstNav: number; lastNav: number }
-  >();
-  const monthNames = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  for (const pt of equity) {
-    if (!pt || !Number.isFinite(pt.time) || !Number.isFinite(pt.nav)) continue;
-    const date = new Date(pt.time * 1000);
-    const key = `${monthNames[date.getUTCMonth()]} ${String(date.getUTCFullYear()).slice(-2)}`;
-    const existing = monthlyBuckets.get(key);
-    if (!existing) {
-      monthlyBuckets.set(key, { firstNav: pt.nav, lastNav: pt.nav });
-    } else {
-      existing.lastNav = pt.nav;
-    }
-  }
-  const results: MonthlyReturn[] = [];
-  for (const [month, { firstNav, lastNav }] of monthlyBuckets.entries()) {
-    const retPct = firstNav > 0 ? ((lastNav - firstNav) / firstNav) * 100 : 0;
-    results.push({ month, value: Number(retPct.toFixed(2)) });
-  }
-  return results;
 }
 
 export const liveBacktestService = new LiveBacktestService();

@@ -66,32 +66,56 @@ describe('LiveBacktestService', () => {
     expect(listSpy).not.toHaveBeenCalled();
   });
 
-  it('loads artifacts without inventing equity points', async () => {
+  it('loads every artifact page without inventing values', async () => {
     vi.spyOn(apiClient, 'getBacktestSummary').mockResolvedValueOnce({
       backtest_id: 'bt-job-123',
-      metrics: { sharpe_ratio: 2.34 },
+      metrics: { sharpe_ratio: 2.34, return_pct: '18.4' },
     });
-    vi.spyOn(apiClient, 'getBacktestTrades').mockResolvedValueOnce({
-      items: [],
-    });
-    vi.spyOn(apiClient, 'getBacktestEquityCurve').mockResolvedValueOnce({
-      items: [
-        { time: 1704067200, nav: 100000, benchmark: 100000 },
-        { time: 1704153600, nav: 102500 },
-        { time: 1704240000 },
-      ],
-    });
+    const artifact = vi
+      .spyOn(apiClient, 'getBacktestArtifact')
+      .mockImplementation(async (_id, kind, params) => {
+        if (kind === 'trades') {
+          return {
+            items: [
+              {
+                id: 'POS_1',
+                side: 'long',
+                entry_date: '2024-04-16T13:30:00Z',
+                pnl_pct: -2.59,
+              },
+            ],
+          };
+        }
+        return params?.cursor
+          ? {
+              items: [
+                { time: '2024-01-02T00:00:00Z', equity: '102500', drawdown: 0 },
+              ],
+            }
+          : {
+              items: [
+                { time: '2024-01-01T00:00:00Z', equity: '100000', drawdown: 0 },
+                { time: '2024-01-01T01:00:00Z' },
+              ],
+              next_cursor: '2',
+            };
+      });
 
-    const result = await new LiveBacktestService().fetchResult(
-      'bt-job-123',
-      100_000
-    );
+    const result = await new LiveBacktestService().fetchResult('bt-job-123');
 
     expect(result.metrics.sharpe).toBe(2.34);
+    expect(result.metrics.returnPct).toBe(18.4);
+    expect(result.metrics.profitFactor).toBeNull();
     expect(result.equity).toEqual([
-      { time: 1704067200, nav: 100000, benchmark: 100000 },
-      { time: 1704153600, nav: 102500, benchmark: 100000 },
+      { time: 1704067200, equity: 100000, drawdownPct: 0 },
+      { time: 1704153600, equity: 102500, drawdownPct: 0 },
     ]);
+    expect(result.trades[0]).toMatchObject({
+      id: 'POS_1',
+      pnlPct: -2.59,
+      entryPrice: null,
+    });
+    expect(artifact).toHaveBeenCalledTimes(3);
   });
 
   it('cancels through the lab service', async () => {

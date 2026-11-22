@@ -134,7 +134,7 @@ describe('WidgetContainer', () => {
 
   it('invokes toggleWidgetPin when pin button is clicked', () => {
     render(
-      <WidgetContainer id="equity-curve" title="Mini IDE" layout={mockLayout}>
+      <WidgetContainer id="capital-chart" title="Mini IDE" layout={mockLayout}>
         <div>Content</div>
       </WidgetContainer>
     );
@@ -143,14 +143,15 @@ describe('WidgetContainer', () => {
     fireEvent.click(pinBtn);
 
     expect(
-      useLayoutStore.getState().layout.find((item) => item.i === 'equity-curve')
-        ?.isPinned
+      useLayoutStore
+        .getState()
+        .layout.find((item) => item.i === 'capital-chart')?.isPinned
     ).toBe(true);
   });
 
   it('invokes toggleWidgetMinimize when minimize button is clicked', () => {
     render(
-      <WidgetContainer id="equity-curve" title="Mini IDE" layout={mockLayout}>
+      <WidgetContainer id="capital-chart" title="Mini IDE" layout={mockLayout}>
         <div>Content</div>
       </WidgetContainer>
     );
@@ -159,8 +160,9 @@ describe('WidgetContainer', () => {
     fireEvent.click(minimizeBtn);
 
     expect(
-      useLayoutStore.getState().layout.find((item) => item.i === 'equity-curve')
-        ?.isMinimized
+      useLayoutStore
+        .getState()
+        .layout.find((item) => item.i === 'capital-chart')?.isMinimized
     ).toBe(true);
   });
 
@@ -211,7 +213,7 @@ describe('useGridSync', () => {
             sync.handleDragStop(
               [
                 {
-                  i: 'equity-curve',
+                  i: 'capital-chart',
                   x: 3,
                   y: 4,
                   w: 8,
@@ -242,7 +244,9 @@ describe('useGridSync', () => {
     });
 
     const storeState = useLayoutStore.getState();
-    const miniIde = storeState.layout.find((item) => item.i === 'equity-curve');
+    const miniIde = storeState.layout.find(
+      (item) => item.i === 'capital-chart'
+    );
 
     expect(miniIde?.x).toBe(3);
     expect(miniIde?.y).toBe(4);
@@ -253,8 +257,8 @@ describe('useGridSync', () => {
     const { result } = renderHook(() =>
       useGridSync({
         widgets: {
-          'equity-curve': {
-            id: 'equity-curve',
+          'capital-chart': {
+            id: 'capital-chart',
             title: 'Equity',
             component: () => null,
           },
@@ -263,20 +267,20 @@ describe('useGridSync', () => {
     );
 
     act(() => {
-      drag(result.current, [{ i: 'equity-curve', x: 1, y: 2, w: 7, h: 8 }]);
+      drag(result.current, [{ i: 'capital-chart', x: 1, y: 2, w: 7, h: 8 }]);
     });
 
     expect(useLayoutStore.getState().layout).toHaveLength(4);
-    expect(useLayoutStore.getState().layout[1]?.i).toBe('drawdown');
+    expect(useLayoutStore.getState().layout[1]?.i).toBe('drawdowns');
     expect(useLayoutStore.getState().layout[0]).toMatchObject({ x: 1, y: 2 });
   });
 
   it('retains the full height and constraints when dragging minimized widgets', () => {
-    useLayoutStore.getState().toggleWidgetMinimize('equity-curve');
+    useLayoutStore.getState().toggleWidgetMinimize('capital-chart');
     const { result } = renderHook(() => useGridSync());
 
     act(() => {
-      drag(result.current, [{ i: 'equity-curve', x: 0, y: 3, w: 8, h: 1 }]);
+      drag(result.current, [{ i: 'capital-chart', x: 0, y: 3, w: 8, h: 1 }]);
     });
 
     expect(useLayoutStore.getState().layout[0]).toMatchObject({
@@ -286,21 +290,21 @@ describe('useGridSync', () => {
       y: 3,
     });
 
-    act(() => useLayoutStore.getState().toggleWidgetMinimize('equity-curve'));
+    act(() => useLayoutStore.getState().toggleWidgetMinimize('capital-chart'));
     expect(result.current.rglLayout[0]).toMatchObject({ h: 7, minH: 4 });
   });
 
   it('stacks mobile widgets by their actual heights and desktop reading order', () => {
-    useLayoutStore.getState().updateWidget('equity-curve', { h: 15, y: 20 });
-    useLayoutStore.getState().toggleWidgetMinimize('execution-metrics');
+    useLayoutStore.getState().updateWidget('capital-chart', { h: 15, y: 20 });
+    useLayoutStore.getState().toggleWidgetMinimize('monthly-returns');
     const { result } = renderHook(() => useGridSync({ rowHeight: 36 }));
     const mobileLayout = result.current.rglLayouts.sm!;
 
     expect(mobileLayout.map((item) => item.i)).toEqual([
-      'drawdown',
-      'execution-metrics',
-      'trade-log',
-      'equity-curve',
+      'drawdowns',
+      'monthly-returns',
+      'trades',
+      'capital-chart',
     ]);
     for (let index = 1; index < mobileLayout.length; index += 1) {
       const previous = mobileLayout[index - 1]!;
@@ -319,7 +323,7 @@ describe('useGridSync', () => {
 
     act(() => result.current.handleBreakpointChange('sm', 1));
     act(() =>
-      drag(result.current, [{ i: 'equity-curve', x: 0, y: 0, w: 1, h: 7 }])
+      drag(result.current, [{ i: 'capital-chart', x: 0, y: 0, w: 1, h: 7 }])
     );
 
     expect(useLayoutStore.getState().layout).toBe(before);
@@ -332,14 +336,14 @@ describe('useGridSync', () => {
       useGridSync({ isEditable: false })
     );
     act(() =>
-      drag(readOnly.current, [{ i: 'equity-curve', x: 2, y: 3, w: 6, h: 5 }])
+      drag(readOnly.current, [{ i: 'capital-chart', x: 2, y: 3, w: 6, h: 5 }])
     );
     expect(useLayoutStore.getState().layout).toBe(before);
 
-    act(() => useLayoutStore.getState().toggleWidgetPin('equity-curve'));
+    act(() => useLayoutStore.getState().toggleWidgetPin('capital-chart'));
     const { result: editable } = renderHook(() => useGridSync());
     act(() =>
-      drag(editable.current, [{ i: 'equity-curve', x: 2, y: 3, w: 6, h: 5 }])
+      drag(editable.current, [{ i: 'capital-chart', x: 2, y: 3, w: 6, h: 5 }])
     );
     expect(useLayoutStore.getState().layout[0]).toMatchObject({
       x: 0,
@@ -365,12 +369,16 @@ describe('useGridSync', () => {
     const { result } = renderHook(() => useGridSync());
     const staleSync = result.current;
 
-    act(() => useLayoutStore.getState().removeWidget('equity-curve'));
-    act(() => drag(staleSync, [{ i: 'equity-curve', x: 1, y: 2, w: 6, h: 5 }]));
+    act(() => useLayoutStore.getState().removeWidget('capital-chart'));
+    act(() =>
+      drag(staleSync, [{ i: 'capital-chart', x: 1, y: 2, w: 6, h: 5 }])
+    );
 
     expect(useLayoutStore.getState().layout).toHaveLength(3);
     expect(
-      useLayoutStore.getState().layout.some((item) => item.i === 'equity-curve')
+      useLayoutStore
+        .getState()
+        .layout.some((item) => item.i === 'capital-chart')
     ).toBe(false);
   });
 });

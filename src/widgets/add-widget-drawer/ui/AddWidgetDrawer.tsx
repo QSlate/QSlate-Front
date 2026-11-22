@@ -20,7 +20,7 @@ import {
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 import { useLayoutStore } from '@/entities/layout';
-import { LAB_WIDGET_INVENTORY } from '@/entities/widget';
+import { LAB_WIDGETS, WIDGET_CATEGORY_LABELS } from '@/entities/widget';
 import { useLabStore } from '@/features/lab-state';
 import { apiClient, type InstalledWidget } from '@/shared/api';
 import { useAppearance } from '@/shared/theme';
@@ -114,18 +114,18 @@ export function AddWidgetDrawer() {
     const addedIds = new Set<string>();
 
     // 1. Add known core widgets from inventory
-    for (const core of LAB_WIDGET_INVENTORY) {
+    for (const core of LAB_WIDGETS) {
       list.push({
-        id: core.id,
+        id: core.type,
         title: core.title,
-        category: core.category,
-        subtitle: core.subtitle,
-        kind: core.isCore ? 'core' : 'marketplace',
-        icon: WIDGET_ICONS[core.id] ?? (
+        category: WIDGET_CATEGORY_LABELS[core.category],
+        subtitle: core.description,
+        kind: 'core',
+        icon: WIDGET_ICONS[core.type] ?? (
           <Activity size={15} className="text-blue-500" />
         ),
       });
-      addedIds.add(core.id);
+      addedIds.add(core.type);
     }
 
     // 2. Append new dynamic custom or marketplace widgets from backend
@@ -412,8 +412,8 @@ export function AddWidgetDrawer() {
                       <button
                         type="button"
                         onClick={() => {
-                          const isKnown = LAB_WIDGET_INVENTORY.some(
-                            (k) => k.id === widget.id
+                          const isKnown = LAB_WIDGETS.some(
+                            (k) => k.type === widget.id
                           );
                           addWidget(
                             widget.id,

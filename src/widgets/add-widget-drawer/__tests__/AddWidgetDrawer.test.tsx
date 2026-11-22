@@ -55,8 +55,8 @@ describe('AddWidgetDrawer', () => {
 
     // Verify dynamic widget and core widgets loaded from API
     await waitFor(() => {
-      expect(screen.getByText('Monte Carlo 10k Simulator')).toBeDefined();
-      expect(screen.getByText('Order Book Heatmap L2')).toBeDefined();
+      expect(screen.getByText('Ratio de Sharpe')).toBeDefined();
+      expect(screen.getByText('Trades gagnants')).toBeDefined();
       expect(screen.getByText('Delta Neutral Strategy Monitor')).toBeDefined();
       expect(screen.getByText('custom')).toBeDefined();
     });
@@ -78,7 +78,7 @@ describe('AddWidgetDrawer', () => {
     });
 
     expect(screen.getByText('Delta Neutral Strategy Monitor')).toBeDefined();
-    expect(screen.queryByText('Monte Carlo 10k Simulator')).toBeNull();
+    expect(screen.queryByText('Ratio de Sharpe')).toBeNull();
   });
 
   it('filters widgets by category pill click', async () => {
@@ -94,7 +94,7 @@ describe('AddWidgetDrawer', () => {
     });
 
     expect(screen.getByText('Delta Neutral Strategy Monitor')).toBeDefined();
-    expect(screen.queryByText('Monte Carlo 10k Simulator')).toBeNull();
+    expect(screen.queryByText('Ratio de Sharpe')).toBeNull();
   });
 
   it('adds a dynamic custom widget to layout when clicking Add', async () => {
@@ -127,15 +127,15 @@ describe('AddWidgetDrawer', () => {
 
   it('removes an active widget from layout when clicking Remove', async () => {
     // Add Monte Carlo first
-    useLayoutStore.getState().addWidget('monte-carlo');
+    useLayoutStore.getState().addWidget('sharpe');
 
     render(<AddWidgetDrawer />);
 
     await waitFor(() => {
-      expect(screen.getByText('Monte Carlo 10k Simulator')).toBeDefined();
+      expect(screen.getByText('Ratio de Sharpe')).toBeDefined();
     });
 
-    const monteCarloHeader = screen.getByText('Monte Carlo 10k Simulator');
+    const monteCarloHeader = screen.getByText('Ratio de Sharpe');
     const container = monteCarloHeader.closest('.group');
     const removeButton = container?.querySelector('button');
 
@@ -147,7 +147,7 @@ describe('AddWidgetDrawer', () => {
     }
 
     expect(
-      useLayoutStore.getState().layout.some((item) => item.i === 'monte-carlo')
+      useLayoutStore.getState().layout.some((item) => item.i === 'sharpe')
     ).toBe(false);
     expect(useLabStore.getState().toast?.type).toBe('info');
   });
