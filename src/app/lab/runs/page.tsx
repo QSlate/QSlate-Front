@@ -5,7 +5,7 @@ import { LabHeader } from '@/widgets/lab-frame';
 
 export const metadata: Metadata = {
   title: 'Historique · QSlate',
-  description: 'Auditable institutional quantitative simulation run history',
+  description: 'Historique de tes backtests',
 };
 
 export default function RunsPage() {

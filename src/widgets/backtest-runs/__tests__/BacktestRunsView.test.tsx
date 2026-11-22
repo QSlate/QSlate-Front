@@ -1,260 +1,108 @@
 // @vitest-environment jsdom
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useAuthStore } from '@/entities/user/model';
 import { useLabStore } from '@/features/lab-state';
-import { apiClient } from '@/shared/api';
-import { AppearanceProvider } from '@/shared/theme';
+import { apiClient, type BacktestJob } from '@/shared/api';
+import { renderWithQuery } from '@/shared/lib/test';
 
 import { BacktestRunsView } from '../ui/BacktestRunsView';
 
 const mockPush = vi.fn();
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: mockPush,
-  }),
-}));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: mockPush }) }));
+
+function job(id: string, status: BacktestJob['status']): BacktestJob {
+  return {
+    backtest_id: id,
+    status,
+    progress: status === 'running' ? 40 : 100,
+    input: {
+      strategy_id: 's1',
+      dataset_id: 'public-btc-usdt-1h',
+      initial_capital: '10000',
+    },
+    created_at: '2026-11-20T10:00:00Z',
+    updated_at: '2026-11-20T10:01:00Z',
+  };
+}
+
+beforeEach(() => {
+  vi.spyOn(apiClient, 'getStrategies').mockResolvedValue({
+    items: [
+      {
+        id: 's1',
+        version_id: 'v',
+        revision: 1,
+        name: 'RsiTrend',
+        created_at: '',
+        updated_at: '',
+      },
+    ],
+  });
+  vi.spyOn(apiClient, 'getMarketSymbols').mockResolvedValue({
+    items: [
+      {
+        symbol: 'BTC/USDT@1h',
+        name: 'Bitcoin',
+        dataset_id: 'public-btc-usdt-1h',
+        version_id: 'v',
+        resolution: '1h',
+        live: false,
+      },
+    ],
+  });
+});
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  vi.clearAllMocks();
+});
 
 describe('BacktestRunsView', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    useLabStore.setState({
-      activeTab: 'runs',
-      toast: null,
-      loadedBacktestId: null,
-    });
-    useAuthStore.setState({
-      isAuthenticated: true,
-      accessToken: 'test-token',
-    });
-
+  it('lists runs with readable labels and status', async () => {
     vi.spyOn(apiClient, 'getBacktests').mockResolvedValue({
-      items: [
-        {
-          backtest_id: 'bt-9021',
-          status: 'completed',
-          progress: 100,
-          input: {
-            strategy_id: 'strat-momentum-eth',
-            strategy_name: 'Momentum_ETH_4h.py · v3.2',
-            dataset_id: 'binance-eth-4h',
-          },
-          created_at: '2026-06-30T16:04:12Z',
-          updated_at: '2026-06-30T16:05:00Z',
-        },
-        {
-          backtest_id: 'bt-9020',
-          status: 'running',
-          progress: 65,
-          input: {
-            strategy_id: 'strat-vol-btc',
-            strategy_name: 'Vol_Breakout_BTC_1h.py',
-            dataset_id: 'binance-btc-1h',
-          },
-          created_at: '2026-06-29T11:15:30Z',
-          updated_at: '2026-06-29T11:16:00Z',
-        },
-      ],
-      next_cursor: 'cursor-page-2',
+      items: [job('a', 'completed'), job('b', 'running')],
     });
-
-    vi.spyOn(apiClient, 'getBacktestSummary').mockResolvedValue({
-      backtest_id: 'bt-9021',
-      metrics: {
-        sharpe_ratio: 2.41,
-        total_return: 0.292,
-        max_drawdown: 0.087,
-        trades_count: 1284,
-      },
-    });
+    renderWithQuery(<BacktestRunsView />);
+    expect(
+      (await screen.findAllByText('RsiTrend · BTC / USDT · 1 h')).length
+    ).toBe(2);
+    expect(screen.getByText('Terminé')).toBeTruthy();
+    expect(screen.getByText(/40 %/)).toBeTruthy();
   });
 
-  afterEach(() => {
-    cleanup();
-  });
-
-  it('renders table with runs fetched from backend API and displays summary metrics', async () => {
-    render(<BacktestRunsView />);
-
-    expect(screen.getByText('Backtest Execution History')).toBeDefined();
-
-    await waitFor(() => {
-      expect(screen.getByText('bt-9021')).toBeDefined();
-      expect(screen.getByText('Momentum_ETH_4h.py · v3.2')).toBeDefined();
-      expect(screen.getByText('binance-eth-4h')).toBeDefined();
-      expect(screen.getAllByText('Completed').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByText('Running (65%)')).toBeDefined();
-      expect(screen.getByText('2.41')).toBeDefined();
-      expect(screen.getByText('29.2%')).toBeDefined();
-      expect(screen.getByText('1,284')).toBeDefined();
+  it('opens a completed run in the lab', async () => {
+    vi.spyOn(apiClient, 'getBacktests').mockResolvedValue({
+      items: [job('a', 'completed')],
     });
-  });
-
-  it('filters runs by search query', async () => {
-    render(<BacktestRunsView />);
-
-    await waitFor(() => {
-      expect(screen.getByText('bt-9021')).toBeDefined();
-      expect(screen.getByText('bt-9020')).toBeDefined();
-    });
-
-    const searchInput = screen.getByPlaceholderText(
-      /search run, strategy, dataset.../i
-    );
-    fireEvent.change(searchInput, { target: { value: 'Momentum' } });
-
-    expect(screen.getByText('bt-9021')).toBeDefined();
-    expect(screen.queryByText('bt-9020')).toBeNull();
-  });
-
-  it('filters runs by status filter pill tabs', async () => {
-    render(<BacktestRunsView />);
-
-    await waitFor(() => {
-      expect(screen.getByText('bt-9021')).toBeDefined();
-      expect(screen.getByText('bt-9020')).toBeDefined();
-    });
-
-    // Click "Running" filter pill
-    const runningPill = screen.getByRole('button', { name: /^running$/i });
-    fireEvent.click(runningPill);
-
-    expect(screen.queryByText('bt-9021')).toBeNull();
-    expect(screen.getByText('bt-9020')).toBeDefined();
-
-    // Click "Completed" filter pill
-    const completedPill = screen.getByRole('button', { name: /^completed$/i });
-    fireEvent.click(completedPill);
-
-    expect(screen.getByText('bt-9021')).toBeDefined();
-    expect(screen.queryByText('bt-9020')).toBeNull();
-  });
-
-  it('loads run into Lab workspace when clicking Load button', async () => {
-    render(<BacktestRunsView />);
-
-    await waitFor(() => {
-      expect(screen.getByText('bt-9021')).toBeDefined();
-    });
-
-    const loadButtons = screen.getAllByRole('button', { name: /load/i });
-    fireEvent.click(loadButtons[0]);
-
-    expect(useLabStore.getState().loadedBacktestId).toBe('bt-9021');
-    expect(useLabStore.getState().activeTab).toBe('workspace');
+    renderWithQuery(<BacktestRunsView />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ouvrir' }));
+    expect(useLabStore.getState().loadedBacktestId).toBe('a');
     expect(mockPush).toHaveBeenCalledWith('/lab');
   });
 
-  it('deletes backtest run using live API method', async () => {
-    const deleteSpy = vi
-      .spyOn(apiClient, 'deleteBacktest')
-      .mockResolvedValueOnce(undefined);
-
-    render(<BacktestRunsView />);
-
-    await waitFor(() => {
-      expect(screen.getByText('bt-9021')).toBeDefined();
+  it('enables comparison from two completed runs', async () => {
+    vi.spyOn(apiClient, 'getBacktests').mockResolvedValue({
+      items: [job('a', 'completed'), job('b', 'completed')],
     });
-
-    const deleteButtons = screen.getAllByTitle('Delete run');
-    fireEvent.click(deleteButtons[0]);
-
-    await waitFor(() => {
-      expect(deleteSpy).toHaveBeenCalledWith('bt-9021', 'test-token');
-      expect(screen.queryByText('bt-9021')).toBeNull();
-    });
+    renderWithQuery(<BacktestRunsView />);
+    const boxes = await screen.findAllByRole('checkbox');
+    const compare = screen.getByRole('button', { name: /Comparer/ });
+    expect(compare.hasAttribute('disabled')).toBe(true);
+    boxes.forEach((box) => fireEvent.click(box));
+    expect(
+      screen
+        .getByRole('button', { name: 'Comparer (2)' })
+        .hasAttribute('disabled')
+    ).toBe(false);
   });
 
-  it('renders empty state when no runs exist', async () => {
-    vi.spyOn(apiClient, 'getBacktests').mockResolvedValueOnce({
-      items: [],
-    });
-
-    render(<BacktestRunsView />);
-
-    await waitFor(() => {
-      expect(screen.getByText('No Backtest Runs Found')).toBeDefined();
-      expect(screen.getByText('Launch First Backtest')).toBeDefined();
-    });
-
-    const launchBtn = screen.getByRole('button', {
-      name: /launch first backtest/i,
-    });
-    fireEvent.click(launchBtn);
-    expect(useLabStore.getState().activeTab).toBe('workspace');
-    expect(mockPush).toHaveBeenCalledWith('/lab');
-  });
-
-  it('renders correctly in light theme mode', async () => {
-    const { container } = render(
-      <AppearanceProvider value={{ theme: 'light', colorblindMode: 'none' }}>
-        <BacktestRunsView />
-      </AppearanceProvider>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText('bt-9021')).toBeDefined();
-    });
-
-    expect(container).toBeDefined();
-  });
-
-  it('enables Compare button when 2 runs are selected and opens BacktestComparisonModal', async () => {
-    vi.spyOn(apiClient, 'compareBacktests').mockResolvedValueOnce({
-      summaries: [
-        {
-          backtest_id: 'bt-9021',
-          strategy_version_id: 's-v1',
-          dataset_version_id: 'd-v1',
-          metrics: { total_return: 0.29, sharpe_ratio: 2.41 },
-        },
-        {
-          backtest_id: 'bt-9020',
-          strategy_version_id: 's-v2',
-          dataset_version_id: 'd-v1',
-          metrics: { total_return: 0.15, sharpe_ratio: 1.2 },
-        },
-      ],
-    });
-
-    vi.spyOn(apiClient, 'getBacktestEquityCurve').mockResolvedValue({
-      items: [
-        { timestamp: 1, equity: 100000 },
-        { timestamp: 2, equity: 120000 },
-      ],
-    } as unknown as { items: [] });
-
-    render(<BacktestRunsView />);
-
-    await waitFor(() => {
-      expect(screen.getByText('bt-9021')).toBeDefined();
-    });
-
-    const compareBtn = screen.getByTitle(
-      'Select at least 2 runs below to compare'
-    );
-    expect(compareBtn).toBeDefined();
-
-    // Select all runs via header checkbox
-    const selectAllCheckbox = screen.getByLabelText('Select all runs');
-    fireEvent.click(selectAllCheckbox);
-
-    // Now button should say Compare Selected (2)
-    const activeCompareBtn = screen.getByText('Compare Selected (2)');
-    expect(activeCompareBtn).toBeDefined();
-
-    fireEvent.click(activeCompareBtn);
-
-    // Modal should now be open
-    await waitFor(() => {
-      expect(screen.getByText('Backtest Run Comparison')).toBeDefined();
-    });
+  it('shows an empty state without runs', async () => {
+    vi.spyOn(apiClient, 'getBacktests').mockResolvedValue({ items: [] });
+    renderWithQuery(<BacktestRunsView />);
+    expect(
+      await screen.findByText('Aucun backtest pour le moment')
+    ).toBeTruthy();
   });
 });
