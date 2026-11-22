@@ -5,8 +5,7 @@ import { MarketplaceView } from '@/widgets/marketplace';
 
 export const metadata: Metadata = {
   title: 'Market · QSlate',
-  description:
-    'Discover and embed verified quantitative trading modules, alternative data, and risk analytics',
+  description: 'Stratégies et widgets publiés par la communauté',
 };
 
 export default function MarketplacePage() {

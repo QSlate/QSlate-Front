@@ -1,291 +1,74 @@
 // @vitest-environment jsdom
-import {
-  act,
-  cleanup,
-  fireEvent,
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useLabStore } from '@/features/lab-state';
-import { apiClient } from '@/shared/api';
+import { apiClient, type MarketplaceItem } from '@/shared/api';
 import { renderWithQuery } from '@/shared/lib/test';
-import { AppearanceProvider } from '@/shared/theme';
 
 import { MarketplaceView } from '../ui/MarketplaceView';
 
+const ITEM: MarketplaceItem = {
+  id: 'i'.repeat(43),
+  kind: 'strategy',
+  version_id: 'v1',
+  author_id: 1,
+  name: 'Alpha Breakout',
+  description: 'Breakout strategy',
+  category: 'strategies',
+  visibility: 'public',
+  revision: 1,
+  install_count: 3,
+  review_count: 0,
+  average_rating: 0,
+  created_at: '',
+  updated_at: '',
+};
+
+beforeEach(() => {
+  vi.spyOn(apiClient, 'getInstalledWidgets').mockResolvedValue({ items: [] });
+  vi.spyOn(apiClient, 'getStrategies').mockResolvedValue({ items: [] });
+});
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  vi.clearAllMocks();
+});
+
 describe('MarketplaceView', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    useLabStore.setState({
-      marketplaceSearch: '',
-      marketplaceCategory: 'All',
-      installedMarketplaceIds: [],
-      reviewingItem: null,
-      toast: null,
-    });
-
-    // Default mock responses for live marketplace calls
-    vi.spyOn(apiClient, 'getMarketplaceCategories').mockResolvedValue({
-      items: [
-        { id: 'strategies', name: 'Strategies' },
-        { id: 'visualization', name: 'Visualization' },
-      ],
-    });
-
-    vi.spyOn(apiClient, 'getMarketplaceFeatured').mockResolvedValue({
-      items: [
-        {
-          id: 'feat-1',
-          kind: 'strategy',
-          version_id: 'ver-f1',
-          author_id: 1,
-          name: 'Institutional Volatility Arbitrage',
-          description:
-            'High-frequency statistical arbitrage on cross-venue spreads.',
-          category: 'Strategies',
-          visibility: 'public',
-          revision: 1,
-          install_count: 500,
-          review_count: 12,
-          average_rating: 4.9,
-          created_at: '2026-01-01T00:00:00Z',
-          updated_at: '2026-01-01T00:00:00Z',
-        },
-      ],
-    });
-
+  it('lists only items returned by the backend', async () => {
     vi.spyOn(apiClient, 'getMarketplaceItems').mockResolvedValue({
-      items: [
-        {
-          id: 'mod-monte-carlo',
-          kind: 'widget',
-          version_id: 'v-mc-10k',
-          author_id: 101,
-          name: 'Monte Carlo 10k Simulator',
-          description:
-            'Geometric Brownian motion fan chart projecting 10,000 paths with tail risk percentiles.',
-          category: 'Risk Analytics',
-          visibility: 'public',
-          revision: 1,
-          install_count: 1420,
-          review_count: 38,
-          average_rating: 4.9,
-          created_at: '2026-01-01T00:00:00Z',
-          updated_at: '2026-01-01T00:00:00Z',
-        },
-        {
-          id: 'mod-order-book-heatmap',
-          kind: 'widget',
-          version_id: 'v-obh-2',
-          author_id: 102,
-          name: 'Order Book Heatmap L2',
-          description:
-            'Full depth-of-market liquidity migration visualizer across Binance, Bybit, and Coinbase.',
-          category: 'Execution Algos',
-          visibility: 'public',
-          revision: 2,
-          install_count: 980,
-          review_count: 24,
-          average_rating: 4.8,
-          created_at: '2026-01-02T00:00:00Z',
-          updated_at: '2026-01-02T00:00:00Z',
-        },
-      ],
+      items: [ITEM],
     });
-  });
-
-  afterEach(() => {
-    cleanup();
-  });
-
-  it('renders marketplace catalog and featured banner', async () => {
     renderWithQuery(<MarketplaceView />);
-
-    expect(screen.getByText('Widget Marketplace')).toBeDefined();
-
-    await waitFor(() => {
-      expect(
-        screen.getByText('Institutional Volatility Arbitrage')
-      ).toBeDefined();
-      expect(screen.getByText('Monte Carlo 10k Simulator')).toBeDefined();
-      expect(screen.getByText('Order Book Heatmap L2')).toBeDefined();
-    });
+    expect(await screen.findByText('Alpha Breakout')).toBeTruthy();
+    expect(screen.getAllByRole('listitem')).toHaveLength(1);
+    expect(screen.getByText("Pas encore d'avis")).toBeTruthy();
   });
 
-  it('filters modules by search query with debouncing', async () => {
-    renderWithQuery(<MarketplaceView />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Monte Carlo 10k Simulator')).toBeDefined();
+  it('installs an item with its version', async () => {
+    vi.spyOn(apiClient, 'getMarketplaceItems').mockResolvedValue({
+      items: [ITEM],
     });
-
-    const searchInput = screen.getByPlaceholderText(
-      'Search modules, authors, signals...'
-    );
-
-    act(() => {
-      fireEvent.change(searchInput, { target: { value: 'Heatmap' } });
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('Order Book Heatmap L2')).toBeDefined();
-      expect(screen.queryByText('Monte Carlo 10k Simulator')).toBeNull();
-    });
-  });
-
-  it('filters modules by category pill click', async () => {
-    renderWithQuery(<MarketplaceView />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Monte Carlo 10k Simulator')).toBeDefined();
-    });
-
-    const execPill = screen.getByRole('button', { name: 'Execution Algos' });
-    act(() => {
-      fireEvent.click(execPill);
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('Order Book Heatmap L2')).toBeDefined();
-      expect(screen.queryByText('Monte Carlo 10k Simulator')).toBeNull();
-    });
-  });
-
-  it('installs and uninstalls a module using live API methods', async () => {
-    const installSpy = vi
+    const install = vi
       .spyOn(apiClient, 'installMarketplaceItem')
-      .mockResolvedValueOnce({
-        item_id: 'mod-monte-carlo',
-        version_id: 'v-mc-10k',
-        kind: 'widget',
-        catalog_id: 'cat-1',
-        installed_at: '2026-01-01T00:00:00Z',
+      .mockResolvedValue({
+        item_id: ITEM.id,
+        version_id: 'v1',
+        kind: 'strategy',
+        catalog_id: 'c',
+        installed_at: '',
       });
-
-    const uninstallSpy = vi
-      .spyOn(apiClient, 'uninstallMarketplaceItem')
-      .mockResolvedValueOnce();
-
     renderWithQuery(<MarketplaceView />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Monte Carlo 10k Simulator')).toBeDefined();
-    });
-
-    // 1. Install
-    const installButtons = screen.getAllByText('Install to Lab');
-    expect(installButtons.length).toBeGreaterThan(0);
-
-    act(() => {
-      fireEvent.click(installButtons[0]!);
-    });
-
-    await waitFor(() => {
-      expect(installSpy).toHaveBeenCalledWith('mod-monte-carlo', 'v-mc-10k');
-      expect(useLabStore.getState().installedMarketplaceIds).toContain(
-        'mod-monte-carlo'
-      );
-      expect(useLabStore.getState().toast?.type).toBe('success');
-    });
-
-    // 2. Uninstall
-    const removeBtn = screen.getByText('Remove');
-    act(() => {
-      fireEvent.click(removeBtn);
-    });
-
-    await waitFor(() => {
-      expect(uninstallSpy).toHaveBeenCalledWith('mod-monte-carlo');
-      expect(useLabStore.getState().installedMarketplaceIds).not.toContain(
-        'mod-monte-carlo'
-      );
-      expect(useLabStore.getState().toast?.type).toBe('info');
-    });
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Installer Alpha Breakout' })
+    );
+    await waitFor(() => expect(install).toHaveBeenCalledWith(ITEM.id, 'v1'));
   });
 
-  it('opens ReviewModal, displays existing reviews, and posts a new review', async () => {
-    vi.spyOn(apiClient, 'getMarketplaceReviews').mockResolvedValueOnce({
-      items: [
-        {
-          id: 'rev-prev',
-          author_id: 99,
-          rating: 5,
-          comment: 'Incredible variance estimation.',
-          created_at: '2026-01-01T00:00:00Z',
-        },
-      ],
-    });
-
-    const createReviewSpy = vi
-      .spyOn(apiClient, 'createMarketplaceReview')
-      .mockResolvedValueOnce({
-        id: 'rev-new-1',
-        author_id: 101,
-        rating: 5,
-        comment: 'Accurate tail percentiles and blazing fast.',
-        created_at: '2026-01-02T00:00:00Z',
-      });
-
+  it('shows an empty state when nothing is published', async () => {
+    vi.spyOn(apiClient, 'getMarketplaceItems').mockResolvedValue({ items: [] });
     renderWithQuery(<MarketplaceView />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Monte Carlo 10k Simulator')).toBeDefined();
-    });
-
-    // Click the Review modal trigger button
-    const reviewButtons = screen.getAllByLabelText('Open reviews modal');
-    expect(reviewButtons.length).toBeGreaterThan(0);
-
-    act(() => {
-      fireEvent.click(reviewButtons[0]!);
-    });
-
-    // Check modal opened
-    expect(screen.getByText('Community Reviews & Ratings')).toBeDefined();
-
-    // Check existing review loaded
-    await waitFor(() => {
-      expect(screen.getByText('Incredible variance estimation.')).toBeDefined();
-    });
-
-    // Fill comment and submit
-    const textarea = screen.getByPlaceholderText(
-      /Share your quantitative experience/i
-    );
-    act(() => {
-      fireEvent.change(textarea, {
-        target: { value: 'Accurate tail percentiles and blazing fast.' },
-      });
-    });
-
-    const submitBtn = screen.getByText('Submit Community Review');
-    act(() => {
-      fireEvent.click(submitBtn);
-    });
-
-    await waitFor(() => {
-      expect(createReviewSpy).toHaveBeenCalledWith('mod-monte-carlo', {
-        rating: 5,
-        comment: 'Accurate tail percentiles and blazing fast.',
-      });
-      expect(useLabStore.getState().toast?.message).toContain(
-        'review was published'
-      );
-    });
-  });
-
-  it('renders correctly in light theme mode', async () => {
-    renderWithQuery(
-      <AppearanceProvider value={{ theme: 'light', colorblindMode: 'none' }}>
-        <MarketplaceView />
-      </AppearanceProvider>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText('Widget Marketplace')).toBeDefined();
-      expect(screen.getByText('Monte Carlo 10k Simulator')).toBeDefined();
-    });
+    expect(await screen.findByText('La marketplace est vide')).toBeTruthy();
   });
 });
