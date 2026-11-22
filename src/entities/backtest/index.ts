@@ -1,7 +1,11 @@
 export {
+  abortableDelay,
   fetchBacktestArtifacts,
+  isTransientError,
   LiveBacktestService,
   liveBacktestService,
+  pollBacktest,
+  toJobSnapshot,
 } from './api/liveBacktestService';
 export {
   INITIAL_MOCK_RESULT,

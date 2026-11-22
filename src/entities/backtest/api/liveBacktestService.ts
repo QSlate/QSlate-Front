@@ -1,4 +1,4 @@
-import { apiClient, type BacktestJob } from '@/shared/api';
+import { apiClient, ApiError, type BacktestJob } from '@/shared/api';
 
 import { BacktestJobError } from '../model/run-error';
 import {
@@ -6,72 +6,132 @@ import {
   toBacktestRunPayload,
 } from '../model/run-request';
 import {
+  type BacktestJobSnapshot,
+  type BacktestJobStatus,
   type BacktestResult,
-  type BacktestRunOptions,
   type BacktestService,
+  type BacktestWatchOptions,
   type EquityPoint,
+  isTerminalStatus,
   type MonthlyReturn,
   type Trade,
 } from '../model/types';
 
-const POLL_INTERVAL_MS = 400;
+const POLL_INTERVAL_MS = 1_000;
+/** Consecutive transient failures tolerated before giving up. */
+const MAX_TRANSIENT_POLL_FAILURES = 5;
+/** Safety bound for an orphaned watch; long runs are normal. */
+const WATCH_TIMEOUT_MS = 60 * 60_000;
+
+function abortError(): DOMException {
+  return new DOMException('Stopped listening to the backtest', 'AbortError');
+}
+
+/** Sleeps `ms`, rejecting with an AbortError as soon as `signal` aborts. */
+export function abortableDelay(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject(abortError());
+      return;
+    }
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(abortError());
+    };
+    const timer = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    signal.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
 /**
- * Upper bound for status polling. Long runs on large datasets are normal;
- * this only stops an orphaned loop. Step 4 of #144 replaces polling with the
- * backtest WebSocket stream.
+ * Network failures, 429 and 5xx are worth retrying; 401/403/404 and other
+ * client errors are final and must reach the user right away.
  */
-const POLL_TIMEOUT_MS = 10 * 60_000;
-
-function cancelledByUser(): DOMException {
-  return new DOMException('Backtest was cancelled by user', 'AbortError');
+export function isTransientError(error: unknown): boolean {
+  if (error instanceof ApiError) {
+    return error.statusCode === 429 || error.statusCode >= 500;
+  }
+  return error instanceof TypeError;
 }
 
-function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function toStatus(status: BacktestJob['status']): BacktestJobStatus {
+  return status === 'pending' ? 'queued' : status;
+}
+
+export function toJobSnapshot(job: BacktestJob): BacktestJobSnapshot {
+  const progress = typeof job.progress === 'number' ? job.progress : null;
+  return {
+    backtestId: job.backtest_id,
+    status: toStatus(job.status),
+    progress: progress === null ? null : Math.min(100, Math.max(0, progress)),
+    error: job.error ?? null,
+  };
 }
 
 /**
- * Runs exactly the given request on the lab service: enqueue, poll the job
- * status, then load its artifacts. It never creates strategies nor falls
- * back to hard-coded ids; errors are raised as-is for the caller to
- * describe (see describeRunError).
+ * Polls GET /backtests/{id}/status until the job is terminal. Used directly
+ * and as the fallback of the WebSocket stream.
+ */
+export async function pollBacktest(
+  backtestId: string,
+  { signal, onUpdate }: BacktestWatchOptions
+): Promise<BacktestJobSnapshot> {
+  const startedAt = Date.now();
+  let failures = 0;
+  for (;;) {
+    if (signal.aborted) throw abortError();
+    try {
+      const snapshot = toJobSnapshot(
+        await apiClient.getBacktestStatus(backtestId)
+      );
+      failures = 0;
+      onUpdate?.(snapshot);
+      if (isTerminalStatus(snapshot.status)) return snapshot;
+    } catch (error) {
+      if (!isTransientError(error)) throw error;
+      failures += 1;
+      if (failures > MAX_TRANSIENT_POLL_FAILURES) throw error;
+    }
+    if (Date.now() - startedAt > WATCH_TIMEOUT_MS) {
+      throw new BacktestJobError('timeout', null);
+    }
+    await abortableDelay(POLL_INTERVAL_MS, signal);
+  }
+}
+
+/**
+ * Lab service adapter: submits exactly the given request, follows the job
+ * and loads its artifacts. It never creates strategies nor falls back to
+ * hard-coded ids; errors are raised as-is (see describeRunError).
  */
 export class LiveBacktestService implements BacktestService {
-  public async run(
-    request: BacktestRunRequest,
-    options: BacktestRunOptions = {}
-  ): Promise<BacktestResult> {
-    const { signal, onAccepted } = options;
-    let job: BacktestJob = await apiClient.runBacktest(
-      toBacktestRunPayload(request)
+  public async submit(
+    request: BacktestRunRequest
+  ): Promise<BacktestJobSnapshot> {
+    return toJobSnapshot(
+      await apiClient.runBacktest(toBacktestRunPayload(request))
     );
+  }
 
-    const cancel = async () => {
-      await apiClient.cancelBacktest(job.backtest_id).catch(() => undefined);
-      throw cancelledByUser();
-    };
+  public watch(
+    backtestId: string,
+    options: BacktestWatchOptions
+  ): Promise<BacktestJobSnapshot> {
+    return pollBacktest(backtestId, options);
+  }
 
-    if (signal?.aborted) return cancel();
-    onAccepted?.(job.backtest_id);
+  public async cancel(backtestId: string): Promise<void> {
+    await apiClient.cancelBacktest(backtestId);
+  }
 
-    const startedAt = Date.now();
-    while (job.status !== 'completed') {
-      if (job.status === 'failed' || job.status === 'cancelled') {
-        throw new BacktestJobError(job.status, job.error ?? null);
-      }
-      if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
-        throw new BacktestJobError('timeout', null);
-      }
-      await wait(POLL_INTERVAL_MS);
-      if (signal?.aborted) return cancel();
-      try {
-        job = await apiClient.getBacktestStatus(job.backtest_id);
-      } catch {
-        // Transient status failures are retried on the next tick.
-      }
-    }
-
-    return fetchBacktestArtifacts(job.backtest_id, request.initialCapital);
+  public fetchResult(
+    backtestId: string,
+    initialCapital: number | null
+  ): Promise<BacktestResult> {
+    return fetchBacktestArtifacts(backtestId, initialCapital);
   }
 }
 

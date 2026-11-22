@@ -92,7 +92,7 @@ export function useRunComposer(): RunComposerModel {
       : null;
 
   const { status, run, cancel } = useBacktest();
-  const isRunning = status === 'running';
+  const isRunning = status === 'running' || status === 'cancelling';
   const isLoading = strategiesQuery.isPending || datasetsQuery.isPending;
   const fieldErrors = validateComposerFields(selection);
   const built = buildRunRequest({

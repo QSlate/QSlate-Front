@@ -68,18 +68,44 @@ export interface BacktestResult {
   longestDrawdownDays: number;
 }
 
-export interface BacktestRunOptions {
-  readonly signal?: AbortSignal | undefined;
-  /** Called once the lab service accepted the job (for live logs). */
-  readonly onAccepted?: ((backtestId: string) => void) | undefined;
+export type BacktestJobStatus =
+  'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
+
+/** Latest known state of a server-side backtest job. */
+export interface BacktestJobSnapshot {
+  readonly backtestId: string;
+  readonly status: BacktestJobStatus;
+  /** Completion percentage 0–100 when the server reports it. */
+  readonly progress: number | null;
+  /** Server error detail for failed jobs. */
+  readonly error: string | null;
 }
 
-/** Runs one backtest end to end and resolves with its artifacts. */
+export interface BacktestWatchOptions {
+  /** Aborting stops listening (detach); it never cancels the job. */
+  readonly signal: AbortSignal;
+  readonly onUpdate?: ((job: BacktestJobSnapshot) => void) | undefined;
+}
+
+/** Lab service operations used to run and follow a backtest. */
 export interface BacktestService {
-  run(
-    request: BacktestRunRequest,
-    options?: BacktestRunOptions
+  submit(request: BacktestRunRequest): Promise<BacktestJobSnapshot>;
+  /** Resolves with the terminal snapshot (completed, failed or cancelled). */
+  watch(
+    backtestId: string,
+    options: BacktestWatchOptions
+  ): Promise<BacktestJobSnapshot>;
+  cancel(backtestId: string): Promise<void>;
+  fetchResult(
+    backtestId: string,
+    initialCapital: number | null
   ): Promise<BacktestResult>;
+}
+
+export function isTerminalStatus(status: BacktestJobStatus): boolean {
+  return (
+    status === 'completed' || status === 'failed' || status === 'cancelled'
+  );
 }
 
 export const STRATEGIES: Strategy[] = [

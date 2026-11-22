@@ -114,7 +114,10 @@ export function LabRail() {
             <RailLink
               destination={destination}
               active={isDestinationActive(pathname, destination.href)}
-              busy={destination.href === '/lab' && status === 'running'}
+              busy={
+                destination.href === '/lab' &&
+                (status === 'running' || status === 'cancelling')
+              }
             />
           </li>
         ))}

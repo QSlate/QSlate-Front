@@ -53,7 +53,13 @@ function describeApiError(error: ApiError): BacktestRunError {
         code: error.code,
         action: 'none',
         message:
-          "La stratégie ou le jeu de données sélectionné n'existe plus. Choisis-en un autre.",
+          "La stratégie, le jeu de données ou le backtest demandé n'existe plus. Vérifie ta sélection.",
+      };
+    case 'forbidden':
+      return {
+        code: error.code,
+        action: 'none',
+        message: "Tu n'as pas accès à ce backtest.",
       };
     case 'quota_exceeded':
       return {
@@ -71,6 +77,13 @@ function describeApiError(error: ApiError): BacktestRunError {
       };
     default:
       break;
+  }
+  if (error.statusCode === 403) {
+    return {
+      code: 'forbidden',
+      action: 'none',
+      message: "Tu n'as pas accès à ce backtest.",
+    };
   }
   if (error.statusCode === 401) {
     return {
