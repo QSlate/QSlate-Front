@@ -8,7 +8,7 @@ import { apiClient, ApiError, type MarketplaceItem } from '@/shared/api';
 import { cn, FOCUS_RING } from '@/shared/lib/class-names';
 import { Button, Dialog, Skeleton } from '@/shared/ui';
 
-import { categoryLabel, kindLabel } from '../model/labels';
+import { categoryLabel, isKindCategory, kindLabel } from '../model/labels';
 import { ItemIcon } from './marketplace-card';
 import { RatingStars, RatingSummary } from './rating-stars';
 
@@ -86,7 +86,7 @@ export function ItemDetailDialog({
   return (
     <Dialog
       title={item.name}
-      description={`${kindLabel(item.kind)}${item.category ? ` · ${categoryLabel(item.category)}` : ''} · par ${author}`}
+      description={`${kindLabel(item.kind)}${item.category && !isKindCategory(item.category, item.kind) ? ` · ${categoryLabel(item.category)}` : ''} · par ${author}`}
       onClose={onClose}
       className="w-[min(600px,calc(100vw-32px))]"
       footer={

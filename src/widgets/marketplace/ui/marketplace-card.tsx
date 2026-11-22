@@ -22,7 +22,7 @@ import type { MarketplaceItem } from '@/shared/api';
 import { cn, FOCUS_RING } from '@/shared/lib/class-names';
 import { Button, IconButton } from '@/shared/ui';
 
-import { categoryLabel, kindLabel } from '../model/labels';
+import { categoryLabel, isKindCategory, kindLabel } from '../model/labels';
 import { RatingSummary } from './rating-stars';
 
 const COUNT = new Intl.NumberFormat('fr-FR');
@@ -193,7 +193,7 @@ export function MarketplaceCard({
         <span className="rounded-md bg-sunken px-2 py-0.5 text-[11px] font-medium text-fg-2">
           {kindLabel(item.kind)}
         </span>
-        {item.category ? (
+        {item.category && !isKindCategory(item.category, item.kind) ? (
           <span className="rounded-md border border-line px-2 py-0.5 text-[11px] text-fg-3">
             {categoryLabel(item.category)}
           </span>

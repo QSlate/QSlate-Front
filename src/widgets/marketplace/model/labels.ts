@@ -23,6 +23,19 @@ export function categoryLabel(id: string, name?: string | undefined): string {
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : 'Autre';
 }
 
+/** "strategies" on a strategy only repeats its kind: not worth a tag. */
+export function isKindCategory(
+  category: string,
+  kind: MarketplaceItemKind
+): boolean {
+  const id = category.toLowerCase();
+  return (
+    id === kind ||
+    id === `${kind}s` ||
+    (kind === 'strategy' && id === 'strategies')
+  );
+}
+
 export function kindLabel(kind: MarketplaceItemKind): string {
   return kind === 'strategy' ? 'Stratégie' : 'Widget';
 }
