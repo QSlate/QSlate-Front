@@ -140,16 +140,30 @@ describe('buildRunRequest', () => {
     });
   });
 
-  it('falls back to the first strategy and dataset when the saved ones are gone', () => {
+  it('defaults to the first strategy and dataset only when nothing is selected', () => {
     const result = buildRunRequest({
-      selection: selection({ strategyId: 'deleted', datasetId: 'deleted' }),
-      strategies: [STRATEGY],
+      selection: selection(),
+      strategies: [STRATEGY, { ...STRATEGY, id: 'strat-b' }],
       datasets: [DATASET],
       strategyDefaults: null,
     });
 
     expect(result.ok && result.request.strategyId).toBe('strat-a');
     expect(result.ok && result.request.datasetId).toBe('ds-eth');
+  });
+
+  it('reports a stored selection that no longer exists instead of replacing it', () => {
+    const result = buildRunRequest({
+      selection: selection({ strategyId: 'deleted', datasetId: 'gone' }),
+      strategies: [STRATEGY],
+      datasets: [DATASET],
+      strategyDefaults: null,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      blockers: [{ kind: 'missing-strategy' }, { kind: 'missing-dataset' }],
+    });
   });
 
   it('lists every blocker when nothing can run', () => {

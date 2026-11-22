@@ -25,6 +25,8 @@ export type ComposerFieldErrors = Partial<Record<ComposerField, string>>;
 export type RunBlocker =
   | { readonly kind: 'no-strategy' }
   | { readonly kind: 'no-dataset' }
+  | { readonly kind: 'missing-strategy' }
+  | { readonly kind: 'missing-dataset' }
   | { readonly kind: 'invalid-field'; readonly field: ComposerField };
 
 export type BuildRunRequestResult =
@@ -41,28 +43,38 @@ export interface BuildRunRequestInput {
 
 const CAPITAL_FORMATTER = new Intl.NumberFormat('fr-FR');
 
-/** Selected strategy, or the first one when none (or a deleted one) is set. */
+/**
+ * Outcome of resolving a stored selection against the current list:
+ * nothing stored defaults to the first item, a stored id that no longer
+ * exists is reported as `missing` (never silently replaced).
+ */
+export interface SelectionResolution<T> {
+  readonly item: T | null;
+  readonly missing: boolean;
+}
+
+function resolveSelection<T extends { readonly id: string }>(
+  selectedId: string | null,
+  items: readonly T[]
+): SelectionResolution<T> {
+  if (selectedId === null) return { item: items[0] ?? null, missing: false };
+  const item = items.find((candidate) => candidate.id === selectedId) ?? null;
+  return { item, missing: item === null };
+}
+
 export function resolveStrategy(
   selection: ComposerSelection,
   strategies: readonly StrategySummary[]
-): StrategySummary | null {
-  return (
-    strategies.find((strategy) => strategy.id === selection.strategyId) ??
-    strategies[0] ??
-    null
-  );
+): SelectionResolution<StrategySummary> {
+  return resolveSelection(selection.strategyId, strategies);
 }
 
-/** Selected runnable dataset, or the first runnable one. */
+/** Only runnable (ready) datasets are expected in `datasets`. */
 export function resolveDataset(
   selection: ComposerSelection,
   datasets: readonly CustomDataset[]
-): CustomDataset | null {
-  return (
-    datasets.find((dataset) => dataset.id === selection.datasetId) ??
-    datasets[0] ??
-    null
-  );
+): SelectionResolution<CustomDataset> {
+  return resolveSelection(selection.datasetId, datasets);
 }
 
 function inRange(value: number | null, min: number, max: number) {
@@ -149,10 +161,16 @@ export function buildRunRequest({
   strategyDefaults,
 }: BuildRunRequestInput): BuildRunRequestResult {
   const blockers: RunBlocker[] = [];
-  const strategy = resolveStrategy(selection, strategies);
-  const dataset = resolveDataset(selection, datasets);
-  if (!strategy) blockers.push({ kind: 'no-strategy' });
-  if (!dataset) blockers.push({ kind: 'no-dataset' });
+  const strategyResolution = resolveStrategy(selection, strategies);
+  const datasetResolution = resolveDataset(selection, datasets);
+  const strategy = strategyResolution.item;
+  const dataset = datasetResolution.item;
+  if (strategies.length === 0) blockers.push({ kind: 'no-strategy' });
+  else if (strategyResolution.missing)
+    blockers.push({ kind: 'missing-strategy' });
+  if (datasets.length === 0) blockers.push({ kind: 'no-dataset' });
+  else if (datasetResolution.missing)
+    blockers.push({ kind: 'missing-dataset' });
   const errors = validateComposerFields(selection);
   for (const field of COMPOSER_FIELDS) {
     if (errors[field]) blockers.push({ kind: 'invalid-field', field });

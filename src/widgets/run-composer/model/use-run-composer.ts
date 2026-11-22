@@ -35,6 +35,9 @@ export interface RunComposerModel {
   readonly datasets: readonly CustomDataset[];
   readonly strategy: StrategySummary | null;
   readonly dataset: CustomDataset | null;
+  /** A stored selection no longer exists in the current list. */
+  readonly strategyMissing: boolean;
+  readonly datasetMissing: boolean;
   /** Saved default parameters of the selected strategy, once loaded. */
   readonly strategyDefaults: Readonly<Record<string, unknown>> | null;
   readonly fieldErrors: ComposerFieldErrors;
@@ -78,8 +81,10 @@ export function useRunComposer(): RunComposerModel {
     () => datasetsQuery.data ?? [],
     [datasetsQuery.data]
   );
-  const strategy = resolveStrategy(selection, strategies);
-  const dataset = resolveDataset(selection, datasets);
+  const strategyResolution = resolveStrategy(selection, strategies);
+  const datasetResolution = resolveDataset(selection, datasets);
+  const strategy = strategyResolution.item;
+  const dataset = datasetResolution.item;
   const detail = useStrategy(strategy?.id ?? null);
   const strategyDefaults =
     detail.data && detail.data.id === strategy?.id
@@ -119,6 +124,16 @@ export function useRunComposer(): RunComposerModel {
         href: '/lab/data',
         linkLabel: 'Gérer mes données',
       };
+    } else if (first?.kind === 'missing-strategy') {
+      blockReason = {
+        message:
+          'Sélection introuvable : la stratégie choisie a été supprimée. Choisis-en une autre.',
+      };
+    } else if (first?.kind === 'missing-dataset') {
+      blockReason = {
+        message:
+          "Sélection introuvable : le jeu de données choisi a été supprimé ou n'est plus prêt. Choisis-en un autre.",
+      };
     } else if (first?.kind === 'invalid-field') {
       blockReason = {
         message:
@@ -156,6 +171,8 @@ export function useRunComposer(): RunComposerModel {
     datasets,
     strategy,
     dataset,
+    strategyMissing: strategyResolution.missing,
+    datasetMissing: datasetResolution.missing,
     strategyDefaults,
     fieldErrors,
     advancedChanges: countAdvancedChanges(

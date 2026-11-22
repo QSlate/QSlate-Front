@@ -23,6 +23,8 @@ interface ComposerSelectTokenProps {
   readonly onChange: (value: string) => void;
   /** Shown as the only option when the list is empty. */
   readonly emptyLabel: string;
+  /** The stored value no longer exists: show a placeholder, keep the list. */
+  readonly missing?: boolean | undefined;
   /** Secondary information (version, candle count). */
   readonly meta?: string | undefined;
   readonly disabled?: boolean | undefined;
@@ -38,6 +40,7 @@ export function ComposerSelectToken({
   onChange,
   emptyLabel,
   meta,
+  missing = false,
   disabled = false,
 }: ComposerSelectTokenProps) {
   const metaId = useId();
@@ -56,7 +59,8 @@ export function ComposerSelectToken({
       <select
         aria-label={label}
         aria-describedby={meta ? metaId : undefined}
-        value={empty ? '' : (value ?? '')}
+        value={empty || missing ? '' : (value ?? '')}
+        aria-invalid={missing || undefined}
         disabled={disabled || empty}
         onChange={(event) => onChange(event.target.value)}
         className="max-w-[170px] cursor-pointer appearance-none truncate border-0 bg-transparent p-0 pr-4 font-medium text-inherit outline-none disabled:cursor-not-allowed [&>option]:bg-raised [&>option]:text-fg"
@@ -64,11 +68,18 @@ export function ComposerSelectToken({
         {empty ? (
           <option value="">{emptyLabel}</option>
         ) : (
-          options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))
+          <>
+            {missing ? (
+              <option value="" disabled>
+                Sélection introuvable
+              </option>
+            ) : null}
+            {options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </>
         )}
       </select>
       {meta ? (

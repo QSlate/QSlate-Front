@@ -8,6 +8,7 @@ export {
   resolveDataset,
   resolveStrategy,
   type RunBlocker,
+  type SelectionResolution,
   validateComposerFields,
 } from './model/build-run-request';
 export {

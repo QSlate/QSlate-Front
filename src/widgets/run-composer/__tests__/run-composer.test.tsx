@@ -137,6 +137,25 @@ describe('RunComposer', () => {
     ).toBe(true);
   });
 
+  it('flags a stored strategy that was deleted instead of switching silently', async () => {
+    useComposerStore.getState().update('anonymous', { strategyId: 'deleted' });
+    mockCatalog([STRATEGY], [DATASET]);
+    renderComposer();
+
+    expect(
+      await screen.findByText(/Sélection introuvable : la stratégie choisie/)
+    ).toBeDefined();
+    const select = screen.getByRole('combobox', { name: 'Stratégie' });
+    expect(select).toHaveProperty('value', '');
+    expect(select.getAttribute('aria-invalid')).toBe('true');
+    expect((await launchButton()).getAttribute('aria-disabled')).toBe('true');
+
+    fireEvent.change(select, { target: { value: 'strat-a' } });
+    expect(useComposerStore.getState().selections.anonymous?.strategyId).toBe(
+      'strat-a'
+    );
+  });
+
   it('flags an invalid capital and blocks the run', async () => {
     mockCatalog([STRATEGY], [DATASET]);
     renderComposer();

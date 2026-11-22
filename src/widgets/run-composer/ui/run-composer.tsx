@@ -107,6 +107,7 @@ export function RunComposer() {
         value={strategy?.id ?? null}
         onChange={(strategyId) => update({ strategyId })}
         emptyLabel="Aucune stratégie"
+        missing={model.strategyMissing}
         meta={strategy ? `v${strategy.revision}` : undefined}
         disabled={isRunning}
       />
@@ -122,6 +123,7 @@ export function RunComposer() {
         value={dataset?.id ?? null}
         onChange={(datasetId) => update({ datasetId })}
         emptyLabel="Aucune donnée prête"
+        missing={model.datasetMissing}
         meta={dataset ? formatCandleCount(dataset.row_count) : undefined}
         disabled={isRunning}
       />
