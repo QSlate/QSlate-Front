@@ -125,6 +125,14 @@ describe('LabRail', () => {
       expect(useUserStore.getState().theme).toBe('light');
     });
 
+    const daltonism = screen.getByRole('switch', {
+      name: 'Mode daltonien (orange / bleu)',
+    });
+    expect(daltonism.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(daltonism);
+    expect(useUserStore.getState().colorblindMode).toBe('orange-blue');
+    useUserStore.getState().setColorblindMode('none');
+
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(account.getAttribute('aria-expanded')).toBe('false');
     expect(document.activeElement).toBe(account);

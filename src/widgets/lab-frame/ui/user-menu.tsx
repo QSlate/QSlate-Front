@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, Moon, Sun, UserRound } from 'lucide-react';
+import { Eye, LogOut, Moon, Sun, UserRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type FocusEvent, useEffect, useId, useRef, useState } from 'react';
 
@@ -32,6 +32,14 @@ export function UserMenu() {
   );
   const theme = useHydratedStore(useUserStore, (state) => state.theme, 'dark');
   const toggleTheme = useUserStore((state) => state.toggleTheme);
+  const colorblindMode = useHydratedStore(
+    useUserStore,
+    (state) => state.colorblindMode,
+    'none'
+  );
+  const toggleColorblindMode = useUserStore(
+    (state) => state.toggleColorblindMode
+  );
   const { name, email, initials } = resolveUserIdentity(authUser, session);
 
   useEffect(() => {
@@ -124,6 +132,16 @@ export function UserMenu() {
               {theme === 'dark'
                 ? 'Passer en thème clair'
                 : 'Passer en thème sombre'}
+            </button>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={colorblindMode === 'orange-blue'}
+              className={MENU_ITEM_CLASS}
+              onClick={toggleColorblindMode}
+            >
+              <Eye size={15} aria-hidden="true" />
+              Mode daltonien (orange / bleu)
             </button>
             <button
               type="button"
