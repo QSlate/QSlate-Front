@@ -2,7 +2,10 @@
 
 import { useCallback, useMemo } from 'react';
 
-import type { StrategyParameterValue } from '@/entities/backtest';
+import type {
+  BacktestRunRequest,
+  StrategyParameterValue,
+} from '@/entities/backtest';
 import {
   type RunDataset,
   useDatasetCoverageEnd,
@@ -56,6 +59,8 @@ export interface RunComposerModel {
   readonly isLoading: boolean;
   readonly blockReason: RunBlockReason | null;
   readonly canRun: boolean;
+  /** The request "Lancer" would send, when valid. */
+  readonly request: BacktestRunRequest | null;
   /** A run is active (running or being cancelled). */
   readonly isRunning: boolean;
   readonly isCancelling: boolean;
@@ -229,6 +234,7 @@ export function useRunComposer(): RunComposerModel {
     isLoading,
     blockReason,
     canRun,
+    request,
     isRunning,
     isCancelling: status === 'cancelling',
     update,

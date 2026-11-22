@@ -32,6 +32,7 @@ import {
   TOKEN_CLASS,
   TOKEN_META_CLASS,
 } from './composer-token';
+import { OptimizeDialog } from './optimize-dialog';
 import { RUN_COMPOSER_HINT_ID } from './run-composer-hint';
 
 const subscribePlatform = () => () => {};
@@ -50,6 +51,7 @@ function Separator() {
 export function RunComposer() {
   const model = useRunComposer();
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [optimizing, setOptimizing] = useState(false);
   const {
     selection,
     strategies,
@@ -296,7 +298,14 @@ export function RunComposer() {
         open={advancedOpen}
         onClose={() => setAdvancedOpen(false)}
         model={model}
+        onOptimize={() => {
+          setAdvancedOpen(false);
+          setOptimizing(true);
+        }}
       />
+      {optimizing ? (
+        <OptimizeDialog model={model} onClose={() => setOptimizing(false)} />
+      ) : null}
     </div>
   );
 }

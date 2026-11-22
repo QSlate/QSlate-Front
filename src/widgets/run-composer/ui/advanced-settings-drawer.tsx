@@ -1,6 +1,6 @@
 'use client';
 
-import { RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { FlaskConical, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { type ReactNode, useId } from 'react';
 
 import {
@@ -247,6 +247,8 @@ interface AdvancedSettingsDrawerProps {
   readonly open: boolean;
   readonly onClose: () => void;
   readonly model: RunComposerModel;
+  /** Opens the parameter optimization dialog. */
+  readonly onOptimize: () => void;
 }
 
 /** "Réglages avancés": strategy parameters, market costs and warm-up. */
@@ -254,6 +256,7 @@ export function AdvancedSettingsDrawer({
   open,
   onClose,
   model,
+  onOptimize,
 }: AdvancedSettingsDrawerProps) {
   const {
     strategy,
@@ -315,15 +318,27 @@ export function AdvancedSettingsDrawer({
             Cette stratégie n&apos;expose aucun paramètre réglable.
           </p>
         ) : (
-          fields.map((field) => (
-            <ParameterRow
-              key={field.key}
-              field={field}
-              value={overrides[field.key]}
-              error={parameterErrors[field.key]}
-              onChange={(value) => setParameter(field.key, value)}
-            />
-          ))
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              leadingIcon={<FlaskConical size={14} />}
+              className="self-start"
+              disabled={!fields.some((field) => field.kind === 'number')}
+              onClick={onOptimize}
+            >
+              Optimiser les paramètres…
+            </Button>
+            {fields.map((field) => (
+              <ParameterRow
+                key={field.key}
+                field={field}
+                value={overrides[field.key]}
+                error={parameterErrors[field.key]}
+                onChange={(value) => setParameter(field.key, value)}
+              />
+            ))}
+          </>
         )}
       </section>
       <section className="flex flex-col gap-3.5" aria-label="Coûts de marché">

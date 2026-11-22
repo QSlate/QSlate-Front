@@ -410,15 +410,7 @@ export interface BacktestLogsPage {
 export type OptimizationMethod = 'grid_search' | 'monte_carlo';
 
 export interface BacktestOptimizeInput {
-  run: {
-    strategy_id: string;
-    strategy_version_id: string;
-    dataset_id: string;
-    dataset_version_id: string;
-    initial_capital: string;
-    parameters?: Record<string, unknown>;
-    execution_target?: string;
-  };
+  run: BacktestRunPayload;
   method: OptimizationMethod;
   search_space: Record<string, number[]>;
   max_runs: number;
