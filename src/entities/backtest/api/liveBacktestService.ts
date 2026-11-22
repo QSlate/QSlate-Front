@@ -1,4 +1,5 @@
 import { apiClient, ApiError, type BacktestJob } from '@/shared/api';
+import { connectBacktestStream } from '@/shared/api/websocket';
 
 import { BacktestJobError } from '../model/run-error';
 import {
@@ -16,6 +17,11 @@ import {
   type MonthlyReturn,
   type Trade,
 } from '../model/types';
+import {
+  backtestStreamUrl,
+  canOpenWebSocket,
+  watchBacktestStream,
+} from './stream-watch';
 
 const POLL_INTERVAL_MS = 1_000;
 /** Consecutive transient failures tolerated before giving up. */
@@ -120,7 +126,14 @@ export class LiveBacktestService implements BacktestService {
     backtestId: string,
     options: BacktestWatchOptions
   ): Promise<BacktestJobSnapshot> {
-    return pollBacktest(backtestId, options);
+    if (!canOpenWebSocket()) return pollBacktest(backtestId, options);
+    return watchBacktestStream(backtestId, options, {
+      connect: connectBacktestStream,
+      getToken: () => apiClient.getToken(),
+      getUrl: backtestStreamUrl,
+      confirm: pollBacktest,
+      delay: abortableDelay,
+    });
   }
 
   public async cancel(backtestId: string): Promise<void> {

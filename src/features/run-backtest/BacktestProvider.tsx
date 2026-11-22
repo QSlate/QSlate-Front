@@ -21,6 +21,7 @@ import {
   describeRunError,
   EMPTY_BACKTEST_RESULT,
   liveBacktestService,
+  MAX_RUN_LOG_LINES,
 } from '@/entities/backtest';
 import { useAuthStore } from '@/entities/user/model';
 import { useLabStore } from '@/features/lab-state';
@@ -61,6 +62,8 @@ interface BacktestContextValue {
   error: BacktestRunError | null;
   activeRun: ActiveRun | null;
   lastRun: FinishedRun | null;
+  /** Log lines streamed for the active (or just finished) run. */
+  runLogs: readonly string[];
   /** Starts a run; ignored until the previous one has fully settled. */
   run: (request: BacktestRunRequest) => Promise<void>;
   /** Runs the last submitted request again. */
@@ -126,6 +129,7 @@ export function BacktestProvider({
   const [error, setError] = useState<BacktestRunError | null>(null);
   const [activeRun, setActiveRun] = useState<ActiveRun | null>(null);
   const [lastRun, setLastRun] = useState<FinishedRun | null>(null);
+  const [runLogs, setRunLogs] = useState<readonly string[]>([]);
   const [lastRequest, setLastRequest] = useState<BacktestRunRequest | null>(
     null
   );
@@ -192,6 +196,12 @@ export function BacktestProvider({
               current && current.backtestId === job.backtestId
                 ? { ...current, job }
                 : current
+            );
+          },
+          onLogs: (lines) => {
+            if (runToken !== runTokenRef.current) return;
+            setRunLogs((current) =>
+              [...current, ...lines].slice(-MAX_RUN_LOG_LINES)
             );
           },
         });
@@ -269,6 +279,7 @@ export function BacktestProvider({
       cancelRequestedRef.current = false;
       setLastRequest(request);
       setError(null);
+      setRunLogs([]);
       setStatus('running');
       setActiveRun({ backtestId: null, request, startedAt, job: null });
 
@@ -375,12 +386,24 @@ export function BacktestProvider({
       error,
       activeRun,
       lastRun,
+      runLogs,
       run,
       retry,
       cancel,
       canRetry: lastRequest !== null,
     }),
-    [result, status, error, activeRun, lastRun, run, retry, cancel, lastRequest]
+    [
+      result,
+      status,
+      error,
+      activeRun,
+      lastRun,
+      runLogs,
+      run,
+      retry,
+      cancel,
+      lastRequest,
+    ]
   );
 
   return (

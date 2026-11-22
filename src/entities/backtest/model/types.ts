@@ -85,6 +85,8 @@ export interface BacktestWatchOptions {
   /** Aborting stops listening (detach); it never cancels the job. */
   readonly signal: AbortSignal;
   readonly onUpdate?: ((job: BacktestJobSnapshot) => void) | undefined;
+  /** New log lines, in order, as soon as the server publishes them. */
+  readonly onLogs?: ((lines: readonly string[]) => void) | undefined;
 }
 
 /** Lab service operations used to run and follow a backtest. */
