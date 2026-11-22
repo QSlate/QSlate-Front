@@ -5,6 +5,8 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 
 import { ThemeSync } from '@/features/theme-sync';
 
+import { QueryProvider } from './providers';
+
 const inter = Inter({
   variable: '--font-inter',
   subsets: ['latin'],
@@ -32,7 +34,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased min-h-screen`}
       >
-        <ThemeSync>{children}</ThemeSync>
+        <QueryProvider>
+          <ThemeSync>{children}</ThemeSync>
+        </QueryProvider>
       </body>
     </html>
   );
