@@ -11,7 +11,7 @@ export type LabWidgetType =
   | 'trade-distribution'
   | 'trades';
 
-export type WidgetCategory = 'performance' | 'risk' | 'trades';
+export type WidgetCategory = 'performance' | 'risk' | 'trades' | 'market';
 
 export type WidgetTone = 'brand' | 'gain' | 'loss' | 'vio' | 'amber';
 

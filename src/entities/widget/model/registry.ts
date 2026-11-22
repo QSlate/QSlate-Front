@@ -60,7 +60,7 @@ export const LAB_WIDGETS: readonly LabWidgetDefinition[] = [
     title: 'Graphique de prix',
     description:
       'Bougies et volumes des données du backtest affiché, avec les achats et ventes de la stratégie.',
-    category: 'performance',
+    category: 'market',
     tone: 'brand',
     defaultSize: { w: 8, h: 8 },
     minSize: { w: 5, h: 6 },
@@ -112,6 +112,7 @@ export const WIDGET_CATEGORY_LABELS: Readonly<Record<WidgetCategory, string>> =
     performance: 'Performance',
     risk: 'Risque',
     trades: 'Trades',
+    market: 'Marché',
   };
 
 export function isLabWidgetType(value: unknown): value is LabWidgetType {
