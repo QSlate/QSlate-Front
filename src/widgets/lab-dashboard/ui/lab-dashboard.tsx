@@ -68,7 +68,7 @@ export function LabDashboard({ components }: LabDashboardProps) {
           />
           <span>
             <b className="font-semibold text-fg">Mode personnalisation</b>
-            <span className="max-lg:hidden">
+            <span className="max-2xl:hidden">
               {' · '}glisse pour déplacer, tire le coin pour redimensionner ·{' '}
               <Kbd>Maj</Kbd> + flèches au clavier
             </span>
@@ -115,7 +115,7 @@ export function CustomizeDashboardButton() {
       onClick={editor.start}
       disabled={editor.editing}
     >
-      Personnaliser
+      <span className="max-xl:sr-only">Personnaliser</span>
     </Button>
   );
 }

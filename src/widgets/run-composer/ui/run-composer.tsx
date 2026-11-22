@@ -127,7 +127,7 @@ export function RunComposer() {
     <div
       role="group"
       aria-label="Lancement du backtest"
-      className="flex items-center gap-1 rounded-[14px] border border-line bg-sunken p-[5px] shadow-card"
+      className="flex shrink-0 items-center gap-1 rounded-[14px] border border-line bg-sunken p-[5px] shadow-card"
     >
       <ComposerSelectToken
         label="Stratégie"
