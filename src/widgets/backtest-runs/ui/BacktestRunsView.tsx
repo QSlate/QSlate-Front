@@ -234,13 +234,13 @@ export function BacktestRunsView() {
       >
         <div className="flex items-center gap-3">
           <History size={16} className="text-blue-500" />
-          <h1
+          <h2
             className={`font-sans font-semibold text-sm ${
               isLight ? 'text-zinc-900' : 'text-white'
             }`}
           >
             Backtest Execution History
-          </h1>
+          </h2>
           <span className="text-zinc-500">
             · {filteredRuns.length} runs loaded
           </span>

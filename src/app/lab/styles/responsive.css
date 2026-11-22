@@ -116,7 +116,7 @@
   .lab-workspace-heading > div {
     gap: 6px;
   }
-  .lab-workspace-heading h1 {
+  .lab-workspace-heading h2 {
     font-size: 11px;
   }
   .lab-run-status:not(:empty) {

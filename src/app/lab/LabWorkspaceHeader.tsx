@@ -96,7 +96,7 @@ export function LabWorkspaceHeader() {
   return (
     <div className="lab-workspace-heading">
       <div>
-        <h1>Lab Workspace</h1>
+        <h2>Espace de travail</h2>
         <div
           className="lab-dashboard-picker"
           style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}

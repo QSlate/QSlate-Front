@@ -152,13 +152,13 @@ export function SettingsView() {
       >
         <div className="flex items-center gap-3">
           <Settings2 size={16} className="text-blue-500" />
-          <h1
+          <h2
             className={`font-sans font-semibold text-sm ${
               isLight ? 'text-zinc-900' : 'text-white'
             }`}
           >
             Simulation & Engine Settings
-          </h1>
+          </h2>
           <span className="text-zinc-500">· gVisor v2.8 / Polars 1.18</span>
         </div>
 

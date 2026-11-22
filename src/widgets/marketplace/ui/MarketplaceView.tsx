@@ -338,13 +338,13 @@ export function MarketplaceView() {
         }`}
       >
         <div className="flex items-center gap-3">
-          <h1
+          <h2
             className={`font-sans font-semibold text-sm ${
               isLight ? 'text-zinc-900' : 'text-white'
             }`}
           >
             Widget Marketplace
-          </h1>
+          </h2>
           <span className="text-zinc-500">
             · {items.length} module
             {items.length === 1 ? '' : 's'} available
