@@ -130,6 +130,52 @@ describe('LabRail', () => {
     expect(document.activeElement).toBe(account);
   });
 
+  it('closes the account panel when focus leaves it', () => {
+    useAuthStore.getState().setAuth(AUTH_SESSION);
+    render(
+      <>
+        <LabRail />
+        <button type="button">Ailleurs</button>
+      </>
+    );
+    const account = screen.getByRole('button', {
+      name: 'Compte de Sarah Connor',
+    });
+    fireEvent.click(account);
+    const themeButton = screen.getByRole('button', {
+      name: 'Passer en thème clair',
+    });
+
+    fireEvent.blur(account, { relatedTarget: themeButton });
+    expect(account.getAttribute('aria-expanded')).toBe('true');
+
+    fireEvent.blur(themeButton, {
+      relatedTarget: screen.getByRole('button', { name: 'Ailleurs' }),
+    });
+    expect(account.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('ignores an Escape already handled by a nested layer', () => {
+    useAuthStore.getState().setAuth(AUTH_SESSION);
+    render(<LabRail />);
+    const account = screen.getByRole('button', {
+      name: 'Compte de Sarah Connor',
+    });
+    fireEvent.click(account);
+
+    const consumed = new KeyboardEvent('keydown', {
+      key: 'Escape',
+      bubbles: true,
+      cancelable: true,
+    });
+    consumed.preventDefault();
+    fireEvent(document, consumed);
+    expect(account.getAttribute('aria-expanded')).toBe('true');
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(account.getAttribute('aria-expanded')).toBe('false');
+  });
+
   it('signs out: calls the API, clears the session and redirects to /login', async () => {
     useAuthStore.getState().setAuth(AUTH_SESSION);
     const logoutSpy = vi.spyOn(apiClient, 'logout').mockResolvedValueOnce();

@@ -2,7 +2,7 @@
 
 import { LogOut, Moon, Sun, UserRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useId, useRef, useState } from 'react';
+import { type FocusEvent, useEffect, useId, useRef, useState } from 'react';
 
 import { useAuthStore, useUserStore } from '@/entities/user';
 import { apiClient } from '@/shared/api';
@@ -37,7 +37,9 @@ export function UserMenu() {
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
+      // Skip presses already handled by a nested layer (e.g. a tooltip).
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      event.preventDefault();
       setOpen(false);
       triggerRef.current?.focus();
     };
@@ -58,6 +60,12 @@ export function UserMenu() {
     };
   }, [open]);
 
+  const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
+    const next = event.relatedTarget;
+    if (!(next instanceof Node) || !event.currentTarget.contains(next))
+      setOpen(false);
+  };
+
   const handleLogout = async () => {
     try {
       await apiClient.logout();
@@ -70,7 +78,7 @@ export function UserMenu() {
   };
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative" onBlur={handleBlur}>
       <button
         ref={triggerRef}
         type="button"
