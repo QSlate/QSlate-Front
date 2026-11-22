@@ -42,33 +42,21 @@ export interface MonacoEditorProps {
   markers?: DiagnosticMarker[];
 }
 
-function EditorSkeleton({ isLight }: { isLight?: boolean }) {
+function EditorSkeleton() {
   return (
     <div
-      className={`flex flex-col h-full w-full p-4 font-mono text-xs animate-pulse ${
-        isLight ? 'bg-white text-zinc-500' : 'bg-[#07080a] text-zinc-500'
-      }`}
+      className={`flex flex-col h-full w-full p-4 font-mono text-xs animate-pulse ${'bg-surface text-fg-3'}`}
     >
-      <div className="flex items-center gap-2 mb-4 text-zinc-400">
-        <LoaderCircle size={14} className="animate-spin text-blue-500" />
+      <div className="flex items-center gap-2 mb-4 text-fg-2">
+        <LoaderCircle size={14} className="animate-spin text-brand" />
         <span>Initializing Monaco Sandbox Runtime…</span>
       </div>
       <div className="space-y-2">
-        <div
-          className={`h-3 w-48 rounded ${isLight ? 'bg-zinc-200' : 'bg-white/[0.05]'}`}
-        />
-        <div
-          className={`h-3 w-72 rounded ${isLight ? 'bg-zinc-200' : 'bg-white/[0.05]'}`}
-        />
-        <div
-          className={`h-3 w-64 rounded ${isLight ? 'bg-zinc-200' : 'bg-white/[0.05]'}`}
-        />
-        <div
-          className={`h-3 w-80 rounded ${isLight ? 'bg-zinc-200' : 'bg-white/[0.05]'}`}
-        />
-        <div
-          className={`h-3 w-56 rounded ${isLight ? 'bg-zinc-200' : 'bg-white/[0.05]'}`}
-        />
+        <div className={`h-3 w-48 rounded ${'bg-[var(--line-2)]'}`} />
+        <div className={`h-3 w-72 rounded ${'bg-[var(--line-2)]'}`} />
+        <div className={`h-3 w-64 rounded ${'bg-[var(--line-2)]'}`} />
+        <div className={`h-3 w-80 rounded ${'bg-[var(--line-2)]'}`} />
+        <div className={`h-3 w-56 rounded ${'bg-[var(--line-2)]'}`} />
       </div>
     </div>
   );
@@ -83,10 +71,8 @@ function FallbackCodeEditor({
   language,
   onChange,
   onRetry,
-  theme = 'dark',
   markers = [],
 }: MonacoEditorProps & { onRetry?: () => void }) {
-  const isLight = theme === 'light';
   const lines = value.split('\n');
   const errorLines = new Set(markers.map((m) => m.line));
 
@@ -107,19 +93,13 @@ function FallbackCodeEditor({
 
   return (
     <div
-      className={`flex flex-col h-full w-full font-mono text-xs overflow-hidden select-text ${
-        isLight ? 'bg-white text-zinc-900' : 'bg-[#07080a] text-zinc-200'
-      }`}
+      className={`flex flex-col h-full w-full font-mono text-xs overflow-hidden select-text ${'bg-surface text-fg'}`}
     >
       {/* Notice bar */}
       <div
-        className={`flex items-center justify-between px-3 py-1.5 border-b text-[11px] ${
-          isLight
-            ? 'bg-zinc-100 border-zinc-200 text-zinc-700'
-            : 'bg-[#0e1014] border-[#242528] text-zinc-400'
-        }`}
+        className={`flex items-center justify-between px-3 py-1.5 border-b text-[11px] ${'bg-surface border-line text-fg-2'}`}
       >
-        <div className="flex items-center gap-1.5 text-amber-500">
+        <div className="flex items-center gap-1.5 text-warn">
           <AlertTriangle size={12} />
           <span>Lightweight Sandbox Editor ({language})</span>
         </div>
@@ -127,11 +107,7 @@ function FallbackCodeEditor({
           <button
             type="button"
             onClick={onRetry}
-            className={`flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${
-              isLight
-                ? 'bg-zinc-200 hover:bg-zinc-300 text-zinc-800'
-                : 'bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white'
-            }`}
+            className={`flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${'bg-[var(--line-2)] hover:bg-[var(--line-2)] text-fg hover:text-fg'}`}
           >
             <RotateCcw size={10} />
             <span>Retry Monaco</span>
@@ -141,13 +117,9 @@ function FallbackCodeEditor({
 
       {markers.length > 0 && (
         <div
-          className={`px-3 py-1 border-b text-[11px] flex items-center gap-2 ${
-            isLight
-              ? 'bg-rose-50 border-rose-200 text-rose-700'
-              : 'bg-rose-950/40 border-rose-900/50 text-rose-300'
-          }`}
+          className={`px-3 py-1 border-b text-[11px] flex items-center gap-2 ${'bg-rose-950/40 border-rose-900/50 text-rose-300'}`}
         >
-          <AlertTriangle size={12} className="shrink-0 text-rose-500" />
+          <AlertTriangle size={12} className="shrink-0 text-loss" />
           <span className="truncate">
             Line {markers[0].line}: {markers[0].message}
           </span>
@@ -158,20 +130,14 @@ function FallbackCodeEditor({
       <div className="flex-1 flex overflow-hidden">
         {/* Line Numbers Gutter */}
         <div
-          className={`w-12 py-3 text-right pr-3 select-none font-mono text-xs border-r leading-5 shrink-0 overflow-hidden ${
-            isLight
-              ? 'bg-zinc-50 text-zinc-400 border-zinc-200'
-              : 'bg-[#07080a] text-zinc-600 border-white/[0.04]'
-          }`}
+          className={`w-12 py-3 text-right pr-3 select-none font-mono text-xs border-r leading-5 shrink-0 overflow-hidden ${'bg-surface text-fg-3 border-line'}`}
         >
           {lines.map((_, i) => {
             const hasErr = errorLines.has(i + 1);
             return (
               <div
                 key={i}
-                className={
-                  hasErr ? 'text-rose-500 font-bold bg-rose-500/10' : ''
-                }
+                className={hasErr ? 'text-loss font-bold bg-loss-soft' : ''}
               >
                 {i + 1}
               </div>
@@ -185,9 +151,7 @@ function FallbackCodeEditor({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           spellCheck={false}
-          className={`flex-1 h-full w-full p-3 font-mono text-xs leading-5 resize-none focus:outline-hidden whitespace-pre overflow-auto ${
-            isLight ? 'bg-white text-zinc-900' : 'bg-transparent text-zinc-200'
-          }`}
+          className={`flex-1 h-full w-full p-3 font-mono text-xs leading-5 resize-none focus:outline-hidden whitespace-pre overflow-auto ${'bg-transparent text-fg'}`}
         />
       </div>
     </div>
@@ -307,7 +271,7 @@ const DynamicEditor = dynamic(
             language={language}
             value={value}
             theme={theme === 'light' ? 'qslate-light' : 'qslate-dark'}
-            loading={<EditorSkeleton isLight={theme === 'light'} />}
+            loading={<EditorSkeleton />}
             beforeMount={(monaco) => {
               try {
                 // Dark theme

@@ -1,764 +1,480 @@
 'use client';
 
 import {
-  AlertTriangle,
-  ArrowUp,
-  Check,
-  CheckCircle2,
-  Code2,
-  Columns2,
-  Copy,
-  FileCode,
-  FileJson,
+  CircleAlert,
+  CircleCheck,
+  FilePlus2,
   History,
-  Loader2,
-  RotateCcw,
+  LoaderCircle,
   Save,
-  ShieldCheck,
-  Sparkles,
   Upload,
 } from 'lucide-react';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useInvalidateStrategies } from '@/entities/strategy';
+import {
+  useInvalidateStrategies,
+  useStrategies,
+  useStrategy,
+} from '@/entities/strategy';
 import { useLabStore } from '@/features/lab-state';
-import { apiClient, ApiError, type StrategyVersion } from '@/shared/api';
+import { apiClient, type Diagnostic, type StrategyVersion } from '@/shared/api';
+import { cn, FOCUS_RING } from '@/shared/lib/class-names';
 import { useAppearance } from '@/shared/theme';
+import {
+  Badge,
+  Button,
+  Dialog,
+  EmptyState,
+  Input,
+  Skeleton,
+} from '@/shared/ui';
 
-import { MonacoEditorWrapper } from './MonacoEditorWrapper';
+import {
+  type DiagnosticMarker,
+  MonacoEditorWrapper,
+} from './MonacoEditorWrapper';
 import { VersionHistoryDrawer } from './VersionHistoryDrawer';
 
-const FILE_TABS = [
-  { id: 'strategy.py', label: 'strategy.py', icon: FileCode, lang: 'python' },
-  {
-    id: 'indicators.py',
-    label: 'indicators.py',
-    icon: Code2,
-    lang: 'python',
-  },
-  { id: 'config.json', label: 'config.json', icon: FileJson, lang: 'json' },
-];
+/** Minimal starting point for a new strategy (no trading logic). */
+const NEW_STRATEGY_SOURCE = `from qslate import Strategy
 
-const PROMPT_SUGGESTIONS = [
-  'Add a 2% trailing stop and filter out FOMC volatility days',
-  'Implement ATR dynamic volatility position sizing',
-  'Add RSI < 30 extreme oversold filter for entries',
-];
 
+class MyStrategy(Strategy):
+    """Décris ici l'idée de ta stratégie."""
+
+    def on_bar(self, bar):
+        pass
+`;
+
+const LINT_DELAY_MS = 400;
+
+function toMarkers(diagnostics: readonly Diagnostic[]): DiagnosticMarker[] {
+  return diagnostics.map((item) => ({
+    line: item.line,
+    column: item.column,
+    endLine: item.end_line,
+    endColumn: item.end_column,
+    severity: item.severity,
+    message: item.message,
+  }));
+}
+
+type Selection =
+  | { readonly kind: 'existing'; readonly id: string }
+  | { readonly kind: 'new' }
+  | null;
+
+/** "Stratégies": the user's strategies, a Python editor, lint, save and history. */
 export function MiniIdeView() {
-  const activeFile = useLabStore((state) => state.ideActiveFile);
-  const setActiveFile = useLabStore((state) => state.setIdeActiveFile);
-  const files = useLabStore((state) => state.ideFiles);
-  const updateFileContent = useLabStore((state) => state.updateIdeFileContent);
-  const splitView = useLabStore((state) => state.ideSplitView);
-  const toggleSplitView = useLabStore((state) => state.toggleIdeSplitView);
-  const astStatus = useLabStore((state) => state.ideAstStatus);
-  const applyAiPrompt = useLabStore((state) => state.applyAiPrompt);
+  const { theme } = useAppearance();
   const showToast = useLabStore((state) => state.showToast);
-  const invalidateStrategies = useInvalidateStrategies();
+  const strategies = useStrategies();
+  const invalidate = useInvalidateStrategies();
+  const [selection, setSelection] = useState<Selection>(null);
+  const [pendingSelection, setPendingSelection] = useState<Selection>(null);
+  const list = strategies.data ?? [];
+  const current: Selection =
+    selection ?? (list[0] ? { kind: 'existing', id: list[0].id } : null);
+  const selectedId = current?.kind === 'existing' ? current.id : null;
+  const detail = useStrategy(selectedId);
+  const [draft, setDraft] = useState<{
+    readonly source: string;
+    readonly name: string;
+    readonly for: string;
+  } | null>(null);
+  const [diagnostics, setDiagnostics] = useState<readonly Diagnostic[]>([]);
+  const [linting, setLinting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [versions, setVersions] = useState<StrategyVersion[]>([]);
+  const [loadingVersions, setLoadingVersions] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  // Strategy metadata & versioning state from useLabStore
-  const strategyId = useLabStore((state) => state.strategyId);
-  const versionId = useLabStore((state) => state.versionId);
-  const strategyRevision = useLabStore((state) => state.strategyRevision);
-  const strategyName = useLabStore((state) => state.strategyName);
-  const strategyDiagnostics = useLabStore((state) => state.strategyDiagnostics);
-  const isLinting = useLabStore((state) => state.isLinting);
-  const isVersionDrawerOpen = useLabStore((state) => state.isVersionDrawerOpen);
-  const strategyVersions = useLabStore((state) => state.strategyVersions);
+  const currentKey =
+    current?.kind === 'existing'
+      ? current.id
+      : current?.kind === 'new'
+        ? 'new'
+        : '';
+  const loaded =
+    detail.data && detail.data.id === selectedId ? detail.data : null;
+  const readOnly = loaded?.read_only === true;
 
-  const setStrategyDiagnostics = useLabStore(
-    (state) => state.setStrategyDiagnostics
-  );
-  const setIsLinting = useLabStore((state) => state.setIsLinting);
-  const setStrategyMeta = useLabStore((state) => state.setStrategyMeta);
-  const setVersionDrawerOpen = useLabStore(
-    (state) => state.setVersionDrawerOpen
-  );
-  const setStrategyVersions = useLabStore((state) => state.setStrategyVersions);
+  const source =
+    draft && draft.for === currentKey
+      ? draft.source
+      : current?.kind === 'new'
+        ? NEW_STRATEGY_SOURCE
+        : (loaded?.source ?? '');
+  const name =
+    draft && draft.for === currentKey
+      ? draft.name
+      : current?.kind === 'new'
+        ? 'MaStrategie'
+        : (loaded?.name ?? '');
+  const dirty = draft !== null && draft.for === currentKey;
 
-  const { theme, colorblindMode } = useAppearance();
-  const isLight = theme === 'light';
-  const isColorblind = colorblindMode === 'orange-blue';
-  const statusColor = isColorblind ? '#38BDF8' : '#10B981';
-
-  const [promptInput, setPromptInput] = useState('');
-  const [copied, setCopied] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isLoadingVersions, setIsLoadingVersions] = useState(false);
-  const [isRestoring, setIsRestoring] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const currentContent = files[activeFile] ?? '';
-  const currentLang = activeFile.endsWith('.json') ? 'json' : 'python';
-
-  // 1. Live AST linting debounced at 300ms via Go Strategy endpoint
   useEffect(() => {
-    if (activeFile !== 'strategy.py') {
-      setStrategyDiagnostics([]);
-      setIsLinting(false);
-      return;
-    }
-
-    setIsLinting(true);
-    const timer = setTimeout(async () => {
-      try {
-        const res = await apiClient.lintStrategy(currentContent, 'python');
-        if (res.valid) {
-          setStrategyDiagnostics([]);
-        } else {
-          setStrategyDiagnostics(res.diagnostics ?? []);
-        }
-      } catch (err) {
-        // Fallback gracefully without breaking editing
-        console.warn('AST Linting request warning:', err);
-      } finally {
-        setIsLinting(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [currentContent, activeFile, setStrategyDiagnostics, setIsLinting]);
-
-  // Real-time AST security validation check (static safety guard)
-  const securityAnalysis = useMemo(() => {
-    const forbidden = [
-      'import os',
-      'import sys',
-      'subprocess',
-      'eval(',
-      'exec(',
-    ];
-    const detected = forbidden.filter((word) => currentContent.includes(word));
-    return {
-      isValid: detected.length === 0,
-      violations: detected,
+    if (source.trim() === '') return;
+    let active = true;
+    const timer = window.setTimeout(() => {
+      setLinting(true);
+      apiClient
+        .lintStrategy(source, 'python')
+        .then((result) => {
+          if (active)
+            setDiagnostics(result.valid ? [] : (result.diagnostics ?? []));
+        })
+        .catch(() => {
+          if (active) setDiagnostics([]);
+        })
+        .finally(() => {
+          if (active) setLinting(false);
+        });
+    }, LINT_DELAY_MS);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
     };
-  }, [currentContent]);
+  }, [source]);
 
-  // Map diagnostics into Monaco editor markers
-  const markers = useMemo(() => {
-    return strategyDiagnostics.map((d) => ({
-      line: d.line,
-      column: d.column,
-      endLine: d.end_line || d.line,
-      endColumn: d.end_column || d.column + 1,
-      severity: d.severity,
-      message: d.message,
-    }));
-  }, [strategyDiagnostics]);
+  const markers = useMemo(() => toMarkers(diagnostics), [diagnostics]);
+  const errors = diagnostics.filter((item) => item.severity === 'error').length;
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(currentContent);
-      setCopied(true);
-      showToast(`Copied ${activeFile} to clipboard`, 'info');
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback
-    }
+  const edit = (patch: { readonly source?: string; readonly name?: string }) =>
+    setDraft({
+      source: patch.source ?? source,
+      name: patch.name ?? name,
+      for: currentKey,
+    });
+
+  const applySelection = (next: Selection) => {
+    setDraft(null);
+    setDiagnostics([]);
+    setSelection(next);
+    setPendingSelection(null);
   };
 
-  const handlePromptSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!promptInput.trim() || astStatus === 'synthesizing') return;
-    const text = promptInput;
-    setPromptInput('');
-    void applyAiPrompt(text);
+  const select = (next: Selection) => {
+    if (dirty) setPendingSelection(next);
+    else applySelection(next);
   };
 
-  // 2. Save Strategy Revision to Go Strategy Service
-  const handleSaveVersion = async () => {
-    if (isSaving) return;
-    setIsSaving(true);
+  const save = async () => {
+    if (saving || name.trim() === '') return;
+    setSaving(true);
     try {
-      // Ensure only Python strategy code is saved as backend source, never config.json
-      const pythonFileKey =
-        Object.keys(files).find((k) => k.endsWith('.py')) || 'strategy.py';
-      const strategySource = activeFile.endsWith('.py')
-        ? currentContent
-        : files[pythonFileKey] || currentContent;
-
-      if (!strategyId || !versionId) {
-        // First-time strategy creation
-        const created = await apiClient.createStrategy({
-          name: strategyName || 'Momentum_ETH_4h',
-          source: strategySource,
-        });
-        setStrategyMeta({
-          id: created.id,
-          version_id: created.version_id,
-          revision: created.revision,
-          name: created.name,
-        });
-        void invalidateStrategies();
-        showToast(
-          `Strategy "${created.name}" created (v${created.revision})`,
-          'success'
-        );
-      } else {
-        // Commit new revision
-        const updated = await apiClient.updateStrategy(strategyId, {
-          base_version_id: versionId,
-          source: strategySource,
-          name: strategyName || 'My Strategy',
-        });
-        setStrategyMeta({
-          id: updated.id,
-          version_id: updated.version_id,
-          revision: updated.revision,
-          name: updated.name,
-        });
-        void invalidateStrategies();
-        showToast(
-          `Committed revision v${updated.revision} successfully`,
-          'success'
-        );
-      }
-    } catch (err) {
-      if (err instanceof ApiError && err.statusCode === 409) {
-        showToast(
-          'Version conflict: Strategy modified concurrently. Please refresh history.',
-          'warning'
-        );
-      } else {
-        showToast('Failed to save strategy revision.', 'warning');
-      }
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // 3. Open Version History Drawer & Fetch Past Versions
-  const handleOpenHistory = async () => {
-    setVersionDrawerOpen(true);
-    if (!strategyId) {
-      setStrategyVersions([]);
-      return;
-    }
-    setIsLoadingVersions(true);
-    try {
-      const res = await apiClient.getStrategyVersions(strategyId);
-      setStrategyVersions(res.items ?? []);
-    } catch (err) {
-      console.warn('Failed to fetch strategy version history:', err);
-    } finally {
-      setIsLoadingVersions(false);
-    }
-  };
-
-  // 4. Restore a Previous Version
-  const handleRestoreVersion = async (ver: StrategyVersion) => {
-    if (!strategyId || !versionId || isRestoring) return;
-    setIsRestoring(true);
-    try {
-      const restored = await apiClient.restoreStrategyVersion(strategyId, {
-        version_id: ver.version_id,
-        base_version_id: versionId,
-      });
-      setStrategyMeta({
-        id: restored.id,
-        version_id: restored.version_id,
-        revision: restored.revision,
-        name: restored.name,
-      });
-      void invalidateStrategies();
-      updateFileContent('strategy.py', restored.source);
+      const saved =
+        current?.kind === 'existing' && loaded
+          ? await apiClient.updateStrategy(loaded.id, {
+              base_version_id: loaded.version_id,
+              source,
+              name: name.trim(),
+            })
+          : await apiClient.createStrategy({ name: name.trim(), source });
+      await invalidate();
+      setDraft(null);
+      setSelection({ kind: 'existing', id: saved.id });
       showToast(
-        `Restored revision v${ver.revision} as new active v${restored.revision}`,
+        `« ${saved.name} » enregistrée (v${saved.revision})`,
         'success'
       );
-      // Refresh versions drawer
-      const res = await apiClient.getStrategyVersions(strategyId);
-      setStrategyVersions(res.items ?? []);
-    } catch {
-      showToast('Failed to restore strategy revision.', 'warning');
+    } catch (error) {
+      showToast(
+        error instanceof Error
+          ? `Enregistrement impossible : ${error.message}`
+          : 'Enregistrement impossible.',
+        'error'
+      );
     } finally {
-      setIsRestoring(false);
+      setSaving(false);
     }
   };
 
-  // 5. Import Strategy (.py) via Multipart Upload
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
+  const openHistory = async () => {
+    if (!loaded) return;
+    setHistoryOpen(true);
+    setLoadingVersions(true);
+    try {
+      setVersions((await apiClient.getStrategyVersions(loaded.id)).items ?? []);
+    } catch {
+      showToast("Impossible de charger l'historique.", 'error');
+    } finally {
+      setLoadingVersions(false);
+    }
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const restore = async (version: StrategyVersion) => {
+    if (!loaded || restoring) return;
+    setRestoring(true);
+    try {
+      const restored = await apiClient.restoreStrategyVersion(loaded.id, {
+        version_id: version.version_id,
+        base_version_id: loaded.version_id,
+      });
+      await invalidate();
+      setDraft(null);
+      setVersions((await apiClient.getStrategyVersions(loaded.id)).items ?? []);
+      showToast(
+        `Version v${version.revision} restaurée (v${restored.revision})`,
+        'success'
+      );
+    } catch {
+      showToast('Restauration impossible.', 'error');
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  const importFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
     if (!file) return;
-
-    if (!file.name.endsWith('.py')) {
-      showToast('Only .py strategy files are supported.', 'warning');
-      return;
-    }
-
-    setIsImporting(true);
     try {
       const imported = await apiClient.importStrategy(file);
-      setStrategyMeta({
-        id: imported.id,
-        version_id: imported.version_id,
-        revision: imported.revision,
-        name: imported.name,
-      });
-      void invalidateStrategies();
-      updateFileContent('strategy.py', imported.source);
-      setActiveFile('strategy.py');
-      showToast(
-        `Imported "${imported.name}" (v${imported.revision}) successfully`,
-        'success'
-      );
+      await invalidate();
+      setDraft(null);
+      setSelection({ kind: 'existing', id: imported.id });
+      showToast(`« ${imported.name} » importée`, 'success');
     } catch {
-      showToast('Failed to import strategy file.', 'warning');
-    } finally {
-      setIsImporting(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      showToast(
+        'Import impossible : seul un fichier .py valide est accepté.',
+        'error'
+      );
     }
   };
 
-  const hasDiagnosticsError = strategyDiagnostics.some(
-    (d) => d.severity === 'error'
-  );
-
   return (
-    <div
-      className={`flex flex-col h-[calc(100vh-46px)] w-full overflow-hidden select-none transition-colors duration-200 ${
-        isLight ? 'bg-[#f4f5f7] text-zinc-900' : 'bg-[#08090a] text-zinc-200'
-      }`}
-    >
-      {/* Hidden File Input for .py Strategy Import */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".py"
-        className="hidden"
-        onChange={handleFileChange}
-      />
-
-      {/* Editor Header Bar with File Tabs and Strategy Lifecycle Controls */}
-      <div
-        className={`flex items-center justify-between h-9 px-3 border-b shrink-0 text-xs font-mono transition-colors ${
-          isLight
-            ? 'bg-[#e9ebf0] border-zinc-200 text-zinc-700'
-            : 'bg-[#0c0d0e] border-[#242528]'
-        }`}
+    <div className="grid min-h-0 flex-1 grid-cols-[240px_minmax(0,1fr)] max-md:grid-cols-1">
+      <nav
+        aria-label="Mes stratégies"
+        className="flex min-h-0 flex-col gap-2 border-r border-line p-3 max-md:border-b max-md:border-r-0"
       >
-        {/* Left: Tabs */}
-        <div className="flex items-center gap-1 h-full pt-1">
-          {FILE_TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeFile === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveFile(tab.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 h-full rounded-t-md text-xs transition-colors border-t border-x ${
-                  isActive
-                    ? isLight
-                      ? 'bg-white text-zinc-900 border-zinc-200 border-b-transparent shadow-xs font-semibold'
-                      : 'bg-[#08090a] text-white border-[#242528] border-b-transparent shadow-xs font-medium'
-                    : isLight
-                      ? 'bg-transparent text-zinc-600 hover:text-zinc-900 border-transparent hover:bg-black/[0.04]'
-                      : 'bg-transparent text-zinc-400 hover:text-zinc-200 border-transparent hover:bg-white/[0.02]'
-                }`}
-              >
-                <Icon
-                  size={13}
-                  className={
-                    isActive
-                      ? 'text-blue-500'
-                      : isLight
-                        ? 'text-zinc-400'
-                        : 'text-zinc-500'
-                  }
+        <div className="flex gap-1.5">
+          <Button
+            size="sm"
+            leadingIcon={<FilePlus2 size={14} />}
+            className="flex-1"
+            onClick={() => select({ kind: 'new' })}
+          >
+            Nouvelle
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            leadingIcon={<Upload size={14} />}
+            onClick={() => fileRef.current?.click()}
+          >
+            Importer
+          </Button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".py"
+            className="hidden"
+            aria-label="Importer un fichier Python"
+            onChange={(event) => void importFile(event)}
+          />
+        </div>
+        {strategies.isPending ? (
+          <Skeleton className="h-24" />
+        ) : list.length === 0 && current?.kind !== 'new' ? (
+          <p className="m-0 p-2 text-xs text-fg-3">
+            Aucune stratégie. Crée-en une ou importe un fichier .py.
+          </p>
+        ) : (
+          <ul className="m-0 flex list-none flex-col gap-0.5 overflow-auto p-0">
+            {current?.kind === 'new' ? (
+              <li>
+                <span
+                  aria-current="true"
+                  className="block rounded-lg bg-brand-soft px-2.5 py-2 text-[12.5px] font-medium text-fg"
+                >
+                  Nouvelle stratégie
+                </span>
+              </li>
+            ) : null}
+            {list.map((item) => {
+              const active =
+                current?.kind === 'existing' && current.id === item.id;
+              return (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    aria-current={active || undefined}
+                    onClick={() => select({ kind: 'existing', id: item.id })}
+                    className={cn(
+                      FOCUS_RING,
+                      'flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[12.5px]',
+                      active
+                        ? 'bg-brand-soft font-medium text-fg'
+                        : 'text-fg-2 hover:bg-[var(--line-2)]'
+                    )}
+                  >
+                    <span className="truncate">{item.name}</span>
+                    <span className="font-mono text-[10.5px] text-fg-3">
+                      v{item.revision}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </nav>
+
+      <div className="flex min-h-0 flex-col">
+        {current === null && !strategies.isPending ? (
+          <EmptyState
+            icon={<FilePlus2 />}
+            title="Commence ta première stratégie"
+            description="Une stratégie est une classe Python qui décide d'acheter ou de vendre à chaque bougie."
+          />
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-2 border-b border-line px-3 py-2">
+              <label className="flex items-center gap-2">
+                <span className="sr-only">Nom de la stratégie</span>
+                <Input
+                  value={name}
+                  mono
+                  disabled={readOnly}
+                  onChange={(event) => edit({ name: event.target.value })}
+                  frameClassName="w-[220px]"
                 />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Right: Strategy Lifecycle & Action Controls */}
-        <div className="flex items-center gap-1.5">
-          {/* Strategy Name & Revision Badge */}
-          <div
-            className={`flex items-center gap-1.5 px-2 py-0.5 rounded border text-[11px] font-sans ${
-              isLight
-                ? 'bg-white border-zinc-300 text-zinc-700'
-                : 'bg-[#121418] border-white/10 text-zinc-300'
-            }`}
-          >
-            <span className="font-semibold truncate max-w-[140px]">
-              {strategyName}
-            </span>
-            <span className="font-mono text-[10px] px-1 py-0.2 bg-blue-500/10 text-blue-400 rounded">
-              v{strategyRevision}
-            </span>
-          </div>
-
-          {/* Save Version Button */}
-          <button
-            type="button"
-            onClick={handleSaveVersion}
-            disabled={isSaving}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
-              isLight
-                ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-xs'
-                : 'bg-blue-600 hover:bg-blue-500 text-white shadow-xs'
-            }`}
-            title="Commit new immutable strategy version to backend"
-          >
-            {isSaving ? (
-              <Loader2 size={12} className="animate-spin" />
-            ) : (
-              <Save size={12} />
-            )}
-            <span>{isSaving ? 'Saving…' : 'Save Version'}</span>
-          </button>
-
-          {/* History Drawer Toggle Button */}
-          <button
-            type="button"
-            onClick={handleOpenHistory}
-            className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] transition-colors ${
-              isLight
-                ? 'bg-white hover:bg-zinc-100 text-zinc-800 border border-zinc-300'
-                : 'bg-[#15171d] hover:bg-[#1a1d24] text-zinc-200 border border-white/10'
-            }`}
-            title="View immutable revision history"
-          >
-            <History size={12} className="text-blue-400" />
-            <span>History</span>
-          </button>
-
-          {/* Import Strategy Button */}
-          <button
-            type="button"
-            onClick={handleImportClick}
-            disabled={isImporting}
-            className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] transition-colors ${
-              isLight
-                ? 'bg-white hover:bg-zinc-100 text-zinc-800 border border-zinc-300'
-                : 'bg-[#15171d] hover:bg-[#1a1d24] text-zinc-200 border border-white/10'
-            }`}
-            title="Import external .py strategy file"
-          >
-            {isImporting ? (
-              <Loader2 size={12} className="animate-spin" />
-            ) : (
-              <Upload size={12} className="text-emerald-400" />
-            )}
-            <span>{isImporting ? 'Importing…' : 'Import'}</span>
-          </button>
-
-          <div
-            className={`h-4 w-px mx-0.5 ${isLight ? 'bg-zinc-300' : 'bg-white/10'}`}
-          />
-
-          {/* Split View Toggle */}
-          <button
-            type="button"
-            onClick={toggleSplitView}
-            className={`p-1.5 rounded transition-colors ${
-              splitView
-                ? 'bg-blue-500/20 text-blue-500 border border-blue-500/30'
-                : isLight
-                  ? 'text-zinc-600 hover:text-zinc-900 hover:bg-black/[0.05]'
-                  : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
-            }`}
-            title="Toggle split view"
-            aria-label="Toggle split view"
-          >
-            <Columns2 size={13} />
-          </button>
-
-          {/* Copy Buffer */}
-          <button
-            type="button"
-            onClick={handleCopy}
-            className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${
-              isLight
-                ? 'text-zinc-600 hover:text-zinc-900 hover:bg-black/[0.05]'
-                : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
-            }`}
-            title="Copy file contents"
-          >
-            {copied ? (
-              <Check size={12} className="text-emerald-500" />
-            ) : (
-              <Copy size={12} />
-            )}
-            <span className="text-[11px]">{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-
-          {/* Re-synthesize Reset */}
-          <button
-            type="button"
-            onClick={() => {
-              void applyAiPrompt();
-            }}
-            className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${
-              isLight
-                ? 'text-zinc-600 hover:text-zinc-900 hover:bg-black/[0.05]'
-                : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
-            }`}
-            title="Reset code buffer"
-          >
-            <RotateCcw size={12} />
-            <span className="text-[11px]">Re-synthesize</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Editor Main Body */}
-      <div className="flex-1 min-h-0 flex overflow-hidden">
-        {/* Primary Monaco Editor with Diagnostics Markers */}
-        <div className="flex-1 h-full min-w-0 relative">
-          <MonacoEditorWrapper
-            value={currentContent}
-            language={currentLang}
-            theme={theme}
-            markers={markers}
-            onChange={(val) => updateFileContent(activeFile, val)}
-          />
-
-          {astStatus === 'synthesizing' && (
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center gap-3 z-30 font-mono text-xs">
-              <div className="w-8 h-8 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
-              <div className="flex items-center gap-2 text-white">
-                <Sparkles size={14} className="text-blue-400 animate-pulse" />
-                <span>AI Kernel Synthesizing Strategy AST Modifications…</span>
-              </div>
-              <span className="text-[10px] text-zinc-300">
-                Verifying safety rules in gVisor sandbox
+              </label>
+              {loaded ? (
+                <span className="font-mono text-[11px] text-fg-3">
+                  v{loaded.revision}
+                </span>
+              ) : null}
+              {readOnly ? (
+                <Badge tone="vio">Marketplace · lecture seule</Badge>
+              ) : null}
+              {dirty ? (
+                <Badge tone="warn" dot>
+                  Non enregistré
+                </Badge>
+              ) : null}
+              <span className="flex-1" />
+              <span
+                role="status"
+                className="flex items-center gap-1.5 text-[11.5px] text-fg-3"
+              >
+                {linting ? (
+                  <>
+                    <LoaderCircle
+                      size={13}
+                      className="animate-spin motion-reduce:animate-none"
+                      aria-hidden="true"
+                    />{' '}
+                    Analyse…
+                  </>
+                ) : errors > 0 ? (
+                  <span className="flex items-center gap-1.5 text-loss">
+                    <CircleAlert size={13} aria-hidden="true" /> {errors} erreur
+                    {errors > 1 ? 's' : ''}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5 text-gain">
+                    <CircleCheck size={13} aria-hidden="true" /> Code valide
+                  </span>
+                )}
               </span>
-            </div>
-          )}
-        </div>
-
-        {/* Split View Secondary Pane (if active) */}
-        {splitView && (
-          <div
-            className={`w-1/2 h-full border-l flex flex-col transition-colors ${
-              isLight
-                ? 'border-zinc-200 bg-white'
-                : 'border-[#242528] bg-[#07080a]'
-            }`}
-          >
-            <div
-              className={`flex items-center justify-between px-3 h-8 border-b text-xs font-mono ${
-                isLight
-                  ? 'bg-[#f8f9fa] border-zinc-200 text-zinc-700'
-                  : 'bg-[#0c0d0e] border-[#242528] text-zinc-400'
-              }`}
-            >
-              <span className="font-medium">Vectorized Helper References</span>
-              <span className="text-[10px] text-zinc-500">indicators.py</span>
-            </div>
-            <div className="flex-1 p-3 overflow-y-auto font-mono text-xs space-y-3">
-              <div
-                className={`p-2.5 rounded border ${
-                  isLight
-                    ? 'bg-zinc-50 border-zinc-200 text-zinc-800'
-                    : 'bg-white/[0.02] border-white/[0.06] text-zinc-300'
-                }`}
+              <Button
+                size="sm"
+                variant="secondary"
+                leadingIcon={<History size={14} />}
+                disabled={!loaded}
+                onClick={() => void openHistory()}
               >
-                <div className="text-blue-500 font-semibold mb-1">
-                  ema(series, period: int)
-                </div>
-                <p
-                  className={`text-[11px] leading-relaxed ${
-                    isLight ? 'text-zinc-600' : 'text-zinc-400'
-                  }`}
-                >
-                  Fast exponential moving average without look-ahead bias,
-                  calculated via recursive convolution.
-                </p>
-              </div>
-              <div
-                className={`p-2.5 rounded border ${
-                  isLight
-                    ? 'bg-zinc-50 border-zinc-200 text-zinc-800'
-                    : 'bg-white/[0.02] border-white/[0.06] text-zinc-300'
-                }`}
+                Historique
+              </Button>
+              <Button
+                size="sm"
+                leadingIcon={<Save size={14} />}
+                disabled={
+                  readOnly ||
+                  saving ||
+                  name.trim() === '' ||
+                  (!dirty && current?.kind !== 'new')
+                }
+                onClick={() => void save()}
               >
-                <div className="text-emerald-500 font-semibold mb-1">
-                  atr(df, period: int = 14)
-                </div>
-                <p
-                  className={`text-[11px] leading-relaxed ${
-                    isLight ? 'text-zinc-600' : 'text-zinc-400'
-                  }`}
-                >
-                  Average True Range for volatility-based dynamic position
-                  sizing and trailing stops.
-                </p>
-              </div>
-              <div
-                className={`p-2.5 rounded border ${
-                  isLight
-                    ? 'bg-zinc-50 border-zinc-200 text-zinc-800'
-                    : 'bg-white/[0.02] border-white/[0.06] text-zinc-300'
-                }`}
-              >
-                <div className="text-purple-500 font-semibold mb-1">
-                  bollinger_bands(series, period, num_std)
-                </div>
-                <p
-                  className={`text-[11px] leading-relaxed ${
-                    isLight ? 'text-zinc-600' : 'text-zinc-400'
-                  }`}
-                >
-                  Upper, mid and lower bands used for statistical envelope
-                  breakouts and mean-reversion bounds.
-                </p>
-              </div>
+                {saving ? 'Enregistrement…' : 'Enregistrer'}
+              </Button>
             </div>
-          </div>
+            <div className="min-h-0 flex-1">
+              {current?.kind === 'existing' && !loaded ? (
+                <div className="p-4">
+                  <Skeleton className="h-64" />
+                </div>
+              ) : (
+                <MonacoEditorWrapper
+                  value={source}
+                  language="python"
+                  theme={theme}
+                  markers={markers}
+                  onChange={(value) => {
+                    if (!readOnly) edit({ source: value });
+                  }}
+                />
+              )}
+            </div>
+            {diagnostics.length > 0 ? (
+              <ul
+                aria-label="Problèmes détectés"
+                className="m-0 max-h-32 list-none overflow-auto border-t border-line p-0 font-mono text-[11.5px]"
+              >
+                {diagnostics.map((item, index) => (
+                  <li
+                    key={index}
+                    className={cn(
+                      'px-3 py-1',
+                      item.severity === 'error' ? 'text-loss' : 'text-warn'
+                    )}
+                  >
+                    L{item.line}:{item.column} — {item.message}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </>
         )}
       </div>
 
-      {/* Docked AI Strategy Builder Prompt Bar */}
-      <div
-        className={`border-t p-3 shrink-0 transition-colors ${
-          isLight
-            ? 'border-zinc-200 bg-[#f8f9fa]'
-            : 'border-[#242528] bg-[#0a0b0d]'
-        }`}
-      >
-        {/* Suggestion Chips */}
-        <div className="flex items-center gap-2 mb-2 overflow-x-auto pb-1 text-[11px] font-sans scrollbar-none">
-          <span className="flex items-center gap-1 text-zinc-500 font-mono text-[10px] uppercase tracking-wider shrink-0">
-            <Sparkles size={11} className="text-blue-500" />
-            Suggested:
-          </span>
-          {PROMPT_SUGGESTIONS.map((sug, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => {
-                setPromptInput(sug);
-              }}
-              className={`px-2.5 py-1 rounded-full transition-colors whitespace-nowrap border ${
-                isLight
-                  ? 'bg-white hover:bg-zinc-100 text-zinc-700 hover:text-zinc-900 border-zinc-300 shadow-2xs'
-                  : 'bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border-white/[0.06]'
-              }`}
-            >
-              + {sug}
-            </button>
-          ))}
-        </div>
-
-        {/* Input Bar */}
-        <form
-          onSubmit={handlePromptSubmit}
-          className="relative flex items-center w-full"
-        >
-          <div className="absolute left-3 flex items-center pointer-events-none text-blue-500">
-            <Sparkles size={15} />
-          </div>
-
-          <input
-            type="text"
-            value={promptInput}
-            onChange={(e) => setPromptInput(e.target.value)}
-            placeholder="Describe strategy modification in natural language (e.g. 'Add a 2% trailing stop and filter out FOMC volatility days')..."
-            className={`w-full border rounded-lg pl-9 pr-12 py-2.5 text-xs font-sans focus:outline-hidden transition-all ${
-              isLight
-                ? 'bg-white border-zinc-300 focus:border-blue-500 text-zinc-900 placeholder-zinc-400 shadow-xs'
-                : 'bg-[#121418] hover:bg-[#15171d] focus:bg-[#15171d] border-white/10 focus:border-blue-500 text-white placeholder-zinc-500 shadow-inner'
-            }`}
-          />
-
-          <button
-            type="submit"
-            disabled={!promptInput.trim() || astStatus === 'synthesizing'}
-            className="absolute right-2 p-1.5 rounded-md bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white transition-all active:scale-95 shadow-xs"
-            aria-label="Submit AI prompt"
-          >
-            <ArrowUp size={14} />
-          </button>
-        </form>
-      </div>
-
-      {/* Docked Runtime & Security Telemetry Footer with Backend Linting Feedback */}
-      <div
-        className={`flex items-center justify-between px-3 py-1.5 border-t text-[10px] font-mono shrink-0 transition-colors ${
-          isLight
-            ? 'bg-[#e9ebf0] border-zinc-200 text-zinc-600'
-            : 'bg-[#060708] border-[#1b1c1f] text-zinc-500'
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          {isLinting ? (
-            <div className="flex items-center gap-1.5 text-blue-400 font-medium">
-              <Loader2 size={11} className="animate-spin text-blue-500" />
-              <span>Verifying Python AST Syntax…</span>
-            </div>
-          ) : hasDiagnosticsError ? (
-            <div className="flex items-center gap-1.5 text-rose-500 font-semibold">
-              <AlertTriangle size={12} />
-              <span>
-                Syntax Error: Line {strategyDiagnostics[0].line}, Col{' '}
-                {strategyDiagnostics[0].column}:{' '}
-                {strategyDiagnostics[0].message}
-              </span>
-            </div>
-          ) : !securityAnalysis.isValid ? (
-            <div className="flex items-center gap-1.5 text-rose-500 font-semibold">
-              <AlertTriangle size={12} />
-              <span>
-                AST Guard Triggered: Unsafe imports detected (
-                {securityAnalysis.violations.join(', ')})
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 size={12} style={{ color: statusColor }} />
-              <span
-                className={`font-semibold ${isLight ? 'text-zinc-900' : 'text-white'}`}
+      {pendingSelection ? (
+        <Dialog
+          title="Abandonner les modifications ?"
+          description="Les changements non enregistrés de cette stratégie seront perdus."
+          onClose={() => setPendingSelection(null)}
+          footer={
+            <>
+              <Button variant="quiet" onClick={() => setPendingSelection(null)}>
+                Continuer l&apos;édition
+              </Button>
+              <Button
+                variant="danger"
+                onClick={() => applySelection(pendingSelection)}
               >
-                AST Validated
-              </span>
-              <span className="text-zinc-400">·</span>
-              <span className={isLight ? 'text-zinc-700' : 'text-zinc-400'}>
-                Python 3.13 (Isolated Analyzer)
-              </span>
-              <span className="text-zinc-400">·</span>
-              <span className={isLight ? 'text-zinc-700' : 'text-zinc-400'}>
-                gVisor runtime
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3 text-zinc-500">
-          <span className="flex items-center gap-1">
-            <ShieldCheck size={11} className="text-blue-500" />
-            <span className={isLight ? 'text-zinc-700' : 'text-zinc-400'}>
-              Isolation: Kernel Sandbox
-            </span>
-          </span>
-          <span className={isLight ? 'text-zinc-600' : 'text-zinc-500'}>
-            Zero Host FS
-          </span>
-        </div>
-      </div>
-
-      {/* Version History Drawer Modal */}
+                Abandonner
+              </Button>
+            </>
+          }
+        >
+          {null}
+        </Dialog>
+      ) : null}
       <VersionHistoryDrawer
-        isOpen={isVersionDrawerOpen}
-        onClose={() => setVersionDrawerOpen(false)}
-        versions={strategyVersions}
-        currentVersionId={versionId}
-        strategyName={strategyName}
-        isLoading={isLoadingVersions}
-        isRestoring={isRestoring}
-        onRestore={handleRestoreVersion}
+        isOpen={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        versions={versions}
+        currentVersionId={loaded?.version_id ?? null}
+        strategyName={name}
+        isLoading={loadingVersions}
+        onRestore={(version) => void restore(version)}
+        isRestoring={restoring}
       />
     </div>
   );
