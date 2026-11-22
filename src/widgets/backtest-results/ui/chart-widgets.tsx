@@ -31,13 +31,15 @@ import {
   TimeSeriesChart,
 } from './time-series-chart';
 
-const AXIS_PERCENT = new Intl.NumberFormat('fr-FR', {
-  maximumFractionDigits: 1,
-});
+function formatAxisAmount(value: number, decimals: number): string {
+  return value.toLocaleString('fr-FR', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
 
-function formatAxisPercent(value: number): string {
-  const rounded = Math.abs(value) < 0.05 ? 0 : value;
-  return `${AXIS_PERCENT.format(rounded)} %`;
+function formatAxisPercent(value: number, decimals: number): string {
+  return `${formatAxisAmount(value, decimals)} %`;
 }
 
 const TONE = { up: 'text-gain', down: 'text-loss', flat: 'text-fg' } as const;
@@ -114,7 +116,7 @@ function CapitalChart({ result }: { readonly result: BacktestResult }) {
           tone="brand"
           fill="below"
           markers={markers}
-          formatAxis={formatAmount}
+          formatAxis={formatAxisAmount}
           tooltip={(point) => {
             const change = start ? ((point.value - start) / start) * 100 : null;
             return [

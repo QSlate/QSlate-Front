@@ -11,6 +11,7 @@ import {
 
 import { cn, FOCUS_RING } from '@/shared/lib/class-names';
 
+import { niceTicks } from '../model/axis-ticks';
 import { downsample, nearestIndex } from '../model/downsample';
 import { formatDay } from '../model/format';
 import { useElementSize } from '../model/use-element-size';
@@ -34,7 +35,8 @@ interface TimeSeriesChartProps {
   readonly tone: 'brand' | 'loss';
   /** Draw the area down to the minimum (brand) or up to zero (loss). */
   readonly fill: 'below' | 'above';
-  readonly formatAxis: (value: number) => string;
+  /** Formats a value-axis tick with the precision the tick step needs. */
+  readonly formatAxis: (value: number, decimals: number) => string;
   readonly tooltip: (point: SeriesPoint) => readonly TooltipRow[];
   /** Times (Unix seconds) to mark on the line, e.g. trade entries. */
   readonly markers?: readonly number[] | undefined;
@@ -44,7 +46,7 @@ const PAD = { left: 58, right: 10, top: 10, bottom: 22 } as const;
 const MAX_DRAWN_POINTS = 700;
 const MAX_MARKERS = 400;
 
-function ticks(min: number, max: number, count: number): number[] {
+function timeTicks(min: number, max: number, count: number): number[] {
   if (max === min) return [min];
   return Array.from(
     { length: count },
@@ -91,6 +93,8 @@ export function TimeSeriesChart({
   const span = max - min;
   min -= fill === 'above' ? span * 0.06 : span * 0.04;
   if (fill === 'below') max += span * 0.04;
+
+  const valueTicks = niceTicks(min, max, 4);
 
   const startTime = first?.time ?? 0;
   const timeSpan = Math.max(1, (last?.time ?? 1) - startTime);
@@ -198,7 +202,7 @@ export function TimeSeriesChart({
               <stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
-          {ticks(min, max, 4).map((value) => (
+          {valueTicks.values.map((value) => (
             <g key={value}>
               <line
                 x1={PAD.left}
@@ -213,11 +217,11 @@ export function TimeSeriesChart({
                 textAnchor="end"
                 className="fill-fg-3 font-mono text-[10.5px]"
               >
-                {formatAxis(value)}
+                {formatAxis(value, valueTicks.decimals)}
               </text>
             </g>
           ))}
-          {ticks(
+          {timeTicks(
             startTime,
             startTime + timeSpan,
             Math.max(2, Math.min(5, Math.floor(width / 120)))
