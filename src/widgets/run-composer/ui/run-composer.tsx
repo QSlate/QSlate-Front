@@ -1,6 +1,12 @@
 'use client';
 
-import { Database, Play, SlidersHorizontal, Square } from 'lucide-react';
+import {
+  CalendarRange,
+  Database,
+  Play,
+  SlidersHorizontal,
+  Square,
+} from 'lucide-react';
 import {
   type ChangeEvent,
   useEffect,
@@ -9,7 +15,12 @@ import {
   useSyncExternalStore,
 } from 'react';
 
-import { formatCandleCount } from '@/entities/dataset';
+import { formatDatasetLabel } from '@/entities/dataset';
+import {
+  isPeriodPreset,
+  PERIOD_LABELS,
+  PERIOD_PRESETS,
+} from '@/features/compose-backtest';
 import { cn } from '@/shared/lib/class-names';
 import { Button, IconButton, Kbd, Tooltip } from '@/shared/ui';
 
@@ -140,15 +151,72 @@ export function RunComposer() {
         chipClassName="bg-[linear-gradient(135deg,#F59E0B,#EA580C)]"
         options={datasets.map((item) => ({
           value: item.id,
-          label: item.symbol ? `${item.name} · ${item.symbol}` : item.name,
+          label: formatDatasetLabel(item),
+          group: item.source === 'public' ? 'Données publiques' : 'Mes données',
         }))}
         value={dataset?.id ?? null}
         onChange={(datasetId) => update({ datasetId })}
         emptyLabel="Aucune donnée prête"
         missing={model.datasetMissing}
-        meta={dataset ? formatCandleCount(dataset.row_count) : undefined}
         disabled={isRunning}
       />
+      <Separator />
+      <ComposerSelectToken
+        label="Période"
+        chip={<CalendarRange size={12} strokeWidth={2.25} />}
+        chipClassName="bg-[linear-gradient(135deg,#0EA5E9,#2563EB)]"
+        options={PERIOD_PRESETS.map((preset) => ({
+          value: preset,
+          label: PERIOD_LABELS[preset],
+        }))}
+        value={selection.periodPreset}
+        onChange={(value) => {
+          if (isPeriodPreset(value)) update({ periodPreset: value });
+        }}
+        emptyLabel="Tout"
+        disabled={isRunning}
+      />
+      {selection.periodPreset === 'custom' ? (
+        <span
+          className={cn(
+            TOKEN_CLASS,
+            'gap-1 px-2',
+            model.periodError && 'outline outline-1 outline-loss'
+          )}
+        >
+          <input
+            type="date"
+            aria-label="Début de la période"
+            aria-invalid={model.periodError ? true : undefined}
+            aria-describedby={
+              model.periodError ? RUN_COMPOSER_HINT_ID : undefined
+            }
+            value={selection.periodStart ?? ''}
+            onChange={(event) =>
+              update({ periodStart: event.target.value || null })
+            }
+            disabled={isRunning}
+            className="w-[118px] border-0 bg-transparent p-0 font-mono text-[12px] text-inherit outline-none [color-scheme:inherit]"
+          />
+          <span aria-hidden="true" className={TOKEN_META_CLASS}>
+            →
+          </span>
+          <input
+            type="date"
+            aria-label="Fin de la période (incluse)"
+            aria-invalid={model.periodError ? true : undefined}
+            aria-describedby={
+              model.periodError ? RUN_COMPOSER_HINT_ID : undefined
+            }
+            value={selection.periodEnd ?? ''}
+            onChange={(event) =>
+              update({ periodEnd: event.target.value || null })
+            }
+            disabled={isRunning}
+            className="w-[118px] border-0 bg-transparent p-0 font-mono text-[12px] text-inherit outline-none [color-scheme:inherit]"
+          />
+        </span>
+      ) : null}
       <Separator />
       <label
         className={cn(

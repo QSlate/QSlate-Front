@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useComposerStore } from '@/features/compose-backtest';
 import {
   apiClient,
-  type CustomDataset,
+  type MarketSymbol,
   type StrategySummary,
 } from '@/shared/api';
 
@@ -40,22 +40,18 @@ const STRATEGY: StrategySummary = {
   updated_at: '',
 };
 
-const DATASET: CustomDataset = {
-  id: 'ds-eth',
+const DATASET: MarketSymbol = {
+  symbol: 'ETH/USDT@1h',
+  name: 'Ether / Tether — 1 hour',
+  dataset_id: 'ds-eth',
   version_id: 'dsv-1',
-  name: 'ETH 4h',
-  status: 'ready',
-  format: 'csv',
-  columns: [],
-  row_count: 2190,
-  symbol: 'ETHUSDT',
-  created_at: '',
-  updated_at: '',
+  resolution: '1h',
+  live: false,
 };
 
-function mockCatalog(strategies: StrategySummary[], datasets: CustomDataset[]) {
+function mockCatalog(strategies: StrategySummary[], datasets: MarketSymbol[]) {
   vi.spyOn(apiClient, 'getStrategies').mockResolvedValue({ items: strategies });
-  vi.spyOn(apiClient, 'getCustomDatasets').mockResolvedValue({
+  vi.spyOn(apiClient, 'getMarketSymbols').mockResolvedValue({
     items: datasets,
   });
   vi.spyOn(apiClient, 'getStrategy').mockResolvedValue({
@@ -122,7 +118,7 @@ describe('RunComposer', () => {
   });
 
   it('explains that a ready dataset is needed and links to the data page', async () => {
-    mockCatalog([STRATEGY], [{ ...DATASET, status: 'mapped' }]);
+    mockCatalog([STRATEGY], []);
     renderComposer();
 
     expect(
@@ -197,7 +193,9 @@ describe('RunComposer', () => {
         initialCapital: 10_000,
       })
     );
-    expect(screen.getByText(/2.190 bougies/)).toBeDefined();
+    expect(
+      screen.getByRole('option', { name: 'ETH / USDT · 1 h' })
+    ).toBeDefined();
 
     fireEvent.click(await launchButton());
     expect(mockRun).toHaveBeenCalledTimes(2);

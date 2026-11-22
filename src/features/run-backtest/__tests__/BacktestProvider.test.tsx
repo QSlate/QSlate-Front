@@ -33,6 +33,8 @@ const REQUEST: BacktestRunRequest = {
   window: 20,
   commissionRate: 0.001,
   slippageBps: 0,
+  periodStart: null,
+  periodEnd: null,
 };
 
 function result(id: string): BacktestResult {

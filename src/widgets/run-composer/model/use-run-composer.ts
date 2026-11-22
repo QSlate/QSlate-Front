@@ -3,7 +3,11 @@
 import { useCallback, useMemo } from 'react';
 
 import type { StrategyParameterValue } from '@/entities/backtest';
-import { useRunnableDatasets } from '@/entities/dataset';
+import {
+  type RunDataset,
+  useDatasetCoverageEnd,
+  useRunDatasets,
+} from '@/entities/dataset';
 import { useStrategies, useStrategy } from '@/entities/strategy';
 import { useAuthStore } from '@/entities/user';
 import {
@@ -12,6 +16,7 @@ import {
   type ComposerPatch,
   type ComposerSelection,
   countAdvancedChanges,
+  parameterErrors,
   resolveDataset,
   resolveStrategy,
   useComposerSelection,
@@ -19,7 +24,7 @@ import {
   validateComposerFields,
 } from '@/features/compose-backtest';
 import { useBacktest } from '@/features/run-backtest';
-import type { CustomDataset, StrategySummary } from '@/shared/api';
+import type { StrategyParameterSchema, StrategySummary } from '@/shared/api';
 import { useHydratedStore } from '@/shared/lib/store';
 
 /** Why the run cannot start, with the page that fixes it when relevant. */
@@ -32,14 +37,20 @@ export interface RunBlockReason {
 export interface RunComposerModel {
   readonly selection: ComposerSelection;
   readonly strategies: readonly StrategySummary[];
-  readonly datasets: readonly CustomDataset[];
+  readonly datasets: readonly RunDataset[];
   readonly strategy: StrategySummary | null;
-  readonly dataset: CustomDataset | null;
+  readonly dataset: RunDataset | null;
   /** A stored selection no longer exists in the current list. */
   readonly strategyMissing: boolean;
   readonly datasetMissing: boolean;
   /** Saved default parameters of the selected strategy, once loaded. */
   readonly strategyDefaults: Readonly<Record<string, unknown>> | null;
+  /** Declared parameters of the selected strategy (empty when undeclared). */
+  readonly parameterSchema: readonly StrategyParameterSchema[];
+  /** Parameter overrides that break the declared bounds. */
+  readonly parameterErrors: Readonly<Record<string, string>>;
+  /** Period error (custom dates or unknown data range), if any. */
+  readonly periodError: string | null;
   readonly fieldErrors: ComposerFieldErrors;
   readonly advancedChanges: number;
   readonly isLoading: boolean;
@@ -59,6 +70,7 @@ export interface RunComposerModel {
 }
 
 const ANONYMOUS_USER_KEY = 'anonymous';
+const NO_SCHEMA: readonly StrategyParameterSchema[] = [];
 
 /** Composer state of the signed-in user plus everything needed to run. */
 export function useRunComposer(): RunComposerModel {
@@ -74,7 +86,7 @@ export function useRunComposer(): RunComposerModel {
   const resetStore = useComposerStore((state) => state.resetAdvanced);
 
   const strategiesQuery = useStrategies();
-  const datasetsQuery = useRunnableDatasets();
+  const datasetsQuery = useRunDatasets();
   const strategies = useMemo(
     () => strategiesQuery.data ?? [],
     [strategiesQuery.data]
@@ -88,10 +100,20 @@ export function useRunComposer(): RunComposerModel {
   const strategy = strategyResolution.item;
   const dataset = datasetResolution.item;
   const detail = useStrategy(strategy?.id ?? null);
-  const strategyDefaults =
-    detail.data && detail.data.id === strategy?.id
-      ? detail.data.parameters
-      : null;
+  const current = detail.data && detail.data.id === strategy?.id;
+  const strategyDefaults = current ? detail.data.parameters : null;
+  const parameterSchema =
+    (current ? detail.data.parameter_schema : undefined) ?? NO_SCHEMA;
+  const coverage = useDatasetCoverageEnd(
+    selection.periodPreset === 'all' || selection.periodPreset === 'custom'
+      ? null
+      : dataset
+  );
+  const coverageEnd = coverage.isError
+    ? null
+    : coverage.isSuccess
+      ? coverage.data
+      : undefined;
 
   const { status, run, cancel } = useBacktest();
   const isRunning = status === 'running' || status === 'cancelling';
@@ -102,7 +124,12 @@ export function useRunComposer(): RunComposerModel {
     strategies,
     datasets,
     strategyDefaults,
+    parameterSchema,
+    coverageEnd,
   });
+  const periodBlocker = built.ok
+    ? undefined
+    : built.blockers.find((blocker) => blocker.kind === 'invalid-period');
 
   let blockReason: RunBlockReason | null = null;
   if (strategiesQuery.isError || datasetsQuery.isError) {
@@ -135,6 +162,12 @@ export function useRunComposer(): RunComposerModel {
       blockReason = {
         message:
           "Sélection introuvable : le jeu de données choisi a été supprimé ou n'est plus prêt. Choisis-en un autre.",
+      };
+    } else if (first?.kind === 'invalid-period') {
+      blockReason = { message: first.message };
+    } else if (first?.kind === 'invalid-parameter') {
+      blockReason = {
+        message: `Paramètre « ${first.key} » : ${first.message} Corrige-le dans les réglages avancés.`,
       };
     } else if (first?.kind === 'invalid-field') {
       blockReason = {
@@ -176,11 +209,22 @@ export function useRunComposer(): RunComposerModel {
     strategyMissing: strategyResolution.missing,
     datasetMissing: datasetResolution.missing,
     strategyDefaults,
+    parameterSchema,
+    parameterErrors:
+      strategyDefaults && strategyId !== null
+        ? parameterErrors(
+            strategyDefaults,
+            selection.parameterOverrides[strategyId] ?? {},
+            parameterSchema
+          )
+        : {},
+    periodError: periodBlocker?.message ?? null,
     fieldErrors,
     advancedChanges: countAdvancedChanges(
       selection,
       strategyId,
-      strategyDefaults
+      strategyDefaults,
+      parameterSchema
     ),
     isLoading,
     blockReason,

@@ -6,6 +6,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { RUN_LIMITS, type StrategyParameterValue } from '@/entities/backtest';
 import { useHydratedStore } from '@/shared/lib/store';
 
+import { isPeriodPreset, type PeriodPreset } from './run-period';
 import { isParameterValue } from './strategy-parameters';
 
 export const COMPOSER_STORAGE_KEY = 'qslate_backtest_composer';
@@ -23,6 +24,11 @@ export interface ComposerSelection {
   readonly commissionPercent: number | null;
   readonly slippageBps: number | null;
   readonly window: number | null;
+  /** Test period: whole dataset, last months, or custom days. */
+  readonly periodPreset: PeriodPreset;
+  /** Custom first and last day (YYYY-MM-DD, both inclusive). */
+  readonly periodStart: string | null;
+  readonly periodEnd: string | null;
   /** Parameter overrides, keyed by strategy id then parameter name. */
   readonly parameterOverrides: Readonly<
     Record<string, Readonly<Record<string, StrategyParameterValue>>>
@@ -36,6 +42,9 @@ export const DEFAULT_COMPOSER_SELECTION: ComposerSelection = {
   commissionPercent: RUN_LIMITS.commissionRate.default * 100,
   slippageBps: RUN_LIMITS.slippageBps.default,
   window: RUN_LIMITS.window.default,
+  periodPreset: 'all',
+  periodStart: null,
+  periodEnd: null,
   parameterOverrides: {},
 };
 
@@ -48,6 +57,9 @@ export type ComposerPatch = Partial<
     | 'commissionPercent'
     | 'slippageBps'
     | 'window'
+    | 'periodPreset'
+    | 'periodStart'
+    | 'periodEnd'
   >
 >;
 
@@ -111,6 +123,11 @@ export function sanitizeSelection(value: unknown): ComposerSelection {
     ),
     slippageBps: nullableNumber(value.slippageBps, defaults.slippageBps),
     window: nullableNumber(value.window, defaults.window),
+    periodPreset: isPeriodPreset(value.periodPreset)
+      ? value.periodPreset
+      : defaults.periodPreset,
+    periodStart: nullableString(value.periodStart),
+    periodEnd: nullableString(value.periodEnd),
     parameterOverrides: overrides,
   };
 }

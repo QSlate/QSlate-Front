@@ -65,19 +65,14 @@ beforeEach(() => {
   vi.spyOn(apiClient, 'getStrategies').mockResolvedValue({
     items: [STRATEGY],
   });
-  vi.spyOn(apiClient, 'getCustomDatasets').mockResolvedValue({
+  vi.spyOn(apiClient, 'getMarketSymbols').mockResolvedValue({
     items: [
       {
-        id: 'ds-eth',
+        symbol: 'ETH/USDT@1h',
+        name: 'Ether / Tether — 1 hour',
+        dataset_id: 'ds-eth',
         version_id: 'dsv-1',
-        name: 'ETH 4h',
-        status: 'ready',
-        format: 'csv',
-        columns: [],
-        row_count: 2190,
-        symbol: 'ETHUSDT',
-        created_at: '',
-        updated_at: '',
+        live: false,
       },
     ],
   });
@@ -123,15 +118,15 @@ describe('AdvancedSettingsDrawer', () => {
 
     expect(within(drawer).getByText('Paramètres de RSI Trend')).toBeDefined();
     expect(
-      within(drawer).getByRole('spinbutton', { name: 'rsi_period' })
+      within(drawer).getByRole('spinbutton', { name: /RSI period/ })
     ).toBeDefined();
     expect(
       within(drawer)
-        .getByRole('switch', { name: 'use_stop' })
+        .getByRole('switch', { name: /Use stop/ })
         .getAttribute('aria-checked')
     ).toBe('true');
     expect(
-      within(drawer).getByRole('textbox', { name: 'mode' })
+      within(drawer).getByRole('textbox', { name: /Mode/ })
     ).toHaveProperty('value', 'long');
     expect(within(drawer).queryByText('bands')).toBeNull();
   });
@@ -140,14 +135,14 @@ describe('AdvancedSettingsDrawer', () => {
     const drawer = await openDrawer();
 
     fireEvent.change(
-      within(drawer).getByRole('spinbutton', { name: 'rsi_period' }),
+      within(drawer).getByRole('spinbutton', { name: /RSI period/ }),
       { target: { value: '21' } }
     );
     fireEvent.change(
       within(drawer).getByRole('spinbutton', { name: 'Frais par trade' }),
       { target: { value: '0.1' } }
     );
-    fireEvent.click(within(drawer).getByRole('switch', { name: 'use_stop' }));
+    fireEvent.click(within(drawer).getByRole('switch', { name: /Use stop/ }));
 
     expect(within(drawer).getAllByText(/Modifié · défaut/)).toHaveLength(2);
     expect(
@@ -178,7 +173,7 @@ describe('AdvancedSettingsDrawer', () => {
     ).toBeDefined();
 
     fireEvent.change(
-      within(drawer).getByRole('spinbutton', { name: 'rsi_period' }),
+      within(drawer).getByRole('spinbutton', { name: /RSI period/ }),
       { target: { value: '30' } }
     );
     fireEvent.click(
@@ -186,7 +181,7 @@ describe('AdvancedSettingsDrawer', () => {
     );
 
     expect(
-      within(drawer).getByRole('spinbutton', { name: 'rsi_period' })
+      within(drawer).getByRole('spinbutton', { name: /RSI period/ })
     ).toHaveProperty('value', '14');
     expect(warmUp.getAttribute('aria-invalid')).toBeNull();
     expect(

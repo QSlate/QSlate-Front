@@ -11,6 +11,8 @@ export const TOKEN_META_CLASS = 'font-mono text-[11.5px] font-normal text-fg-3';
 export interface TokenOption {
   readonly value: string;
   readonly label: string;
+  /** Options sharing a group are rendered in one <optgroup>. */
+  readonly group?: string | undefined;
 }
 
 interface ComposerSelectTokenProps {
@@ -28,6 +30,18 @@ interface ComposerSelectTokenProps {
   /** Secondary information (version, candle count). */
   readonly meta?: string | undefined;
   readonly disabled?: boolean | undefined;
+}
+
+function groupOptions(
+  options: readonly TokenOption[]
+): readonly (readonly [string | undefined, readonly TokenOption[]])[] {
+  const groups = new Map<string | undefined, TokenOption[]>();
+  for (const option of options) {
+    const items = groups.get(option.group) ?? [];
+    items.push(option);
+    groups.set(option.group, items);
+  }
+  return [...groups.entries()];
 }
 
 /** Composer token wrapping a native select (keyboard and screen-reader friendly). */
@@ -74,11 +88,23 @@ export function ComposerSelectToken({
                 Sélection introuvable
               </option>
             ) : null}
-            {options.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
+            {groupOptions(options).map(([group, items]) =>
+              group ? (
+                <optgroup key={group} label={group}>
+                  {items.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ) : (
+                items.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))
+              )
+            )}
           </>
         )}
       </select>

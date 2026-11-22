@@ -26,8 +26,22 @@ export {
   commissionRateToPercent,
 } from './model/cost-units';
 export {
+  isPeriodPreset,
+  MAX_PERIOD_DAYS,
+  parseDay,
+  PERIOD_LABELS,
+  PERIOD_PRESETS,
+  type PeriodPreset,
+  type PeriodResolution,
+  type PeriodSelection,
+  resolvePeriod,
+} from './model/run-period';
+export {
   describeParameters,
   effectiveOverrides,
+  humanizeParameterName,
+  parameterErrors,
   type ParameterField,
   type ParameterKind,
+  validateParameterValue,
 } from './model/strategy-parameters';

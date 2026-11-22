@@ -78,6 +78,16 @@ export interface StrategyPage {
   next_cursor?: string;
 }
 
+/** Declared strategy parameter (StrategyParameter in the OpenAPI spec). */
+export interface StrategyParameterSchema {
+  name: string;
+  type: 'integer' | 'number' | 'boolean' | 'string';
+  default: unknown;
+  min?: number;
+  max?: number;
+  description: string;
+}
+
 export interface Strategy {
   id: string;
   version_id: string;
@@ -85,6 +95,7 @@ export interface Strategy {
   name: string;
   source: string;
   parameters: Record<string, unknown>;
+  parameter_schema?: StrategyParameterSchema[];
   created_at: string;
   updated_at: string;
   read_only?: boolean;
@@ -321,6 +332,10 @@ export interface BacktestRunPayload {
   commission_rate?: number;
   /** Slippage in basis points (0–1000). */
   slippage_bps?: number;
+  /** Inclusive UTC start of the test period (with `period_end`). */
+  period_start?: string;
+  /** Exclusive UTC end of the test period, at most 366 days later. */
+  period_end?: string;
 }
 
 export interface BacktestRunInput {
@@ -479,6 +494,7 @@ export interface MarketSymbol {
   name: string;
   dataset_id?: string;
   version_id?: string;
+  resolution?: '1h' | '1d';
   live: boolean;
 }
 

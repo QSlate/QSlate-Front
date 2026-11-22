@@ -15,6 +15,8 @@ const REQUEST: BacktestRunRequest = {
   window: 30,
   commissionRate: 0.001,
   slippageBps: 5,
+  periodStart: null,
+  periodEnd: null,
 };
 
 function job(status: BacktestJob['status'], progress = 0): BacktestJob {

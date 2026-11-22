@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { toBacktestRunPayload } from '@/entities/backtest';
-import type { CustomDataset, StrategySummary } from '@/shared/api';
+import type { RunDataset } from '@/entities/dataset';
+import type { StrategySummary } from '@/shared/api';
 
 import {
   buildRunRequest,
@@ -19,6 +20,8 @@ import {
 import {
   describeParameters,
   effectiveOverrides,
+  humanizeParameterName,
+  parameterErrors,
 } from '../model/strategy-parameters';
 
 const STRATEGY: StrategySummary = {
@@ -30,17 +33,13 @@ const STRATEGY: StrategySummary = {
   updated_at: '',
 };
 
-const DATASET: CustomDataset = {
+const DATASET: RunDataset = {
   id: 'ds-eth',
-  version_id: 'dsv-1',
+  versionId: 'dsv-1',
   name: 'ETH 4h',
-  status: 'ready',
-  format: 'csv',
-  columns: [],
-  row_count: 2190,
-  symbol: 'ETHUSDT',
-  created_at: '',
-  updated_at: '',
+  symbol: 'custom:ds-eth',
+  resolution: null,
+  source: 'custom',
 };
 
 const DEFAULTS = {
@@ -66,11 +65,62 @@ describe('cost units', () => {
 
 describe('strategy parameters', () => {
   it('types editable fields by their default value and skips non scalars', () => {
-    expect(describeParameters(DEFAULTS)).toEqual([
-      { key: 'rsi_period', kind: 'number', defaultValue: 14 },
-      { key: 'use_stop', kind: 'boolean', defaultValue: true },
-      { key: 'mode', kind: 'string', defaultValue: 'long' },
+    expect(
+      describeParameters(DEFAULTS).map(
+        ({ key, kind, defaultValue, label }) => ({
+          key,
+          kind,
+          defaultValue,
+          label,
+        })
+      )
+    ).toEqual([
+      {
+        key: 'rsi_period',
+        kind: 'number',
+        defaultValue: 14,
+        label: 'RSI period',
+      },
+      {
+        key: 'use_stop',
+        kind: 'boolean',
+        defaultValue: true,
+        label: 'Use stop',
+      },
+      { key: 'mode', kind: 'string', defaultValue: 'long', label: 'Mode' },
     ]);
+  });
+
+  it('uses the declared schema for bounds, integers and descriptions', () => {
+    const schema = [
+      {
+        name: 'rsi_period',
+        type: 'integer' as const,
+        default: 14,
+        min: 2,
+        max: 50,
+        description: 'Fenêtre du RSI',
+      },
+    ];
+    const [field] = describeParameters({ rsi_period: 21 }, schema);
+    expect(field).toMatchObject({
+      defaultValue: 21,
+      integer: true,
+      min: 2,
+      max: 50,
+      description: 'Fenêtre du RSI',
+    });
+    expect(
+      parameterErrors({ rsi_period: 21 }, { rsi_period: 60 }, schema)
+    ).toEqual({
+      rsi_period: 'Maximum 50.',
+    });
+    expect(
+      parameterErrors({ rsi_period: 21 }, { rsi_period: 2.5 }, schema)
+    ).toEqual({
+      rsi_period: 'Saisis un nombre entier.',
+    });
+    expect(humanizeParameterName('take_profit_pct')).toBe('Take profit (%)');
   });
 
   it('keeps only overrides that change a known parameter with the same type', () => {

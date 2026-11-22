@@ -83,17 +83,21 @@ function SettingRow({
 interface ParameterRowProps {
   readonly field: ParameterField;
   readonly value: ParameterField['defaultValue'] | undefined;
+  readonly error?: string | undefined;
   readonly onChange: (value: ParameterField['defaultValue'] | null) => void;
 }
 
-function ParameterRow({ field, value, onChange }: ParameterRowProps) {
+function ParameterRow({ field, value, error, onChange }: ParameterRowProps) {
   const labelId = useId();
   const helperId = useId();
+  const errorId = useId();
   const current = value ?? field.defaultValue;
   const changed = value !== undefined && value !== field.defaultValue;
   const commit = (next: ParameterField['defaultValue'] | null) =>
     onChange(next === null || next === field.defaultValue ? null : next);
-  const described = `${helperId}`;
+  const described = error ? `${helperId} ${errorId}` : helperId;
+  const bounded =
+    field.kind === 'number' && field.min !== null && field.max !== null;
 
   let control: ReactNode;
   if (field.kind === 'boolean') {
@@ -111,10 +115,13 @@ function ParameterRow({ field, value, onChange }: ParameterRowProps) {
       <NumberInput
         aria-labelledby={labelId}
         aria-describedby={described}
+        aria-invalid={error ? true : undefined}
         value={typeof current === 'number' ? current : null}
         onValueChange={commit}
-        step="any"
-        frameClassName={cn(changed && CHANGED_FRAME)}
+        step={field.integer ? 1 : 'any'}
+        min={field.min ?? undefined}
+        max={field.max ?? undefined}
+        frameClassName={cn(changed && CHANGED_FRAME, error && 'border-loss')}
       />
     );
   } else {
@@ -130,30 +137,60 @@ function ParameterRow({ field, value, onChange }: ParameterRowProps) {
     );
   }
 
+  const defaultText = changed ? (
+    <>
+      Modifié · défaut{' '}
+      <span className="font-mono">{formatDefault(field.defaultValue)}</span>
+    </>
+  ) : (
+    <>
+      Défaut{' '}
+      <span className="font-mono">{formatDefault(field.defaultValue)}</span>
+    </>
+  );
+
   return (
     <SettingRow
       labelId={labelId}
       helperId={helperId}
-      label={<span className="font-mono">{field.key}</span>}
+      errorId={errorId}
+      error={error}
+      label={
+        <>
+          {field.label}{' '}
+          <span className="font-mono text-[10.5px] font-normal text-fg-3">
+            {field.key}
+          </span>
+        </>
+      }
       helper={
-        changed ? (
-          <>
-            Modifié · défaut{' '}
-            <span className="font-mono">
-              {formatDefault(field.defaultValue)}
-            </span>
-          </>
-        ) : (
-          <>
-            Défaut{' '}
-            <span className="font-mono">
-              {formatDefault(field.defaultValue)}
-            </span>
-          </>
-        )
+        <>
+          {field.description ? <>{field.description} · </> : null}
+          {defaultText}
+          {bounded ? (
+            <>
+              {' · '}
+              <span className="font-mono">
+                {formatDefault(field.min ?? 0)}–{formatDefault(field.max ?? 0)}
+              </span>
+            </>
+          ) : null}
+        </>
       }
     >
       {control}
+      {bounded && typeof current === 'number' ? (
+        <input
+          type="range"
+          aria-label={`${field.label} (curseur)`}
+          min={field.min ?? undefined}
+          max={field.max ?? undefined}
+          step={field.integer ? 1 : 'any'}
+          value={current}
+          onChange={(event) => commit(Number(event.target.value))}
+          className="col-span-2 h-1 w-full cursor-pointer accent-[var(--a1)]"
+        />
+      ) : null}
     </SettingRow>
   );
 }
@@ -221,6 +258,8 @@ export function AdvancedSettingsDrawer({
   const {
     strategy,
     strategyDefaults,
+    parameterSchema,
+    parameterErrors,
     selection,
     fieldErrors,
     advancedChanges,
@@ -228,7 +267,9 @@ export function AdvancedSettingsDrawer({
     setParameter,
     resetAdvanced,
   } = model;
-  const fields = strategyDefaults ? describeParameters(strategyDefaults) : [];
+  const fields = strategyDefaults
+    ? describeParameters(strategyDefaults, parameterSchema)
+    : [];
   const overrides = strategy
     ? (selection.parameterOverrides[strategy.id] ?? {})
     : {};
@@ -279,6 +320,7 @@ export function AdvancedSettingsDrawer({
               key={field.key}
               field={field}
               value={overrides[field.key]}
+              error={parameterErrors[field.key]}
               onChange={(value) => setParameter(field.key, value)}
             />
           ))

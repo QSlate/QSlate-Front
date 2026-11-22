@@ -3,11 +3,13 @@ import {
   RUN_LIMITS,
   type StrategyParameterValue,
 } from '@/entities/backtest';
-import type { CustomDataset, StrategySummary } from '@/shared/api';
+import type { RunDataset } from '@/entities/dataset';
+import type { StrategyParameterSchema, StrategySummary } from '@/shared/api';
 
 import type { ComposerSelection } from './composer-store';
 import { commissionPercentToRate } from './cost-units';
-import { effectiveOverrides } from './strategy-parameters';
+import { resolvePeriod } from './run-period';
+import { effectiveOverrides, parameterErrors } from './strategy-parameters';
 
 export type ComposerField =
   'capital' | 'commissionPercent' | 'slippageBps' | 'window';
@@ -27,7 +29,13 @@ export type RunBlocker =
   | { readonly kind: 'no-dataset' }
   | { readonly kind: 'missing-strategy' }
   | { readonly kind: 'missing-dataset' }
-  | { readonly kind: 'invalid-field'; readonly field: ComposerField };
+  | { readonly kind: 'invalid-field'; readonly field: ComposerField }
+  | { readonly kind: 'invalid-period'; readonly message: string }
+  | {
+      readonly kind: 'invalid-parameter';
+      readonly key: string;
+      readonly message: string;
+    };
 
 export type BuildRunRequestResult =
   | { readonly ok: true; readonly request: BacktestRunRequest }
@@ -36,9 +44,16 @@ export type BuildRunRequestResult =
 export interface BuildRunRequestInput {
   readonly selection: ComposerSelection;
   readonly strategies: readonly StrategySummary[];
-  readonly datasets: readonly CustomDataset[];
+  readonly datasets: readonly RunDataset[];
   /** Saved parameters of the selected strategy when already loaded. */
   readonly strategyDefaults: Readonly<Record<string, unknown>> | null;
+  /** Declared parameters of the selected strategy (may be empty). */
+  readonly parameterSchema?: readonly StrategyParameterSchema[] | undefined;
+  /**
+   * Last candle of the selected dataset: undefined while unknown (loading),
+   * null when it could not be found.
+   */
+  readonly coverageEnd?: string | null | undefined;
 }
 
 const CAPITAL_FORMATTER = new Intl.NumberFormat('fr-FR');
@@ -69,11 +84,11 @@ export function resolveStrategy(
   return resolveSelection(selection.strategyId, strategies);
 }
 
-/** Only runnable (ready) datasets are expected in `datasets`. */
+/** Only runnable datasets (public catalogue and ready ones) are expected. */
 export function resolveDataset(
   selection: ComposerSelection,
-  datasets: readonly CustomDataset[]
-): SelectionResolution<CustomDataset> {
+  datasets: readonly RunDataset[]
+): SelectionResolution<RunDataset> {
   return resolveSelection(selection.datasetId, datasets);
 }
 
@@ -124,24 +139,27 @@ export function validateComposerFields(
 export function overridesFor(
   selection: ComposerSelection,
   strategyId: string,
-  defaults: Readonly<Record<string, unknown>> | null
+  defaults: Readonly<Record<string, unknown>> | null,
+  schema: readonly StrategyParameterSchema[] = []
 ): Record<string, StrategyParameterValue> {
   const raw = selection.parameterOverrides[strategyId] ?? {};
   // Without the saved defaults we cannot tell what changed: send nothing
   // rather than guessing, the backend then uses the saved values.
-  return defaults ? effectiveOverrides(defaults, raw) : {};
+  return defaults ? effectiveOverrides(defaults, raw, schema) : {};
 }
 
 /** Number of advanced settings that differ from their defaults. */
 export function countAdvancedChanges(
   selection: ComposerSelection,
   strategyId: string | null,
-  defaults: Readonly<Record<string, unknown>> | null
+  defaults: Readonly<Record<string, unknown>> | null,
+  schema: readonly StrategyParameterSchema[] = []
 ): number {
   const params =
     strategyId === null
       ? 0
-      : Object.keys(overridesFor(selection, strategyId, defaults)).length;
+      : Object.keys(overridesFor(selection, strategyId, defaults, schema))
+          .length;
   return (
     params +
     Number(selection.commissionPercent !== RUN_LIMITS.commissionRate.default) +
@@ -159,6 +177,8 @@ export function buildRunRequest({
   strategies,
   datasets,
   strategyDefaults,
+  parameterSchema = [],
+  coverageEnd,
 }: BuildRunRequestInput): BuildRunRequestResult {
   const blockers: RunBlocker[] = [];
   const strategyResolution = resolveStrategy(selection, strategies);
@@ -175,9 +195,31 @@ export function buildRunRequest({
   for (const field of COMPOSER_FIELDS) {
     if (errors[field]) blockers.push({ kind: 'invalid-field', field });
   }
+  const period = resolvePeriod(
+    {
+      preset: selection.periodPreset,
+      start: selection.periodStart,
+      end: selection.periodEnd,
+    },
+    coverageEnd
+  );
+  if (!period.ok) {
+    blockers.push({ kind: 'invalid-period', message: period.error });
+  }
+  if (strategy && strategyDefaults) {
+    const invalid = parameterErrors(
+      strategyDefaults,
+      selection.parameterOverrides[strategy.id] ?? {},
+      parameterSchema
+    );
+    for (const [key, message] of Object.entries(invalid)) {
+      blockers.push({ kind: 'invalid-parameter', key, message });
+    }
+  }
   if (
     !strategy ||
     !dataset ||
+    !period.ok ||
     blockers.length > 0 ||
     selection.capital === null ||
     selection.commissionPercent === null ||
@@ -192,12 +234,19 @@ export function buildRunRequest({
       strategyId: strategy.id,
       strategyVersionId: strategy.version_id,
       datasetId: dataset.id,
-      datasetVersionId: dataset.version_id,
+      datasetVersionId: dataset.versionId,
       initialCapital: selection.capital,
-      parameters: overridesFor(selection, strategy.id, strategyDefaults),
+      parameters: overridesFor(
+        selection,
+        strategy.id,
+        strategyDefaults,
+        parameterSchema
+      ),
       window: selection.window,
       commissionRate: commissionPercentToRate(selection.commissionPercent),
       slippageBps: selection.slippageBps,
+      periodStart: period.start,
+      periodEnd: period.end,
     },
   };
 }

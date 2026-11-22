@@ -18,6 +18,9 @@ export interface BacktestRunRequest {
   readonly commissionRate: number;
   /** Slippage in basis points. */
   readonly slippageBps: number;
+  /** UTC test period (start inclusive, end exclusive); null = whole dataset. */
+  readonly periodStart: string | null;
+  readonly periodEnd: string | null;
 }
 
 /** Defaults and bounds of the run contract (RunInput in the OpenAPI spec). */
@@ -54,5 +57,8 @@ export function toBacktestRunPayload(
     window: request.window,
     commission_rate: request.commissionRate,
     slippage_bps: request.slippageBps,
+    ...(request.periodStart && request.periodEnd
+      ? { period_start: request.periodStart, period_end: request.periodEnd }
+      : {}),
   };
 }
