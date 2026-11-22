@@ -10,7 +10,7 @@ import type {
   BacktestLogItem,
   BacktestLogsPage,
   BacktestOptimizeInput,
-  BacktestRunInput,
+  BacktestRunPayload,
   BacktestRunsPage,
   BacktestSummary,
   CustomDataset,
@@ -52,6 +52,11 @@ import type {
   UserPreferencesDTO,
   UserPreferencesPatchDTO,
 } from './types';
+
+/** Idempotency keys must be 16–128 characters (OpenAPI contract). */
+function createIdempotencyKey(prefix: string): string {
+  return `${prefix}-${crypto.randomUUID().replace(/-/g, '')}-${Date.now()}`;
+}
 
 export class ApiError extends Error {
   constructor(
@@ -1037,13 +1042,11 @@ export class QslateApiClient {
    * POST /qslate/v1/backtests/run
    */
   public async runBacktest(
-    payload: BacktestRunInput,
+    payload: BacktestRunPayload,
     idempotencyKey?: string,
     token?: string | null
   ): Promise<BacktestJob> {
-    const key =
-      idempotencyKey ||
-      `run-${crypto.randomUUID().replace(/-/g, '')}-${Date.now()}`;
+    const key = idempotencyKey || createIdempotencyKey('run');
     return this.request<BacktestJob>('/qslate/v1/backtests/run', {
       method: 'POST',
       headers: {
@@ -1060,12 +1063,16 @@ export class QslateApiClient {
    */
   public async cancelBacktest(
     backtestId: string,
-    token?: string | null
+    token?: string | null,
+    idempotencyKey?: string
   ): Promise<void> {
     return this.request<void>(
       `/qslate/v1/backtests/${encodeURIComponent(backtestId)}/cancel`,
       {
         method: 'POST',
+        headers: {
+          'Idempotency-Key': idempotencyKey || createIdempotencyKey('cancel'),
+        },
         ...(token ? { token } : {}),
       }
     );

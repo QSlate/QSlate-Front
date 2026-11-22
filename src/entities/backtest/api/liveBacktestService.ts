@@ -4,7 +4,7 @@ import {
   apiClient,
   ApiError,
   type BacktestJob,
-  type BacktestRunInput,
+  type BacktestRunPayload,
 } from '@/shared/api';
 
 import {
@@ -148,7 +148,7 @@ export class LiveBacktestService implements BacktestService {
       ? customDs.version_id
       : DEFAULT_DATASET_VERSION;
 
-    const payload: BacktestRunInput = {
+    const payload: BacktestRunPayload = {
       strategy_id: strategyId,
       strategy_version_id: versionId,
       dataset_id: datasetId,
