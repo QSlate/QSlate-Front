@@ -1,6 +1,6 @@
 'use client';
 
-import { FlaskConical, Terminal } from 'lucide-react';
+import { Terminal } from 'lucide-react';
 
 import { useHasBacktests } from '@/entities/backtest';
 import { useLabStore } from '@/features/lab-state';
@@ -43,9 +43,6 @@ const WIDGET_COMPONENTS: WidgetComponents = {
 export function LabWorkspace() {
   const isLogsOpen = useLabStore((state) => state.isExecutionLogsOpen);
   const toggleLogs = useLabStore((state) => state.toggleExecutionLogs);
-  const openOptimization = useLabStore(
-    (state) => state.setOptimizationModalOpen
-  );
   const hasBacktests = useHasBacktests();
   const { status, result } = useBacktest();
   const firstRun =
@@ -65,16 +62,6 @@ export function LabWorkspace() {
                   label="Logs d'exécution"
                   aria-pressed={isLogsOpen}
                   onClick={toggleLogs}
-                />
-              )}
-            </Tooltip>
-            <Tooltip content="Optimiser les paramètres">
-              {(triggerProps) => (
-                <IconButton
-                  {...triggerProps}
-                  icon={<FlaskConical size={16} />}
-                  label="Optimiser la stratégie"
-                  onClick={() => openOptimization(true)}
                 />
               )}
             </Tooltip>
