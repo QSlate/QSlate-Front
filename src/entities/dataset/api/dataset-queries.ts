@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
 import { apiClient, type CustomDataset } from '@/shared/api';
 
@@ -36,4 +37,16 @@ export function useRunnableDatasets() {
     queryFn: fetchDatasets,
     select: selectRunnable,
   });
+}
+
+/**
+ * Marks dataset queries stale. Call it after upload, column mapping,
+ * validation or deletion so the run composer sees the current versions.
+ */
+export function useInvalidateDatasets(): () => Promise<void> {
+  const queryClient = useQueryClient();
+  return useCallback(
+    () => queryClient.invalidateQueries({ queryKey: datasetKeys.all }),
+    [queryClient]
+  );
 }

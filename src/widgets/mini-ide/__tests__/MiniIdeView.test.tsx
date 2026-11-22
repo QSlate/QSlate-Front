@@ -3,7 +3,6 @@ import {
   act,
   cleanup,
   fireEvent,
-  render,
   screen,
   waitFor,
 } from '@testing-library/react';
@@ -11,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useLabStore } from '@/features/lab-state';
 import { apiClient, ApiError } from '@/shared/api';
+import { renderWithQuery } from '@/shared/lib/test';
 import { AppearanceProvider } from '@/shared/theme';
 
 import { MiniIdeView } from '../ui/MiniIdeView';
@@ -41,7 +41,7 @@ describe('MiniIdeView', () => {
   });
 
   it('renders file tabs, strategy badges, and telemetry status bar', async () => {
-    render(<MiniIdeView />);
+    renderWithQuery(<MiniIdeView />);
 
     expect(screen.getByText('strategy.py')).toBeDefined();
     expect(screen.getByText('indicators.py')).toBeDefined();
@@ -57,7 +57,7 @@ describe('MiniIdeView', () => {
   });
 
   it('switches active file tab on click', () => {
-    render(<MiniIdeView />);
+    renderWithQuery(<MiniIdeView />);
 
     const indicatorsTab = screen.getByText('indicators.py');
     act(() => {
@@ -68,7 +68,7 @@ describe('MiniIdeView', () => {
   });
 
   it('toggles split view side panel', () => {
-    render(<MiniIdeView />);
+    renderWithQuery(<MiniIdeView />);
 
     const splitBtn = screen.getByTitle('Toggle split view');
     act(() => {
@@ -94,7 +94,7 @@ describe('MiniIdeView', () => {
       ],
     });
 
-    render(<MiniIdeView />);
+    renderWithQuery(<MiniIdeView />);
 
     act(() => {
       useLabStore
@@ -128,7 +128,8 @@ describe('MiniIdeView', () => {
         updated_at: '2026-01-01T00:00:00Z',
       });
 
-    render(<MiniIdeView />);
+    const { queryClient } = renderWithQuery(<MiniIdeView />);
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
 
     const saveBtn = screen.getByText('Save Version');
     act(() => {
@@ -136,6 +137,10 @@ describe('MiniIdeView', () => {
     });
 
     await waitFor(() => {
+      // The run composer must pick up the new version_id and defaults.
+      expect(invalidate).toHaveBeenCalledWith({
+        queryKey: ['strategies'],
+      });
       expect(updateSpy).toHaveBeenCalledWith('strat-123', {
         base_version_id: 'ver-100',
         source: expect.any(String),
@@ -151,7 +156,7 @@ describe('MiniIdeView', () => {
       new ApiError(409, 'conflict', 'revision conflict')
     );
 
-    render(<MiniIdeView />);
+    renderWithQuery(<MiniIdeView />);
 
     const saveBtn = screen.getByText('Save Version');
     act(() => {
@@ -220,7 +225,7 @@ describe('MiniIdeView', () => {
         updated_at: '2026-01-03T00:00:00Z',
       });
 
-    render(<MiniIdeView />);
+    renderWithQuery(<MiniIdeView />);
 
     const historyBtn = screen.getByText('History');
     act(() => {
@@ -266,7 +271,7 @@ describe('MiniIdeView', () => {
         updated_at: '2026-01-01T00:00:00Z',
       });
 
-    const { container } = render(<MiniIdeView />);
+    const { container } = renderWithQuery(<MiniIdeView />);
 
     const fileInput = container.querySelector(
       'input[type="file"]'
@@ -292,7 +297,7 @@ describe('MiniIdeView', () => {
   });
 
   it('renders correctly in light theme mode', async () => {
-    render(
+    renderWithQuery(
       <AppearanceProvider value={{ theme: 'light', colorblindMode: 'none' }}>
         <MiniIdeView />
       </AppearanceProvider>

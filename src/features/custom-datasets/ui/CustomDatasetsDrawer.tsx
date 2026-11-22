@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { useInvalidateDatasets } from '@/entities/dataset';
 import { useAuthStore } from '@/entities/user/model';
 import { useLabStore } from '@/features/lab-state';
 import { apiClient, type CustomDataset } from '@/shared/api';
@@ -36,6 +37,7 @@ export function CustomDatasetsDrawer() {
     (state) => state.setSelectedCustomDataset
   );
   const showToast = useLabStore((state) => state.showToast);
+  const invalidateDatasets = useInvalidateDatasets();
 
   const { theme } = useAppearance();
   const isLight = theme === 'light';
@@ -60,12 +62,14 @@ export function CustomDatasetsDrawer() {
     try {
       const res = await apiClient.getCustomDatasets({ limit: 50 }, token);
       setCustomDatasets(res.items || []);
+      // Keep the run composer's dataset list in sync with this drawer.
+      void invalidateDatasets();
     } catch {
       // Fallback empty or ignore if offline
     } finally {
       setIsLoading(false);
     }
-  }, [token, setCustomDatasets]);
+  }, [token, setCustomDatasets, invalidateDatasets]);
 
   useEffect(() => {
     if (isOpen) {

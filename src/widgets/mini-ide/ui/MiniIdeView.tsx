@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
+import { useInvalidateStrategies } from '@/entities/strategy';
 import { useLabStore } from '@/features/lab-state';
 import { apiClient, ApiError, type StrategyVersion } from '@/shared/api';
 import { useAppearance } from '@/shared/theme';
@@ -54,6 +55,7 @@ export function MiniIdeView() {
   const astStatus = useLabStore((state) => state.ideAstStatus);
   const applyAiPrompt = useLabStore((state) => state.applyAiPrompt);
   const showToast = useLabStore((state) => state.showToast);
+  const invalidateStrategies = useInvalidateStrategies();
 
   // Strategy metadata & versioning state from useLabStore
   const strategyId = useLabStore((state) => state.strategyId);
@@ -191,6 +193,7 @@ export function MiniIdeView() {
           revision: created.revision,
           name: created.name,
         });
+        void invalidateStrategies();
         showToast(
           `Strategy "${created.name}" created (v${created.revision})`,
           'success'
@@ -208,6 +211,7 @@ export function MiniIdeView() {
           revision: updated.revision,
           name: updated.name,
         });
+        void invalidateStrategies();
         showToast(
           `Committed revision v${updated.revision} successfully`,
           'success'
@@ -260,6 +264,7 @@ export function MiniIdeView() {
         revision: restored.revision,
         name: restored.name,
       });
+      void invalidateStrategies();
       updateFileContent('strategy.py', restored.source);
       showToast(
         `Restored revision v${ver.revision} as new active v${restored.revision}`,
@@ -298,6 +303,7 @@ export function MiniIdeView() {
         revision: imported.revision,
         name: imported.name,
       });
+      void invalidateStrategies();
       updateFileContent('strategy.py', imported.source);
       setActiveFile('strategy.py');
       showToast(

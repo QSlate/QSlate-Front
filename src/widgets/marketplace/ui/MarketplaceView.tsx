@@ -16,6 +16,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 
 import { useLayoutStore } from '@/entities/layout';
+import { useInvalidateStrategies } from '@/entities/strategy';
 import { useLabStore } from '@/features/lab-state';
 import {
   apiClient,
@@ -117,6 +118,7 @@ export function MarketplaceView() {
   const reviewingItem = useLabStore((state) => state.reviewingItem);
   const setReviewingItem = useLabStore((state) => state.setReviewingItem);
   const showToast = useLabStore((state) => state.showToast);
+  const invalidateStrategies = useInvalidateStrategies();
 
   const { theme } = useAppearance();
   const isLight = theme === 'light';
@@ -273,6 +275,8 @@ export function MarketplaceView() {
         });
         removeInstalledId(item.id);
         removeWidget(item.id);
+        // Installed strategies appear in the run composer's strategy list.
+        if (item.kind === 'strategy') void invalidateStrategies();
 
         setItems((prev) =>
           prev.map((i) =>
@@ -294,6 +298,7 @@ export function MarketplaceView() {
         if (item.kind === 'widget') {
           addWidget(item.id);
         }
+        if (item.kind === 'strategy') void invalidateStrategies();
 
         setItems((prev) =>
           prev.map((i) =>

@@ -1,15 +1,10 @@
 // @vitest-environment jsdom
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useLabStore } from '@/features/lab-state';
 import { apiClient, type CustomDataset } from '@/shared/api';
+import { renderWithQuery } from '@/shared/lib/test';
 
 import { ColumnMappingModal } from '../ui/ColumnMappingModal';
 import { CustomDatasetsDrawer } from '../ui/CustomDatasetsDrawer';
@@ -48,9 +43,14 @@ describe('CustomDatasetsDrawer & ColumnMappingModal', () => {
       items: [MOCK_DATASET],
     });
 
-    render(<CustomDatasetsDrawer />);
+    const { queryClient } = renderWithQuery(<CustomDatasetsDrawer />);
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
 
     expect(screen.getByText('Custom Datasets')).toBeDefined();
+    // Each refresh of the drawer also refreshes the run composer's list.
+    await waitFor(() =>
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['datasets'] })
+    );
     expect(screen.getByText('ETH/USDT 1m Binance')).toBeDefined();
     expect(screen.getByText('uploaded')).toBeDefined();
     expect(screen.getByText(/Symbol: custom:ds-test-1/)).toBeDefined();
@@ -61,7 +61,7 @@ describe('CustomDatasetsDrawer & ColumnMappingModal', () => {
       items: [MOCK_DATASET],
     });
 
-    render(<CustomDatasetsDrawer />);
+    renderWithQuery(<CustomDatasetsDrawer />);
 
     const selectButton = screen.getByText('Select for Lab');
     fireEvent.click(selectButton);
@@ -78,7 +78,7 @@ describe('CustomDatasetsDrawer & ColumnMappingModal', () => {
       .mockResolvedValueOnce({ items: [MOCK_DATASET] })
       .mockResolvedValueOnce({ items: [] });
 
-    render(<CustomDatasetsDrawer />);
+    renderWithQuery(<CustomDatasetsDrawer />);
 
     const deleteBtn = screen.getByLabelText('Delete ETH/USDT 1m Binance');
     fireEvent.click(deleteBtn);
@@ -101,7 +101,7 @@ describe('CustomDatasetsDrawer & ColumnMappingModal', () => {
       items: [MOCK_DATASET],
     });
 
-    render(<CustomDatasetsDrawer />);
+    renderWithQuery(<CustomDatasetsDrawer />);
 
     const validateBtn = screen.getByText('Validate');
     fireEvent.click(validateBtn);
@@ -121,7 +121,7 @@ describe('CustomDatasetsDrawer & ColumnMappingModal', () => {
         status: 'mapped',
       });
 
-    render(
+    renderWithQuery(
       <ColumnMappingModal
         dataset={MOCK_DATASET}
         isOpen={true}

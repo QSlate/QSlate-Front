@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
 import { apiClient, type Strategy, type StrategySummary } from '@/shared/api';
 
@@ -33,4 +34,17 @@ export function useStrategy(strategyId: string | null) {
     queryFn: (): Promise<Strategy> => apiClient.getStrategy(strategyId ?? ''),
     enabled: strategyId !== null,
   });
+}
+
+/**
+ * Marks every strategy query stale (list and details). Call it after any
+ * create, update, restore, import or install so pickers use the latest
+ * version_id and default parameters.
+ */
+export function useInvalidateStrategies(): () => Promise<void> {
+  const queryClient = useQueryClient();
+  return useCallback(
+    () => queryClient.invalidateQueries({ queryKey: strategyKeys.all }),
+    [queryClient]
+  );
 }

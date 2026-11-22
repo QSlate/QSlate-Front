@@ -3,7 +3,6 @@ import {
   act,
   cleanup,
   fireEvent,
-  render,
   screen,
   waitFor,
 } from '@testing-library/react';
@@ -12,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLayoutStore } from '@/entities/layout';
 import { useLabStore } from '@/features/lab-state';
 import { apiClient } from '@/shared/api';
+import { renderWithQuery } from '@/shared/lib/test';
 import { AppearanceProvider } from '@/shared/theme';
 
 import { MarketplaceView } from '../ui/MarketplaceView';
@@ -103,7 +103,7 @@ describe('MarketplaceView', () => {
   });
 
   it('renders marketplace catalog and featured banner', async () => {
-    render(<MarketplaceView />);
+    renderWithQuery(<MarketplaceView />);
 
     expect(screen.getByText('Widget Marketplace')).toBeDefined();
 
@@ -117,7 +117,7 @@ describe('MarketplaceView', () => {
   });
 
   it('filters modules by search query with debouncing', async () => {
-    render(<MarketplaceView />);
+    renderWithQuery(<MarketplaceView />);
 
     await waitFor(() => {
       expect(screen.getByText('Monte Carlo 10k Simulator')).toBeDefined();
@@ -138,7 +138,7 @@ describe('MarketplaceView', () => {
   });
 
   it('filters modules by category pill click', async () => {
-    render(<MarketplaceView />);
+    renderWithQuery(<MarketplaceView />);
 
     await waitFor(() => {
       expect(screen.getByText('Monte Carlo 10k Simulator')).toBeDefined();
@@ -170,7 +170,7 @@ describe('MarketplaceView', () => {
       .spyOn(apiClient, 'uninstallMarketplaceItem')
       .mockResolvedValueOnce();
 
-    render(<MarketplaceView />);
+    renderWithQuery(<MarketplaceView />);
 
     await waitFor(() => {
       expect(screen.getByText('Monte Carlo 10k Simulator')).toBeDefined();
@@ -230,7 +230,7 @@ describe('MarketplaceView', () => {
         created_at: '2026-01-02T00:00:00Z',
       });
 
-    render(<MarketplaceView />);
+    renderWithQuery(<MarketplaceView />);
 
     await waitFor(() => {
       expect(screen.getByText('Monte Carlo 10k Simulator')).toBeDefined();
@@ -279,7 +279,7 @@ describe('MarketplaceView', () => {
   });
 
   it('renders correctly in light theme mode', async () => {
-    render(
+    renderWithQuery(
       <AppearanceProvider value={{ theme: 'light', colorblindMode: 'none' }}>
         <MarketplaceView />
       </AppearanceProvider>
