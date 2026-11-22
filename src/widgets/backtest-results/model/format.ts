@@ -79,6 +79,11 @@ export function formatRatio(value: number): string {
   return NUMBER_2.format(value);
 }
 
+/** "18,4" (French decimal comma, one digit). */
+export function formatDecimal(value: number): string {
+  return NUMBER_1.format(value);
+}
+
 export function formatPercent(value: number): string {
   return `${NUMBER_1.format(value)} %`;
 }

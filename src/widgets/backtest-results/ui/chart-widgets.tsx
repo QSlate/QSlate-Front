@@ -11,6 +11,7 @@ import {
 import {
   directionOf,
   formatAmount,
+  formatDecimal,
   formatPercent,
   formatSignedPercent,
   formatUsd,
@@ -287,7 +288,7 @@ function MonthlyHeatmap({ result }: { readonly result: BacktestResult }) {
                           : cell.returnPct < 0
                             ? '−'
                             : ''}
-                        {Math.abs(cell.returnPct).toFixed(1)}
+                        {formatDecimal(Math.abs(cell.returnPct))}
                       </span>
                       <span className="sr-only">
                         {formatSignedPercent(cell.returnPct)}
