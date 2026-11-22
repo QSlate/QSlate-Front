@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import {
   createContext,
   type ReactNode,
@@ -14,6 +15,7 @@ import {
 import {
   BacktestJobError,
   type BacktestJobSnapshot,
+  backtestKeys,
   type BacktestResult,
   type BacktestRunError,
   type BacktestRunRequest,
@@ -161,6 +163,21 @@ export function BacktestProvider({
     (state) => state.setLoadedBacktestId
   );
   const token = useAuthStore((state) => state.accessToken);
+  const queryClient = useQueryClient();
+
+  /**
+   * A completed run's results are immutable: cache them for the session so
+   * concurrent or repeated loads (restore, re-renders) hit the API once.
+   */
+  const loadResult = useCallback(
+    (backtestId: string) =>
+      queryClient.fetchQuery({
+        queryKey: backtestKeys.result(backtestId),
+        queryFn: () => service.fetchResult(backtestId),
+        staleTime: Infinity,
+      }),
+    [queryClient, service]
+  );
 
   const setStatus = useCallback((next: BacktestStatus) => {
     statusRef.current = next;
@@ -234,7 +251,7 @@ export function BacktestProvider({
           );
         }
         setResultStatus('loading');
-        const next = await service.fetchResult(run.backtestId);
+        const next = await loadResult(run.backtestId);
         if (runToken !== runTokenRef.current) return;
         commitResult(next);
         // Only a completed run becomes the "loaded" backtest (logs, restore).
@@ -261,7 +278,15 @@ export function BacktestProvider({
         endRun();
       }
     },
-    [commitResult, endRun, fail, service, setLoadedBacktestId, setStatus]
+    [
+      commitResult,
+      endRun,
+      fail,
+      loadResult,
+      service,
+      setLoadedBacktestId,
+      setStatus,
+    ]
   );
 
   const performCancel = useCallback(
@@ -372,7 +397,12 @@ export function BacktestProvider({
       try {
         let targetId = loadedBacktestId;
         if (!targetId && token) {
-          const runs = await apiClient.getBacktests({ limit: 1 }, token);
+          // Concurrent restores share one in-flight request.
+          const runs = await queryClient.fetchQuery({
+            queryKey: backtestKeys.latest(),
+            queryFn: () => apiClient.getBacktests({ limit: 1 }, token),
+            staleTime: 0,
+          });
           const latest = runs.items?.[0];
           if (latest && latest.status === 'completed') {
             targetId = latest.backtest_id;
@@ -387,9 +417,18 @@ export function BacktestProvider({
         setResultStatus((current) =>
           current === 'empty' ? 'loading' : current
         );
+        const restoreId = targetId;
         const [loaded, job] = await Promise.all([
-          service.fetchResult(targetId),
-          apiClient.getBacktestStatus(targetId).catch(() => null),
+          loadResult(restoreId),
+          queryClient
+            .fetchQuery({
+              queryKey: backtestKeys.status(restoreId),
+              queryFn: () => apiClient.getBacktestStatus(restoreId),
+              // A terminal job never changes again.
+              staleTime: (query) =>
+                query.state.data?.status === 'completed' ? Infinity : 0,
+            })
+            .catch(() => null),
         ]);
         if (!cancelled && version === resultVersionRef.current) {
           commitResult(loaded);
@@ -407,7 +446,7 @@ export function BacktestProvider({
     return () => {
       cancelled = true;
     };
-  }, [commitResult, loadedBacktestId, service, token]);
+  }, [commitResult, loadResult, loadedBacktestId, queryClient, token]);
 
   const value = useMemo(
     () => ({

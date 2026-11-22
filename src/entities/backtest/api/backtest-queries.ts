@@ -11,8 +11,13 @@ const MAX_LOG_PAGES = 10;
 export const backtestKeys = {
   all: ['backtests'] as const,
   list: () => [...backtestKeys.all, 'list'] as const,
+  latest: () => [...backtestKeys.list(), 'latest'] as const,
   logs: (backtestId: string) =>
     [...backtestKeys.all, 'logs', backtestId] as const,
+  result: (backtestId: string) =>
+    [...backtestKeys.all, 'result', backtestId] as const,
+  status: (backtestId: string) =>
+    [...backtestKeys.all, 'status', backtestId] as const,
 };
 
 /** Reads every log line of a finished run (bounded to 5 000 lines). */

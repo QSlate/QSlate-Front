@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { QueryClientProvider } from '@tanstack/react-query';
 import {
   act,
   cleanup,
@@ -19,7 +20,8 @@ import {
   useLoadedBacktestStore,
 } from '@/entities/backtest';
 import { useAuthStore } from '@/entities/user';
-import { ApiError } from '@/shared/api';
+import { apiClient, ApiError } from '@/shared/api';
+import { createTestQueryClient } from '@/shared/lib/test';
 
 import { BacktestProvider, useBacktest } from '../BacktestProvider';
 
@@ -116,9 +118,11 @@ function Controls() {
 
 function renderProvider(service: BacktestService) {
   return render(
-    <BacktestProvider service={service}>
-      <Controls />
-    </BacktestProvider>
+    <QueryClientProvider client={createTestQueryClient()}>
+      <BacktestProvider service={service}>
+        <Controls />
+      </BacktestProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -236,6 +240,26 @@ describe('BacktestProvider', () => {
     await act(async () => slowRestore.resolve(result('bt-old')));
 
     expect(screen.getByTestId('result').textContent).toBe('bt-new');
+  });
+
+  it('loads a restored result once across effect re-runs', async () => {
+    const { service } = controlledService();
+    const pending = deferred<BacktestResult>();
+    service.fetchResult.mockImplementationOnce(() => pending.promise);
+    vi.spyOn(apiClient, 'getBacktestStatus').mockRejectedValue(
+      new ApiError(404, 'not_found', 'missing')
+    );
+    useLoadedBacktestStore.setState({ loadedBacktestId: 'bt-done' });
+    renderProvider(service);
+
+    // A token refresh re-runs the restore while the first load is in flight.
+    act(() => useAuthStore.setState({ accessToken: 'refreshed' }));
+    await act(async () => pending.resolve(result('bt-done')));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('result').textContent).toBe('bt-done')
+    );
+    expect(service.fetchResult).toHaveBeenCalledTimes(1);
   });
 
   it('describes a rejected run in French and retries the same request', async () => {
