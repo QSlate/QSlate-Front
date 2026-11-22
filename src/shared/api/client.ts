@@ -103,6 +103,11 @@ export class QslateApiClient {
     this.onUnauthorized = handler;
   }
 
+  /** WebSocket URL on the same gateway (http → ws, https → wss). */
+  public getWebSocketUrl(path: string): string {
+    return `${this.baseUrl.replace(/^http/, 'ws')}${path.startsWith('/') ? '' : '/'}${path}`;
+  }
+
   public getToken(): string | null {
     return this.tokenProvider ? this.tokenProvider() : null;
   }
