@@ -86,7 +86,7 @@ export function MiniIdeView() {
   const [linting, setLinting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [versions, setVersions] = useState<StrategyVersion[]>([]);
+  const [versions, setVersions] = useState<readonly StrategyVersion[]>([]);
   const [loadingVersions, setLoadingVersions] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);

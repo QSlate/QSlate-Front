@@ -49,7 +49,7 @@ function EditorSkeleton() {
     >
       <div className="flex items-center gap-2 mb-4 text-fg-2">
         <LoaderCircle size={14} className="animate-spin text-brand" />
-        <span>Initializing Monaco Sandbox Runtime…</span>
+        <span>Chargement de l’éditeur…</span>
       </div>
       <div className="space-y-2">
         <div className={`h-3 w-48 rounded ${'bg-[var(--line-2)]'}`} />
@@ -101,7 +101,7 @@ function FallbackCodeEditor({
       >
         <div className="flex items-center gap-1.5 text-warn">
           <AlertTriangle size={12} />
-          <span>Lightweight Sandbox Editor ({language})</span>
+          <span>Éditeur simplifié ({language})</span>
         </div>
         {onRetry && (
           <button
@@ -110,7 +110,7 @@ function FallbackCodeEditor({
             className={`flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${'bg-[var(--line-2)] hover:bg-[var(--line-2)] text-fg hover:text-fg'}`}
           >
             <RotateCcw size={10} />
-            <span>Retry Monaco</span>
+            <span>Recharger l’éditeur</span>
           </button>
         )}
       </div>
