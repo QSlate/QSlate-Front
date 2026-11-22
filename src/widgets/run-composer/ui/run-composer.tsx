@@ -13,6 +13,7 @@ import { formatCandleCount } from '@/entities/dataset';
 import { cn } from '@/shared/lib/class-names';
 import { Button, IconButton, Kbd, Tooltip } from '@/shared/ui';
 
+import { useComposerNotice } from '../model/composer-notice';
 import { useRunComposer } from '../model/use-run-composer';
 import { AdvancedSettingsDrawer } from './advanced-settings-drawer';
 import {
@@ -49,20 +50,33 @@ export function RunComposer() {
     advancedChanges,
     canRun,
     isRunning,
+    isCancelling,
     update,
     submit,
     stop,
   } = model;
+  const announce = useComposerNotice((state) => state.announce);
   const shortcut = useSyncExternalStore(
     subscribePlatform,
     getPlatformShortcut,
     getServerShortcut
   );
 
-  const submitRef = useRef(submit);
+  // Latest shortcut behaviour, read by the window listener below.
+  const shortcutRef = useRef(() => {});
   useEffect(() => {
-    submitRef.current = submit;
-  }, [submit]);
+    shortcutRef.current = () => {
+      if (isRunning) {
+        announce(
+          'Un backtest est déjà en cours : arrête-le ou attends sa fin avant d’en lancer un autre.'
+        );
+      } else if (!canRun) {
+        announce(blockReason?.message ?? 'Lancement indisponible.');
+      } else {
+        submit();
+      }
+    };
+  }, [announce, blockReason, canRun, isRunning, submit]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -75,7 +89,7 @@ export function RunComposer() {
         !document.querySelector('dialog[open]')
       ) {
         event.preventDefault();
-        submitRef.current();
+        shortcutRef.current();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -89,6 +103,14 @@ export function RunComposer() {
   };
 
   const capitalError = fieldErrors.capital;
+  const launchDisabled = isCancelling || (!isRunning && !canRun);
+  const launchTooltip = isCancelling
+    ? 'Annulation en cours…'
+    : isRunning
+      ? 'Arrêter le backtest en cours'
+      : canRun
+        ? `Lancer le backtest (${shortcut})`
+        : (blockReason?.message ?? 'Lancement indisponible.');
 
   return (
     <div
@@ -164,45 +186,44 @@ export function RunComposer() {
           />
         )}
       </Tooltip>
-      {isRunning ? (
-        <Button
-          variant="danger"
-          leadingIcon={<Square size={13} fill="currentColor" />}
-          onClick={stop}
-          className="h-9 px-4"
-        >
-          Arrêter
-        </Button>
-      ) : canRun ? (
-        <Button
-          variant="primary"
-          leadingIcon={<Play size={14} fill="currentColor" />}
-          trailing={<Kbd className="ml-0.5">{shortcut}</Kbd>}
-          aria-keyshortcuts="Control+Enter Meta+Enter"
-          onClick={submit}
-          className="h-9 px-4"
-        >
-          Lancer
-        </Button>
-      ) : (
-        <Tooltip
-          content={blockReason?.message ?? 'Lancement indisponible.'}
-          side="bottom"
-        >
-          {(triggerProps) => (
-            <Button
-              {...triggerProps}
-              variant="primary"
-              aria-disabled="true"
-              leadingIcon={<Play size={14} fill="currentColor" />}
-              trailing={<Kbd className="ml-0.5">{shortcut}</Kbd>}
-              className="h-9 px-4"
-            >
-              Lancer
-            </Button>
-          )}
-        </Tooltip>
-      )}
+      <Tooltip content={launchTooltip}>
+        {(triggerProps) => (
+          <Button
+            {...triggerProps}
+            variant={isRunning ? 'danger' : 'primary'}
+            aria-disabled={launchDisabled || undefined}
+            aria-describedby={
+              [
+                triggerProps['aria-describedby'],
+                !isRunning && !canRun ? RUN_COMPOSER_HINT_ID : undefined,
+              ]
+                .filter(Boolean)
+                .join(' ') || undefined
+            }
+            aria-keyshortcuts={
+              isRunning ? undefined : 'Control+Enter Meta+Enter'
+            }
+            leadingIcon={
+              isRunning ? (
+                <Square size={13} fill="currentColor" />
+              ) : (
+                <Play size={14} fill="currentColor" />
+              )
+            }
+            trailing={
+              isRunning ? undefined : <Kbd className="ml-0.5">{shortcut}</Kbd>
+            }
+            onClick={() => {
+              if (isCancelling) return;
+              if (isRunning) stop();
+              else if (canRun) submit();
+            }}
+            className="h-9 min-w-[112px] px-4"
+          >
+            {isCancelling ? 'Arrêt…' : isRunning ? 'Arrêter' : 'Lancer'}
+          </Button>
+        )}
+      </Tooltip>
       <AdvancedSettingsDrawer
         open={advancedOpen}
         onClose={() => setAdvancedOpen(false)}

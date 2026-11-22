@@ -45,7 +45,9 @@ export interface RunComposerModel {
   readonly isLoading: boolean;
   readonly blockReason: RunBlockReason | null;
   readonly canRun: boolean;
+  /** A run is active (running or being cancelled). */
   readonly isRunning: boolean;
+  readonly isCancelling: boolean;
   readonly update: (patch: ComposerPatch) => void;
   readonly setParameter: (
     key: string,
@@ -184,6 +186,7 @@ export function useRunComposer(): RunComposerModel {
     blockReason,
     canRun,
     isRunning,
+    isCancelling: status === 'cancelling',
     update,
     setParameter,
     resetAdvanced,

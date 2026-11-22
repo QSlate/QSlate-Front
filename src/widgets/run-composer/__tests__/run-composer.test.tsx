@@ -16,12 +16,13 @@ import {
   type StrategySummary,
 } from '@/shared/api';
 
+import { useComposerNotice } from '../model/composer-notice';
 import { RunComposer } from '../ui/run-composer';
 import { RunComposerHint } from '../ui/run-composer-hint';
 
 const mockRun = vi.fn();
 const mockCancel = vi.fn();
-const mockStatus = vi.fn<() => 'idle' | 'running'>(() => 'idle');
+const mockStatus = vi.fn<() => 'idle' | 'running' | 'cancelling'>(() => 'idle');
 vi.mock('@/features/run-backtest', () => ({
   useBacktest: () => ({
     status: mockStatus(),
@@ -68,12 +69,13 @@ function renderComposer() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return render(
+  const ui = () => (
     <QueryClientProvider client={client}>
       <RunComposer />
       <RunComposerHint />
     </QueryClientProvider>
   );
+  return { ...render(ui()), ui };
 }
 
 async function launchButton() {
@@ -82,6 +84,7 @@ async function launchButton() {
 
 beforeEach(() => {
   useComposerStore.setState({ selections: {} });
+  useComposerNotice.getState().clear();
   mockStatus.mockReturnValue('idle');
 });
 
@@ -200,15 +203,56 @@ describe('RunComposer', () => {
     expect(mockRun).toHaveBeenCalledTimes(2);
   });
 
-  it('shows Arrêter while a backtest runs and cancels it', async () => {
-    mockStatus.mockReturnValue('running');
+  it('keeps one button that swaps Lancer and Arrêter without losing focus', async () => {
     mockCatalog([STRATEGY], [DATASET]);
-    renderComposer();
+    const view = renderComposer();
+    await screen.findByText('v3');
+    const launch = await launchButton();
+    launch.focus();
 
-    const stop = await screen.findByRole('button', { name: 'Arrêter' });
-    expect(screen.queryByRole('button', { name: /Lancer/ })).toBeNull();
+    mockStatus.mockReturnValue('running');
+    view.rerender(view.ui());
+
+    const stop = screen.getByRole('button', { name: 'Arrêter' });
+    expect(stop).toBe(launch);
+    expect(document.activeElement).toBe(stop);
 
     fireEvent.click(stop);
     expect(mockCancel).toHaveBeenCalledTimes(1);
+    expect(mockRun).not.toHaveBeenCalled();
+  });
+
+  it('announces why Ctrl+Enter does nothing while a run is active', async () => {
+    mockStatus.mockReturnValue('running');
+    mockCatalog([STRATEGY], [DATASET]);
+    renderComposer();
+    await screen.findByRole('button', { name: 'Arrêter' });
+
+    fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
+
+    expect(mockRun).not.toHaveBeenCalled();
+    expect(screen.getByRole('status').textContent).toContain(
+      'Un backtest est déjà en cours'
+    );
+  });
+
+  it('disables the button while the cancellation is pending', async () => {
+    mockStatus.mockReturnValue('cancelling');
+    mockCatalog([STRATEGY], [DATASET]);
+    renderComposer();
+
+    const button = await screen.findByRole('button', { name: 'Arrêt…' });
+    expect(button.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(button);
+    expect(mockCancel).not.toHaveBeenCalled();
+  });
+
+  it('describes the disabled button with the block reason', async () => {
+    mockCatalog([], [DATASET]);
+    renderComposer();
+    const launch = await launchButton();
+    await screen.findByText(/Crée ou importe/);
+
+    expect(launch.getAttribute('aria-describedby')).toBe('run-composer-hint');
   });
 });
