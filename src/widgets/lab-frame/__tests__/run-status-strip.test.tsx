@@ -42,6 +42,22 @@ describe('RunStatusStrip', () => {
     expect(screen.getByRole('status').textContent).toBe('En cours · 62 %');
     expect(screen.getByText('› buy 3412.5')).toBeTruthy();
   });
+
+  it('names the displayed run once it has finished', () => {
+    const finishedAt = Date.now() - 120_000;
+    backtest.mockReturnValue({
+      status: 'completed',
+      activeRun: null,
+      lastRun: { startedAt: finishedAt - 1_000, finishedAt, descriptor: null },
+      runLogs: [],
+      result: { id: 'bt' },
+    });
+    renderWithQuery(<RunStatusStrip />);
+    expect(screen.getByRole('status').textContent).toBe('Terminé en 1 s');
+    expect(screen.getByText(/Résultats affichés :/).textContent).toContain(
+      'terminé il y a 2 min'
+    );
+  });
 });
 
 describe('run timing format', () => {

@@ -88,12 +88,19 @@ export function RunStatusStrip({ children }: RunStatusStripProps) {
     content = (
       <>
         <StatusPill tone="ok">
-          Terminé {formatAgo(now - lastRun.finishedAt)} ·{' '}
-          <span className="font-mono">
-            {formatDuration(lastRun.finishedAt - lastRun.startedAt)}
+          <span className="whitespace-nowrap">
+            Terminé en{' '}
+            <span className="font-mono">
+              {formatDuration(lastRun.finishedAt - lastRun.startedAt)}
+            </span>
           </span>
         </StatusPill>
-        {summary ? <span className="min-w-0 truncate">{summary}</span> : null}
+        <span className="min-w-0 truncate">
+          Résultats affichés :{' '}
+          {summary ? <b className="font-medium text-fg-2">{summary}</b> : null}
+          {summary ? ' · ' : null}
+          terminé {formatAgo(now - lastRun.finishedAt)}
+        </span>
       </>
     );
   } else if (result?.id) {
