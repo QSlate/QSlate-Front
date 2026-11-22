@@ -26,6 +26,9 @@ export class BacktestJobError extends Error {
  * router): invalid_input 400, unauthorized 401, not_found 404,
  * state_conflict 409, quota_exceeded 429, execution_unavailable 503.
  */
+/** Developer hint: the local stack ships without the lab executor. */
+const LOCAL_LAB_HINT = ' En local, lance le back avec `make up-lab-local`.';
+
 function describeApiError(error: ApiError): BacktestRunError {
   switch (error.code) {
     case 'unauthorized':
@@ -39,7 +42,8 @@ function describeApiError(error: ApiError): BacktestRunError {
         code: error.code,
         action: 'retry',
         message:
-          "L'exécution des backtests est désactivée ou indisponible sur ce serveur. Réessaie plus tard ou contacte l'administrateur.",
+          "L'exécution des backtests est désactivée ou indisponible sur ce serveur. Réessaie plus tard ou contacte l'administrateur." +
+          (process.env.NODE_ENV === 'production' ? '' : LOCAL_LAB_HINT),
       };
     case 'invalid_input':
       return {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ApiError } from '@/shared/api';
 
@@ -26,6 +26,20 @@ describe('describeRunError', () => {
       expect(described.code).toBe(code);
     }
   );
+
+  it('adds the local stack hint for execution_unavailable outside production', () => {
+    const error = new ApiError(503, 'execution_unavailable', 'raw');
+    expect(describeRunError(error).message).toContain('make up-lab-local');
+
+    vi.stubEnv('NODE_ENV', 'production');
+    try {
+      expect(describeRunError(error).message).not.toContain(
+        'make up-lab-local'
+      );
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
 
   it('treats any 401 as a reconnect and unknown failures as retryable', () => {
     expect(describeRunError(new ApiError(401, 'http_error', 'x')).action).toBe(
