@@ -37,27 +37,39 @@ export function useRunDatasets() {
   });
 }
 
+/** Pages read inside one window (an hourly year is about 9 pages). */
+const MAX_PAGES_PER_WINDOW = 12;
+
 /**
- * Time of the last daily candle of a dataset version, found by reading
- * 366-day windows backwards from today. Null when no candle was found.
+ * Time of the last candle of a dataset version, found by reading 366-day
+ * windows backwards from today at the dataset's own resolution (public
+ * symbols only serve their resolution). Null when no candle was found.
  */
 export async function fetchDatasetCoverageEnd(
   dataset: RunDataset,
   now: number = Date.now()
 ): Promise<string | null> {
+  const resolution = dataset.resolution ?? '1d';
   let end = Math.ceil(now / DAY_MS) * DAY_MS;
   for (let probe = 0; probe < MAX_PROBES; probe += 1) {
     const start = end - PROBE_WINDOW_DAYS * DAY_MS;
-    const page = await apiClient.getMarketHistory({
-      symbol: dataset.symbol,
-      resolution: '1d',
-      start: new Date(start).toISOString(),
-      end: new Date(end).toISOString(),
-      limit: 1_000,
-      version_id: dataset.versionId,
-    });
-    const last = page.items?.[page.items.length - 1];
-    if (last) return last.time;
+    let cursor: string | undefined;
+    let last: string | null = null;
+    for (let page = 0; page < MAX_PAGES_PER_WINDOW; page += 1) {
+      const result = await apiClient.getMarketHistory({
+        symbol: dataset.symbol,
+        resolution,
+        start: new Date(start).toISOString(),
+        end: new Date(end).toISOString(),
+        limit: 1_000,
+        version_id: dataset.versionId,
+        ...(cursor ? { cursor } : {}),
+      });
+      last = result.items?.[result.items.length - 1]?.time ?? last;
+      cursor = result.next_cursor ?? undefined;
+      if (!cursor) break;
+    }
+    if (last) return last;
     end = start;
   }
   return null;
