@@ -5,8 +5,7 @@ import { SettingsView } from '@/widgets/settings-view';
 
 export const metadata: Metadata = {
   title: 'Réglages · QSlate',
-  description:
-    'Manage sandbox execution limits, slippage parameters, and compliance',
+  description: 'Apparence, clés API et compte',
 };
 
 export default function SettingsPage() {
