@@ -21,9 +21,17 @@ vi.mock('@/features/run-backtest', () => ({
   useBacktest: () => mockBacktest(),
 }));
 
+const IDLE: MockBacktest = {
+  error: null,
+  status: 'idle',
+  retry: vi.fn(),
+  canRetry: false,
+};
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  mockBacktest.mockReturnValue(IDLE);
 });
 
 describe('LabHeader', () => {
@@ -46,7 +54,7 @@ describe('LabHeader', () => {
 
   it('shows the backtest error with a retry action', () => {
     const retry = vi.fn();
-    mockBacktest.mockReturnValueOnce({
+    mockBacktest.mockReturnValue({
       error: { message: 'Le moteur ne répond pas', action: 'retry' },
       status: 'error',
       retry,
@@ -62,7 +70,7 @@ describe('LabHeader', () => {
   });
 
   it('hides the retry action when the error cannot be fixed by retrying', () => {
-    mockBacktest.mockReturnValueOnce({
+    mockBacktest.mockReturnValue({
       error: { message: 'Réglages refusés.', action: 'none' },
       status: 'error',
       retry: vi.fn(),
@@ -77,7 +85,7 @@ describe('LabHeader', () => {
   });
 
   it('offers to sign in again when the error is an expired session', () => {
-    mockBacktest.mockReturnValueOnce({
+    mockBacktest.mockReturnValue({
       error: { message: 'Ta session a expiré.', action: 'reconnect' },
       status: 'error',
       retry: vi.fn(),

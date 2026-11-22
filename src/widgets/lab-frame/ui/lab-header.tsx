@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { BacktestErrorBanner } from './backtest-error-banner';
+import { RunProgressLine } from './run-progress-line';
 
 export interface LabHeaderProps {
   /** Page title, rendered as the page's single <h1>. */
@@ -38,6 +39,7 @@ export function LabHeader({
         {actions ? (
           <div className="flex items-center gap-2">{actions}</div>
         ) : null}
+        <RunProgressLine />
       </header>
       <BacktestErrorBanner />
     </>

@@ -37,7 +37,7 @@ import {
   DynamicGridWrapper,
   type WidgetDefinition,
 } from '@/widgets/dynamic-grid';
-import { LabHeader } from '@/widgets/lab-frame';
+import { LabHeader, RunStatusStrip } from '@/widgets/lab-frame';
 import { RunComposer, RunComposerHint } from '@/widgets/run-composer';
 
 import { LabWorkspaceHeader } from './LabWorkspaceHeader';
@@ -187,6 +187,7 @@ export function LabWorkspace() {
         <RunComposer />
       </LabHeader>
       <RunComposerHint />
+      <RunStatusStrip />
       <section className="lab-workspace" aria-label="Espace de travail du Lab">
         <LabWorkspaceHeader />
         {layout.length ? (
