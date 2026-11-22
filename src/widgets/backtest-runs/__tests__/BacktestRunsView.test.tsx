@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useLabStore } from '@/features/lab-state';
+import { useLoadedBacktestStore } from '@/entities/backtest';
 import { apiClient, type BacktestJob } from '@/shared/api';
 import { renderWithQuery } from '@/shared/lib/test';
 
@@ -78,7 +78,7 @@ describe('BacktestRunsView', () => {
     });
     renderWithQuery(<BacktestRunsView />);
     fireEvent.click(await screen.findByRole('button', { name: 'Ouvrir' }));
-    expect(useLabStore.getState().loadedBacktestId).toBe('a');
+    expect(useLoadedBacktestStore.getState().loadedBacktestId).toBe('a');
     expect(mockPush).toHaveBeenCalledWith('/lab');
   });
 

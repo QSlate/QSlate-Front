@@ -10,15 +10,12 @@ export interface ToastNotice {
 
 const TOAST_DURATION_MS = 3_500;
 
-/** Lab-wide UI state shared by pages: toast, logs console, loaded backtest. */
+/** Lab-wide UI state shared by pages: toast and logs console. */
 export interface LabState {
   toast: ToastNotice | null;
-  /** Backtest shown by the dashboard (set when a run completes or is opened). */
-  loadedBacktestId: string | null;
   isExecutionLogsOpen: boolean;
   showToast: (message: string, type?: ToastNotice['type']) => void;
   clearToast: () => void;
-  setLoadedBacktestId: (id: string | null) => void;
   setExecutionLogsOpen: (open: boolean) => void;
   toggleExecutionLogs: () => void;
 }
@@ -27,7 +24,6 @@ let toastCounter = 0;
 
 export const useLabStore = create<LabState>()((set, get) => ({
   toast: null,
-  loadedBacktestId: null,
   isExecutionLogsOpen: false,
   showToast: (message, type = 'success') => {
     toastCounter += 1;
@@ -38,7 +34,6 @@ export const useLabStore = create<LabState>()((set, get) => ({
     }, TOAST_DURATION_MS);
   },
   clearToast: () => set({ toast: null }),
-  setLoadedBacktestId: (id) => set({ loadedBacktestId: id }),
   setExecutionLogsOpen: (open) => set({ isExecutionLogsOpen: open }),
   toggleExecutionLogs: () =>
     set((state) => ({ isExecutionLogsOpen: !state.isExecutionLogsOpen })),

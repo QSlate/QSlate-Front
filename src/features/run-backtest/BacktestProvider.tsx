@@ -21,9 +21,9 @@ import {
   describeRunError,
   liveBacktestService,
   MAX_RUN_LOG_LINES,
+  useLoadedBacktestStore,
 } from '@/entities/backtest';
 import { useAuthStore } from '@/entities/user';
-import { useLabStore } from '@/features/lab-state';
 import { apiClient, type BacktestJob } from '@/shared/api';
 
 import {
@@ -154,8 +154,12 @@ export function BacktestProvider({
   const resultVersionRef = useRef(0);
   const resultIdRef = useRef<string | null>(null);
 
-  const loadedBacktestId = useLabStore((state) => state.loadedBacktestId);
-  const setLoadedBacktestId = useLabStore((state) => state.setLoadedBacktestId);
+  const loadedBacktestId = useLoadedBacktestStore(
+    (state) => state.loadedBacktestId
+  );
+  const setLoadedBacktestId = useLoadedBacktestStore(
+    (state) => state.setLoadedBacktestId
+  );
   const token = useAuthStore((state) => state.accessToken);
 
   const setStatus = useCallback((next: BacktestStatus) => {

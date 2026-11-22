@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useLoadedBacktestStore } from '@/entities/backtest';
 import { useLabStore } from '@/features/lab-state';
 import { apiClient } from '@/shared/api';
 import { renderWithQuery } from '@/shared/lib/test';
@@ -25,10 +26,8 @@ describe('ExecutionLogsConsole', () => {
     mockBacktest.activeRun = null;
     mockBacktest.lastRun = null;
     mockBacktest.runLogs = [];
-    useLabStore.setState({
-      isExecutionLogsOpen: true,
-      loadedBacktestId: null,
-    });
+    useLabStore.setState({ isExecutionLogsOpen: true });
+    useLoadedBacktestStore.setState({ loadedBacktestId: null });
   });
 
   afterEach(() => {
@@ -58,7 +57,7 @@ describe('ExecutionLogsConsole', () => {
   });
 
   it('loads the REST history of the loaded backtest', async () => {
-    useLabStore.setState({ loadedBacktestId: 'bt-2' });
+    useLoadedBacktestStore.setState({ loadedBacktestId: 'bt-2' });
     const spy = vi.spyOn(apiClient, 'getBacktestLogs').mockResolvedValue({
       items: [{ message: 'line A' }, { message: 'ERROR line B' }],
     });

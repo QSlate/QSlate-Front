@@ -9,7 +9,6 @@ describe('useLabStore', () => {
     vi.useFakeTimers();
     useLabStore.setState({
       toast: null,
-      loadedBacktestId: null,
       isExecutionLogsOpen: false,
     });
   });
@@ -23,10 +22,8 @@ describe('useLabStore', () => {
     expect(useLabStore.getState().toast).toBeNull();
   });
 
-  it('toggles the logs console and tracks the loaded backtest', () => {
+  it('toggles the logs console', () => {
     act(() => useLabStore.getState().toggleExecutionLogs());
     expect(useLabStore.getState().isExecutionLogsOpen).toBe(true);
-    act(() => useLabStore.getState().setLoadedBacktestId('bt'));
-    expect(useLabStore.getState().loadedBacktestId).toBe('bt');
   });
 });

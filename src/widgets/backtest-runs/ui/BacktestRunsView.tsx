@@ -5,7 +5,7 @@ import { GitCompare, History, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { backtestKeys } from '@/entities/backtest';
+import { backtestKeys, useLoadedBacktestStore } from '@/entities/backtest';
 import { formatDatasetLabel, useRunDatasets } from '@/entities/dataset';
 import { useStrategies } from '@/entities/strategy';
 import {
@@ -61,7 +61,9 @@ function isTerminal(status: BacktestJob['status']): boolean {
 export function BacktestRunsView() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const setLoaded = useLabStore((state) => state.setLoadedBacktestId);
+  const setLoaded = useLoadedBacktestStore(
+    (state) => state.setLoadedBacktestId
+  );
   const showToast = useLabStore((state) => state.showToast);
   const strategies = useStrategies();
   const datasets = useRunDatasets();

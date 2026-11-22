@@ -3,7 +3,7 @@
 import { ArrowDown, Check, Copy, Download, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { useBacktestLogs } from '@/entities/backtest';
+import { useBacktestLogs, useLoadedBacktestStore } from '@/entities/backtest';
 import { useLabStore } from '@/features/lab-state';
 import { useBacktest } from '@/features/run-backtest';
 import { cn, FOCUS_RING } from '@/shared/lib/class-names';
@@ -49,7 +49,9 @@ export function ExecutionLogsConsole() {
   const showToast = useLabStore((state) => state.showToast);
   const isOpen = useLabStore((state) => state.isExecutionLogsOpen);
   const setIsOpen = useLabStore((state) => state.setExecutionLogsOpen);
-  const loadedBacktestId = useLabStore((state) => state.loadedBacktestId);
+  const loadedBacktestId = useLoadedBacktestStore(
+    (state) => state.loadedBacktestId
+  );
   const { status, activeRun, lastRun, runLogs } = useBacktest();
 
   const running = status === 'running' || status === 'cancelling';

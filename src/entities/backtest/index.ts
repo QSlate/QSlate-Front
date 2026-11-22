@@ -16,6 +16,10 @@ export {
 } from './api/liveBacktestService';
 export { type StreamWatchDeps, watchBacktestStream } from './api/stream-watch';
 export {
+  type LoadedBacktestState,
+  useLoadedBacktestStore,
+} from './model/loaded-backtest-store';
+export {
   type BacktestMetrics,
   type BacktestResult,
   computeMonthlyReturns,

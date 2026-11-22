@@ -16,9 +16,9 @@ import {
   type BacktestService,
   type BacktestWatchOptions,
   EMPTY_METRICS,
+  useLoadedBacktestStore,
 } from '@/entities/backtest';
 import { useAuthStore } from '@/entities/user';
-import { useLabStore } from '@/features/lab-state';
 import { ApiError } from '@/shared/api';
 
 import { BacktestProvider, useBacktest } from '../BacktestProvider';
@@ -126,7 +126,7 @@ const status = () => screen.getByTestId('status').textContent;
 
 beforeEach(() => {
   localStorage.clear();
-  useLabStore.setState({ loadedBacktestId: null });
+  useLoadedBacktestStore.setState({ loadedBacktestId: null });
   useAuthStore.setState({ accessToken: null });
 });
 
@@ -149,7 +149,7 @@ describe('BacktestProvider', () => {
     await act(async () => submit.resolve(snapshot('queued')));
     expect(screen.getByTestId('active').textContent).toBe('bt-1');
     // Not "loaded" while running: the restore effect must not touch it.
-    expect(useLabStore.getState().loadedBacktestId).toBeNull();
+    expect(useLoadedBacktestStore.getState().loadedBacktestId).toBeNull();
     expect(service.fetchResult).not.toHaveBeenCalled();
 
     await act(async () => watch.resolve(snapshot('completed')));
@@ -157,7 +157,7 @@ describe('BacktestProvider', () => {
     expect(status()).toBe('success');
     expect(screen.getByTestId('result').textContent).toBe('bt-1');
     expect(service.fetchResult).toHaveBeenCalledTimes(1);
-    expect(useLabStore.getState().loadedBacktestId).toBe('bt-1');
+    expect(useLoadedBacktestStore.getState().loadedBacktestId).toBe('bt-1');
     expect(screen.getByTestId('active').textContent).toBe('none');
   });
 
@@ -225,7 +225,7 @@ describe('BacktestProvider', () => {
     const { service, submit, watch } = controlledService();
     const slowRestore = deferred<BacktestResult>();
     service.fetchResult.mockImplementationOnce(() => slowRestore.promise);
-    useLabStore.setState({ loadedBacktestId: 'bt-old' });
+    useLoadedBacktestStore.setState({ loadedBacktestId: 'bt-old' });
     renderProvider(service);
 
     fireEvent.click(screen.getByText('Run'));
