@@ -182,7 +182,7 @@ export interface MarketplaceReview {
 
 export interface MarketplaceReviewInput {
   rating: number;
-  comment: string;
+  comment?: string;
 }
 
 export interface MarketplaceReviewsPage {

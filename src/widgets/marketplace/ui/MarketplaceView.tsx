@@ -9,6 +9,7 @@ import { Check, Download, LayoutGrid, Search, Star, Store } from 'lucide-react';
 import { useDeferredValue, useState } from 'react';
 
 import { useInvalidateStrategies, useStrategies } from '@/entities/strategy';
+import { useAuthStore } from '@/entities/user/model';
 import { useLabStore } from '@/features/lab-state';
 import { apiClient, type MarketplaceItem } from '@/shared/api';
 import { cn, FOCUS_RING } from '@/shared/lib/class-names';
@@ -20,6 +21,8 @@ import {
   SegmentedControl,
   Skeleton,
 } from '@/shared/ui';
+
+import { ReviewsDialog } from './reviews-dialog';
 
 type KindFilter = 'all' | 'strategy' | 'widget';
 
@@ -55,6 +58,8 @@ export function MarketplaceView() {
   const [search, setSearch] = useState('');
   const [kind, setKind] = useState<KindFilter>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [reviewing, setReviewing] = useState<MarketplaceItem | null>(null);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const query = useDeferredValue(search.trim());
 
   const items = useInfiniteQuery({
@@ -212,7 +217,22 @@ export function MarketplaceView() {
                       <span className="sr-only">Installations : </span>
                       {COUNT.format(item.install_count)}
                     </span>
-                    {item.review_count > 0 ? (
+                    {isAuthenticated ? (
+                      <button
+                        type="button"
+                        onClick={() => setReviewing(item)}
+                        aria-label={`Avis sur ${item.name}`}
+                        className={cn(
+                          FOCUS_RING,
+                          'flex items-center gap-1 rounded hover:text-fg'
+                        )}
+                      >
+                        <Star size={12} aria-hidden="true" />
+                        {item.review_count > 0
+                          ? `${RATING.format(item.average_rating)} (${COUNT.format(item.review_count)})`
+                          : 'Donner un avis'}
+                      </button>
+                    ) : item.review_count > 0 ? (
                       <span
                         className="flex items-center gap-1"
                         title="Note moyenne"
@@ -257,6 +277,9 @@ export function MarketplaceView() {
         >
           {items.isFetchingNextPage ? 'Chargement…' : 'Afficher plus'}
         </Button>
+      ) : null}
+      {reviewing ? (
+        <ReviewsDialog item={reviewing} onClose={() => setReviewing(null)} />
       ) : null}
     </section>
   );
