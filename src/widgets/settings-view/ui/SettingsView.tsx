@@ -24,6 +24,7 @@ import { useAuthStore, useUserStore } from '@/entities/user/model';
 import { useLabStore } from '@/features/lab-state';
 import { apiClient, type APIKeyDto, type NewAPIKeyDto } from '@/shared/api';
 import { cn } from '@/shared/lib/class-names';
+import { useHydratedStore } from '@/shared/lib/store';
 import { useAppearance } from '@/shared/theme';
 import {
   Badge,
@@ -116,7 +117,18 @@ function keyState(key: APIKeyDto): {
 export function SettingsView() {
   const router = useRouter();
   const showToast = useLabStore((state) => state.showToast);
-  const { theme, colorblindMode } = useAppearance();
+  const appearance = useAppearance();
+  // The store is the live source; the provider value seeds the first render.
+  const theme = useHydratedStore(
+    useUserStore,
+    (state) => state.theme,
+    appearance.theme
+  );
+  const colorblindMode = useHydratedStore(
+    useUserStore,
+    (state) => state.colorblindMode,
+    appearance.colorblindMode
+  );
   const setTheme = useUserStore((state) => state.setTheme);
   const setColorblindMode = useUserStore((state) => state.setColorblindMode);
   const user = useAuthStore((state) => state.user);
