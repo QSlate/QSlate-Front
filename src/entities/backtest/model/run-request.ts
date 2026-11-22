@@ -25,8 +25,19 @@ export const RUN_LIMITS = {
   window: { default: 20, min: 1, max: 10_000 },
   commissionRate: { default: 0, min: 0, max: 0.1 },
   slippageBps: { default: 0, min: 0, max: 1_000 },
-  initialCapital: { min: 0, max: 1_000_000_000_000 },
+  initialCapital: { min: 0.01, max: 1_000_000_000_000 },
 } as const;
+
+const DECIMAL_PATTERN = /^[0-9]+(\.[0-9]+)?$/;
+
+/**
+ * Encodes an amount as the contract's decimal string, keeping the value as
+ * typed (no rounding); exponent notation is expanded with toFixed.
+ */
+export function toDecimalString(amount: number): string {
+  const plain = String(amount);
+  return DECIMAL_PATTERN.test(plain) ? plain : amount.toFixed(8);
+}
 
 /** Maps a run request to the exact JSON body of POST /backtests/run. */
 export function toBacktestRunPayload(
@@ -38,8 +49,7 @@ export function toBacktestRunPayload(
     strategy_version_id: request.strategyVersionId,
     dataset_id: request.datasetId,
     dataset_version_id: request.datasetVersionId,
-    // Decimal string required by the contract (^[0-9]+(\.[0-9]+)?$).
-    initial_capital: request.initialCapital.toFixed(2),
+    initial_capital: toDecimalString(request.initialCapital),
     ...(Object.keys(parameters).length > 0 ? { parameters } : {}),
     window: request.window,
     commission_rate: request.commissionRate,

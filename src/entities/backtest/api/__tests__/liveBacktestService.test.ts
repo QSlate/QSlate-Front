@@ -67,7 +67,7 @@ describe('LiveBacktestService', () => {
       strategy_version_id: 'ver-1',
       dataset_id: 'ds-1',
       dataset_version_id: 'dsv-1',
-      initial_capital: '100000.00',
+      initial_capital: '100000',
       parameters: { rsi_period: 21 },
       window: 30,
       commission_rate: 0.001,

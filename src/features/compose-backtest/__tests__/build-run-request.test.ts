@@ -112,7 +112,7 @@ describe('buildRunRequest', () => {
       strategy_version_id: 'ver-a3',
       dataset_id: 'ds-eth',
       dataset_version_id: 'dsv-1',
-      initial_capital: '25000.50',
+      initial_capital: '25000.5',
       parameters: { rsi_period: 21 },
       window: 50,
       commission_rate: 0.001,
@@ -133,7 +133,7 @@ describe('buildRunRequest', () => {
       strategy_version_id: 'ver-a3',
       dataset_id: 'ds-eth',
       dataset_version_id: 'dsv-1',
-      initial_capital: '10000.00',
+      initial_capital: '10000',
       window: 20,
       commission_rate: 0,
       slippage_bps: 0,
@@ -184,7 +184,7 @@ describe('validateComposerFields', () => {
         })
       )
     ).toEqual({
-      capital: 'Le capital doit être supérieur à 0.',
+      capital: "Le capital doit être d'au moins 0,01 USD.",
       commissionPercent: 'Les frais doivent être compris entre 0 et 10 %.',
       slippageBps: expect.stringContaining('Le glissement'),
       window: expect.stringContaining("L'historique de chauffe"),
@@ -206,5 +206,28 @@ describe('countAdvancedChanges', () => {
         DEFAULTS
       )
     ).toBe(3);
+  });
+});
+
+describe('capital encoding', () => {
+  it('keeps small capitals as typed instead of rounding them to 0.00', () => {
+    const result = buildRunRequest({
+      selection: selection({ capital: 0.015 }),
+      strategies: [STRATEGY],
+      datasets: [DATASET],
+      strategyDefaults: null,
+    });
+    expect(
+      result.ok && toBacktestRunPayload(result.request).initial_capital
+    ).toBe('0.015');
+  });
+
+  it('rejects capitals below 0.01 USD', () => {
+    expect(validateComposerFields(selection({ capital: 0.009 })).capital).toBe(
+      "Le capital doit être d'au moins 0,01 USD."
+    );
+    expect(
+      validateComposerFields(selection({ capital: 0.01 })).capital
+    ).toBeUndefined();
   });
 });

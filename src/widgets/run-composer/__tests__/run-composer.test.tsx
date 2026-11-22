@@ -150,7 +150,7 @@ describe('RunComposer', () => {
     expect(capital.getAttribute('aria-invalid')).toBe('true');
     expect(capital.getAttribute('aria-describedby')).toBe('run-composer-hint');
     expect(
-      screen.getByText('Le capital doit être supérieur à 0.')
+      screen.getByText("Le capital doit être d'au moins 0,01 USD.")
     ).toBeDefined();
     expect((await launchButton()).getAttribute('aria-disabled')).toBe('true');
   });

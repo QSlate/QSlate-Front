@@ -77,8 +77,12 @@ export function validateComposerFields(
 ): ComposerFieldErrors {
   const errors: ComposerFieldErrors = {};
   const { capital, commissionPercent, slippageBps, window } = selection;
-  if (capital === null || !Number.isFinite(capital) || capital <= 0) {
-    errors.capital = 'Le capital doit être supérieur à 0.';
+  if (
+    capital === null ||
+    !Number.isFinite(capital) ||
+    capital < RUN_LIMITS.initialCapital.min
+  ) {
+    errors.capital = "Le capital doit être d'au moins 0,01 USD.";
   } else if (capital > RUN_LIMITS.initialCapital.max) {
     errors.capital = `Le capital ne peut pas dépasser ${CAPITAL_FORMATTER.format(
       RUN_LIMITS.initialCapital.max
