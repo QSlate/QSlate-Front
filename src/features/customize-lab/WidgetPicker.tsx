@@ -3,7 +3,7 @@
 import { Check, Plus, SlidersHorizontal } from 'lucide-react';
 
 import { useLayoutStore } from '@/entities/layout';
-import { Dialog } from '@/shared/ui/dialog/Dialog';
+import { Dialog } from '@/shared/ui/dialog';
 
 export function WidgetPicker({
   widgets,

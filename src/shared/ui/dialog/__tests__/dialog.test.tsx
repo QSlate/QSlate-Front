@@ -11,7 +11,7 @@ import {
   vi,
 } from 'vitest';
 
-import { Dialog } from '../Dialog';
+import { Dialog } from '../dialog';
 
 const originalShowModal = Object.getOwnPropertyDescriptor(
   HTMLDialogElement.prototype,
@@ -91,7 +91,7 @@ describe('Dialog', () => {
     expect(dialog.open).toBe(true);
     expect(document.body.style.overflow).toBe('hidden');
     expect(document.activeElement).toBe(
-      screen.getByRole('button', { name: 'Close dialog' })
+      screen.getByRole('button', { name: 'Fermer' })
     );
 
     unmount();
@@ -114,7 +114,7 @@ describe('Dialog', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(dialog.open).toBe(true);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close dialog' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fermer' }));
 
     expect(onClose).toHaveBeenCalledTimes(2);
     expect(close).not.toHaveBeenCalled();

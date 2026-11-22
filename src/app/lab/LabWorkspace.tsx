@@ -22,7 +22,7 @@ import {
   useBacktest,
 } from '@/features/run-backtest/BacktestProvider';
 import { useHydratedStore } from '@/shared/lib/store';
-import { Dialog } from '@/shared/ui/dialog/Dialog';
+import { Dialog } from '@/shared/ui/dialog';
 import { Toast } from '@/shared/ui/toast';
 import { AddWidgetDrawer } from '@/widgets/add-widget-drawer';
 import {
