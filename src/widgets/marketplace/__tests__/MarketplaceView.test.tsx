@@ -43,7 +43,10 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
-  useAuthStore.setState({ isAuthenticated: false });
+  useAuthStore.setState({ isAuthenticated: false, user: null });
+  vi.spyOn(apiClient, 'getMarketplaceCategories').mockResolvedValue({
+    items: [{ id: 'strategies', name: 'Strategies' }],
+  });
   vi.spyOn(apiClient, 'getInstalledWidgets').mockResolvedValue({ items: [] });
   vi.spyOn(apiClient, 'getStrategies').mockResolvedValue({ items: [] });
 });
@@ -63,6 +66,61 @@ describe('MarketplaceView', () => {
     expect(await screen.findByText('Alpha Breakout')).toBeTruthy();
     expect(screen.getAllByRole('listitem')).toHaveLength(1);
     expect(screen.getByText("Pas encore d'avis")).toBeTruthy();
+    expect(screen.getByText('Membre n° 1')).toBeTruthy();
+    expect(screen.queryByText('strategies')).toBeNull();
+    expect(
+      await screen.findByRole('button', { name: 'Stratégies' })
+    ).toBeTruthy();
+  });
+
+  it('filters by category', async () => {
+    const list = vi
+      .spyOn(apiClient, 'getMarketplaceItems')
+      .mockResolvedValue({ items: [ITEM] });
+    renderWithQuery(<MarketplaceView />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Stratégies' }));
+    await waitFor(() =>
+      expect(list).toHaveBeenLastCalledWith(
+        expect.objectContaining({ category: 'strategies' })
+      )
+    );
+  });
+
+  it('opens the detail and uninstalls from the card menu', async () => {
+    vi.spyOn(apiClient, 'getMarketplaceItems').mockResolvedValue({
+      items: [ITEM],
+    });
+    vi.spyOn(apiClient, 'getStrategies').mockResolvedValue({
+      items: [
+        {
+          id: `market-${ITEM.id}`,
+          version_id: 'v1',
+          revision: 1,
+          name: ITEM.name,
+          created_at: '',
+          updated_at: '',
+        },
+      ],
+    });
+    vi.spyOn(apiClient, 'getMarketplaceReviews').mockResolvedValue({
+      items: [],
+    });
+    const uninstall = vi
+      .spyOn(apiClient, 'uninstallMarketplaceItem')
+      .mockResolvedValue(undefined);
+    renderWithQuery(<MarketplaceView />);
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: "Plus d'actions pour Alpha Breakout",
+      })
+    );
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Désinstaller' }));
+    await waitFor(() => expect(uninstall).toHaveBeenCalledWith(ITEM.id));
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Voir le détail de Alpha Breakout' })
+    );
+    expect(await screen.findByText('Aucun avis pour le moment.')).toBeTruthy();
   });
 
   it('installs an item with its version', async () => {
@@ -118,7 +176,9 @@ describe('MarketplaceView', () => {
       });
     renderWithQuery(<MarketplaceView />);
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Avis sur Alpha Breakout' })
+      await screen.findByRole('button', {
+        name: 'Donner un avis sur Alpha Breakout',
+      })
     );
     expect(await screen.findByText('Solide')).toBeTruthy();
     fireEvent.click(screen.getByRole('radio', { name: '5 sur 5' }));

@@ -5,7 +5,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { Check, Download, LayoutGrid, Search, Star, Store } from 'lucide-react';
+import { Search, Store } from 'lucide-react';
 import { useDeferredValue, useState } from 'react';
 
 import { useInvalidateStrategies, useStrategies } from '@/entities/strategy';
@@ -13,38 +13,21 @@ import { useAuthStore } from '@/entities/user';
 import { useLabStore } from '@/features/lab-state';
 import { apiClient, type MarketplaceItem } from '@/shared/api';
 import { cn, FOCUS_RING } from '@/shared/lib/class-names';
-import {
-  Badge,
-  Button,
-  EmptyState,
-  IconTile,
-  SegmentedControl,
-  Skeleton,
-} from '@/shared/ui';
+import { Button, EmptyState, SegmentedControl, Skeleton } from '@/shared/ui';
 
-import { ReviewsDialog } from './reviews-dialog';
+import { authorLabel, categoryLabel } from '../model/labels';
+import { ItemDetailDialog } from './item-detail-dialog';
+import { MarketplaceCard } from './marketplace-card';
 
-type KindFilter = 'all' | 'strategy' | 'widget';
-
-const KIND_OPTIONS = [
-  { value: 'all', label: 'Tout' },
-  { value: 'strategy', label: 'Stratégies' },
-  { value: 'widget', label: 'Widgets' },
-] as const;
-
+const ALL = 'all';
 const PAGE_SIZE = 24;
 const FIRST_PAGE: string | undefined = undefined;
-const RATING = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
-const COUNT = new Intl.NumberFormat('fr-FR');
-
-function isKind(value: string): value is KindFilter {
-  return KIND_OPTIONS.some((option) => option.value === value);
-}
 
 const marketplaceKeys = {
   all: ['marketplace'] as const,
-  items: (q: string, kind: KindFilter) =>
-    [...marketplaceKeys.all, 'items', q, kind] as const,
+  items: (q: string, category: string) =>
+    [...marketplaceKeys.all, 'items', q, category] as const,
+  categories: () => [...marketplaceKeys.all, 'categories'] as const,
   installedWidgets: () =>
     [...marketplaceKeys.all, 'installed-widgets'] as const,
 };
@@ -56,23 +39,30 @@ export function MarketplaceView() {
   const strategies = useStrategies();
   const invalidateStrategies = useInvalidateStrategies();
   const [search, setSearch] = useState('');
-  const [kind, setKind] = useState<KindFilter>('all');
+  const [category, setCategory] = useState<string>(ALL);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [reviewing, setReviewing] = useState<MarketplaceItem | null>(null);
+  const [openedId, setOpenedId] = useState<string | null>(null);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const currentUserId = useAuthStore((state) => state.user?.id ?? null);
   const query = useDeferredValue(search.trim());
 
   const items = useInfiniteQuery({
-    queryKey: marketplaceKeys.items(query, kind),
+    queryKey: marketplaceKeys.items(query, category),
     initialPageParam: FIRST_PAGE,
     queryFn: ({ pageParam }) =>
       apiClient.getMarketplaceItems({
         limit: PAGE_SIZE,
         ...(query ? { q: query } : {}),
-        ...(kind !== 'all' ? { kind } : {}),
+        ...(category !== ALL ? { category } : {}),
         ...(pageParam ? { cursor: pageParam } : {}),
       }),
     getNextPageParam: (page) => page.next_cursor || undefined,
+  });
+  const categories = useQuery({
+    queryKey: marketplaceKeys.categories(),
+    queryFn: async () =>
+      (await apiClient.getMarketplaceCategories({ limit: 50 })).items ?? [],
+    staleTime: Infinity,
   });
   const installedWidgets = useQuery({
     queryKey: marketplaceKeys.installedWidgets(),
@@ -80,6 +70,8 @@ export function MarketplaceView() {
   });
 
   const list = items.data?.pages.flatMap((page) => page.items ?? []) ?? [];
+  const opened = list.find((item) => item.id === openedId) ?? null;
+  const filtered = query !== '' || category !== ALL;
 
   const isInstalled = (item: MarketplaceItem) =>
     item.kind === 'strategy'
@@ -116,14 +108,38 @@ export function MarketplaceView() {
     }
   };
 
+  const cardProps = (item: MarketplaceItem) => ({
+    item,
+    author: authorLabel(item.author_id, currentUserId),
+    installed: isInstalled(item),
+    busy: busyId === item.id,
+    canReview: isAuthenticated,
+    onInstall: () => void toggle(item),
+    onUninstall: () => void toggle(item),
+  });
+
   return (
     <section
-      aria-label="Marketplace"
-      className="flex flex-col gap-4 px-[22px] py-5"
+      aria-labelledby="marketplace-title"
+      className="mx-auto flex w-full max-w-[1280px] flex-col gap-5 px-[22px] py-6"
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="relative flex min-w-[240px] flex-1 items-center">
-          <span className="sr-only">Rechercher</span>
+      <header className="flex flex-col gap-1.5">
+        <h2
+          id="marketplace-title"
+          className="m-0 text-[20px] font-semibold tracking-[-0.02em] text-fg"
+        >
+          Stratégies et widgets de la communauté
+        </h2>
+        <p className="m-0 max-w-[640px] text-[13px] leading-relaxed text-fg-3">
+          Stratégies et widgets publiés par la communauté. Installe-les en un
+          clic : les stratégies rejoignent ta liste dans le Lab, les widgets ton
+          catalogue.
+        </p>
+      </header>
+
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <label className="relative flex min-w-0 flex-1 items-center lg:max-w-[420px]">
+          <span className="sr-only">Rechercher dans la marketplace</span>
           <Search
             size={14}
             aria-hidden="true"
@@ -140,21 +156,28 @@ export function MarketplaceView() {
             )}
           />
         </label>
-        <SegmentedControl
-          label="Type"
-          options={KIND_OPTIONS}
-          value={kind}
-          onValueChange={(value) => {
-            if (isKind(value)) setKind(value);
-          }}
-        />
+        {categories.data && categories.data.length > 0 ? (
+          <SegmentedControl
+            label="Catégorie"
+            className="max-w-full self-start lg:self-auto"
+            options={[
+              { value: ALL, label: 'Toutes' },
+              ...categories.data.map((entry) => ({
+                value: entry.id,
+                label: categoryLabel(entry.id, entry.name),
+              })),
+            ]}
+            value={category}
+            onValueChange={setCategory}
+          />
+        ) : null}
       </div>
 
       {items.isPending ? (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
-          <Skeleton className="h-40" />
-          <Skeleton className="h-40" />
-          <Skeleton className="h-40" />
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4">
+          <Skeleton className="h-[230px]" />
+          <Skeleton className="h-[230px]" />
+          <Skeleton className="h-[230px]" />
         </div>
       ) : items.isError ? (
         <p role="alert" className="m-0 text-xs text-loss">
@@ -163,114 +186,42 @@ export function MarketplaceView() {
       ) : list.length === 0 ? (
         <EmptyState
           icon={<Store />}
-          title={
-            query || kind !== 'all'
-              ? 'Aucun résultat'
-              : 'La marketplace est vide'
-          }
+          title={filtered ? 'Aucun résultat' : 'La marketplace est vide'}
           description={
-            query || kind !== 'all'
-              ? 'Essaie un autre mot-clé ou un autre type.'
+            filtered
+              ? 'Essaie un autre mot-clé ou une autre catégorie.'
               : 'Les stratégies et widgets publiés par la communauté apparaîtront ici.'
+          }
+          action={
+            filtered ? (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setSearch('');
+                  setCategory(ALL);
+                }}
+              >
+                Effacer les filtres
+              </Button>
+            ) : undefined
           }
         />
       ) : (
-        <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3 p-0">
-          {list.map((item) => {
-            const installed = isInstalled(item);
-            const busy = busyId === item.id;
-            return (
-              <li
-                key={item.id}
-                className="flex flex-col gap-3 rounded-2xl border border-line bg-[var(--card-hl),var(--surface)] p-4 shadow-card"
-              >
-                <div className="flex items-start gap-3">
-                  <IconTile
-                    icon={item.kind === 'strategy' ? <Store /> : <LayoutGrid />}
-                    tone={item.kind === 'strategy' ? 'vio' : 'brand'}
-                  />
-                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <h2 className="m-0 truncate text-[13.5px] font-semibold text-fg">
-                      {item.name}
-                    </h2>
-                    <span className="text-[11.5px] text-fg-3">
-                      {item.kind === 'strategy' ? 'Stratégie' : 'Widget'}
-                      {item.category ? ` · ${item.category}` : ''}
-                    </span>
-                  </div>
-                  {installed ? (
-                    <Badge tone="gain" dot>
-                      Installé
-                    </Badge>
-                  ) : null}
-                </div>
-                <p className="m-0 line-clamp-3 flex-1 text-[12.5px] text-fg-2">
-                  {item.description || 'Pas de description.'}
-                </p>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-3 font-mono text-[11.5px] text-fg-3">
-                    <span
-                      className="flex items-center gap-1"
-                      title="Installations"
-                    >
-                      <Download size={12} aria-hidden="true" />
-                      <span className="sr-only">Installations : </span>
-                      {COUNT.format(item.install_count)}
-                    </span>
-                    {isAuthenticated ? (
-                      <button
-                        type="button"
-                        onClick={() => setReviewing(item)}
-                        aria-label={`Avis sur ${item.name}`}
-                        className={cn(
-                          FOCUS_RING,
-                          'flex items-center gap-1 rounded hover:text-fg'
-                        )}
-                      >
-                        <Star size={12} aria-hidden="true" />
-                        {item.review_count > 0
-                          ? `${RATING.format(item.average_rating)} (${COUNT.format(item.review_count)})`
-                          : 'Donner un avis'}
-                      </button>
-                    ) : item.review_count > 0 ? (
-                      <span
-                        className="flex items-center gap-1"
-                        title="Note moyenne"
-                      >
-                        <Star size={12} aria-hidden="true" />
-                        <span className="sr-only">Note moyenne : </span>
-                        {RATING.format(item.average_rating)} (
-                        {COUNT.format(item.review_count)})
-                      </span>
-                    ) : (
-                      <span>Pas encore d&apos;avis</span>
-                    )}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant={installed ? 'secondary' : 'primary'}
-                    leadingIcon={
-                      installed ? <Check size={13} /> : <Download size={13} />
-                    }
-                    disabled={busy}
-                    onClick={() => void toggle(item)}
-                    aria-label={
-                      installed
-                        ? `Désinstaller ${item.name}`
-                        : `Installer ${item.name}`
-                    }
-                  >
-                    {busy ? '…' : installed ? 'Désinstaller' : 'Installer'}
-                  </Button>
-                </div>
-              </li>
-            );
-          })}
+        <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4 p-0">
+          {list.map((item) => (
+            <li key={item.id} className="min-w-0">
+              <MarketplaceCard
+                {...cardProps(item)}
+                onOpen={() => setOpenedId(item.id)}
+                onReview={() => setOpenedId(item.id)}
+              />
+            </li>
+          ))}
         </ul>
       )}
       {items.hasNextPage ? (
         <Button
-          variant="quiet"
+          variant="secondary"
           className="self-center"
           disabled={items.isFetchingNextPage}
           onClick={() => void items.fetchNextPage()}
@@ -278,8 +229,11 @@ export function MarketplaceView() {
           {items.isFetchingNextPage ? 'Chargement…' : 'Afficher plus'}
         </Button>
       ) : null}
-      {reviewing ? (
-        <ReviewsDialog item={reviewing} onClose={() => setReviewing(null)} />
+      {opened ? (
+        <ItemDetailDialog
+          {...cardProps(opened)}
+          onClose={() => setOpenedId(null)}
+        />
       ) : null}
     </section>
   );
