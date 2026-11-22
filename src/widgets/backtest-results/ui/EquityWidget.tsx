@@ -151,7 +151,7 @@ export function EquityWidget() {
     if (!result.equity.length) return null;
     const first = result.equity[0];
     const last = result.equity[result.equity.length - 1];
-    const initialNav = first.nav || result.config.capital || 100_000;
+    const initialNav = first.nav || result.initialCapital || 0;
     const currentNav = last.nav;
     const netPnl = currentNav - initialNav;
     const returnPct = initialNav > 0 ? (netPnl / initialNav) * 100 : 0;
@@ -170,7 +170,7 @@ export function EquityWidget() {
       benchReturnPct,
       alphaPct,
     };
-  }, [result.equity, result.config.capital]);
+  }, [result.equity, result.initialCapital]);
 
   const navAreaOptions = useMemo(
     () => ({

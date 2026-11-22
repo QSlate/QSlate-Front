@@ -6,15 +6,19 @@ import {
   CandlestickChart,
   ChartNoAxesCombined,
   Cpu,
+  FlaskConical,
   Layers,
   List,
+  Plus,
   Table2,
+  Terminal,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { DEFAULT_LAYOUT, useLayoutStore } from '@/entities/layout';
 import { useLabStore } from '@/features/lab-state';
 import { useHydratedStore } from '@/shared/lib/store';
+import { Button, EmptyState, IconButton, Tooltip } from '@/shared/ui';
 import { Dialog } from '@/shared/ui/dialog';
 import {
   MonteCarloWidget,
@@ -34,7 +38,7 @@ import {
   type WidgetDefinition,
 } from '@/widgets/dynamic-grid';
 import { LabHeader } from '@/widgets/lab-frame';
-import { LabToolbar } from '@/widgets/lab-toolbar/LabToolbar';
+import { RunComposer, RunComposerHint } from '@/widgets/run-composer';
 
 import { LabWorkspaceHeader } from './LabWorkspaceHeader';
 
@@ -109,6 +113,11 @@ export function LabWorkspace() {
   );
   const removeWidget = useLayoutStore((state) => state.removeWidget);
   const openDrawer = useLabStore((state) => state.setAddWidgetDrawerOpen);
+  const isLogsOpen = useLabStore((state) => state.isExecutionLogsOpen);
+  const toggleLogs = useLabStore((state) => state.toggleExecutionLogs);
+  const openOptimization = useLabStore(
+    (state) => state.setOptimizationModalOpen
+  );
   const [expanded, setExpanded] = useState<string | null>(null);
   const [rowHeight, setRowHeight] = useState(32);
   useEffect(() => {
@@ -137,8 +146,47 @@ export function LabWorkspace() {
 
   return (
     <>
-      <LabHeader title="Lab" />
-      <LabToolbar onAddWidget={() => openDrawer(true)} />
+      <LabHeader
+        title="Lab"
+        actions={
+          <>
+            <Tooltip content="Journal d'exécution">
+              {(triggerProps) => (
+                <IconButton
+                  {...triggerProps}
+                  icon={<Terminal size={16} />}
+                  label="Logs d'exécution"
+                  aria-pressed={isLogsOpen}
+                  onClick={toggleLogs}
+                />
+              )}
+            </Tooltip>
+            <Tooltip content="Optimiser les paramètres">
+              {(triggerProps) => (
+                <IconButton
+                  {...triggerProps}
+                  icon={<FlaskConical size={16} />}
+                  label="Optimiser la stratégie"
+                  onClick={() => openOptimization(true)}
+                />
+              )}
+            </Tooltip>
+            <Tooltip content="Ajouter un widget">
+              {(triggerProps) => (
+                <IconButton
+                  {...triggerProps}
+                  icon={<Plus size={16} />}
+                  label="Ajouter un widget"
+                  onClick={() => openDrawer(true)}
+                />
+              )}
+            </Tooltip>
+          </>
+        }
+      >
+        <RunComposer />
+      </LabHeader>
+      <RunComposerHint />
       <section className="lab-workspace" aria-label="Espace de travail du Lab">
         <LabWorkspaceHeader />
         {layout.length ? (
@@ -149,18 +197,20 @@ export function LabWorkspace() {
             rowHeight={rowHeight}
           />
         ) : (
-          <div className="lab-empty-workspace">
-            <ChartNoAxesCombined size={32} strokeWidth={1} />
-            <h2>A clear space for your next idea.</h2>
-            <p>Add a widget to start exploring your strategy.</p>
-            <button
-              type="button"
-              className="lab-button"
-              onClick={() => openDrawer(true)}
-            >
-              Add Widget
-            </button>
-          </div>
+          <EmptyState
+            className="lab-empty-workspace"
+            icon={<ChartNoAxesCombined />}
+            title="Ton dashboard est vide"
+            description="Ajoute un widget pour explorer les résultats de ta stratégie."
+            action={
+              <Button
+                leadingIcon={<Plus size={15} />}
+                onClick={() => openDrawer(true)}
+              >
+                Ajouter un widget
+              </Button>
+            }
+          />
         )}
       </section>
       {expandedWidget && ExpandedComponent ? (

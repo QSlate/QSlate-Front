@@ -1,7 +1,6 @@
 import {
   type BacktestConfig,
   type BacktestResult,
-  type BacktestService,
   DEFAULT_BACKTEST_CONFIG,
   type EquityPoint,
   STRATEGIES,
@@ -15,8 +14,20 @@ const anchors = [
   0.195, 0.208, 0.195, 0.24, 0.26, 0.31, 0.34, 0.325, 0.38,
 ];
 
+/** Synthetic result that also keeps the legacy date-range configuration. */
+export interface MockBacktestResult extends BacktestResult {
+  config: BacktestConfig;
+}
+
+export interface MockBacktestService {
+  run(
+    config: BacktestConfig,
+    signal?: AbortSignal
+  ): Promise<MockBacktestResult>;
+}
+
 /** Synthetic fixtures only. Real result calculations belong to the backend. */
-export function createMockBacktest(input: BacktestConfig): BacktestResult {
+export function createMockBacktest(input: BacktestConfig): MockBacktestResult {
   const config = { ...input };
   const error = validateBacktest(config);
   if (error) throw new Error(error);
@@ -150,6 +161,7 @@ export function createMockBacktest(input: BacktestConfig): BacktestResult {
     id: `mock-${config.strategyId}-${config.timeframe}-${config.startDate}-${config.endDate}-${config.capital}`,
     source: 'mock',
     config,
+    initialCapital: config.capital,
     equity,
     monthlyReturns: [...monthly].map(([month, value]) => ({
       month,
@@ -175,7 +187,7 @@ export function createMockBacktest(input: BacktestConfig): BacktestResult {
 
 export const INITIAL_MOCK_RESULT = createMockBacktest(DEFAULT_BACKTEST_CONFIG);
 
-export const mockBacktestService: BacktestService = {
+export const mockBacktestService: MockBacktestService = {
   async run(config, signal) {
     const submittedConfig = { ...config };
     const error = validateBacktest(submittedConfig);

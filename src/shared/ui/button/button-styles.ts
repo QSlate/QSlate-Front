@@ -26,7 +26,7 @@ const ICON_SIZE_CLASSES: Readonly<Record<ButtonSize, string>> = {
 };
 
 const BASE_CLASSES =
-  'inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap font-medium transition-[background-color,border-color,color,filter] disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:shrink-0';
+  'inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap font-medium transition-[background-color,border-color,color,filter] disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:brightness-100 [&_svg]:shrink-0';
 
 export function buttonClassName(
   variant: ButtonVariant,

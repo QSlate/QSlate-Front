@@ -4,10 +4,18 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { LabHeader } from '../ui/lab-header';
 
-const mockBacktest = vi.fn(() => ({
-  error: null as string | null,
+interface MockBacktest {
+  error: { message: string; action: 'retry' | 'reconnect' | 'none' } | null;
+  status: string;
+  retry: () => void;
+  canRetry: boolean;
+}
+
+const mockBacktest = vi.fn((): MockBacktest => ({
+  error: null,
   status: 'idle',
-  run: vi.fn(),
+  retry: vi.fn(),
+  canRetry: false,
 }));
 vi.mock('@/features/run-backtest', () => ({
   useBacktest: () => mockBacktest(),
@@ -37,11 +45,12 @@ describe('LabHeader', () => {
   });
 
   it('shows the backtest error with a retry action', () => {
-    const run = vi.fn();
+    const retry = vi.fn();
     mockBacktest.mockReturnValueOnce({
-      error: 'Le moteur ne répond pas',
+      error: { message: 'Le moteur ne répond pas', action: 'retry' },
       status: 'error',
-      run,
+      retry,
+      canRetry: true,
     });
     render(<LabHeader title="Lab" />);
 
@@ -49,14 +58,30 @@ describe('LabHeader', () => {
       'Le moteur ne répond pas'
     );
     screen.getByRole('button', { name: 'Réessayer' }).click();
-    expect(run).toHaveBeenCalledTimes(1);
+    expect(retry).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides the retry action when the error cannot be fixed by retrying', () => {
+    mockBacktest.mockReturnValueOnce({
+      error: { message: 'Réglages refusés.', action: 'none' },
+      status: 'error',
+      retry: vi.fn(),
+      canRetry: true,
+    });
+    render(<LabHeader title="Lab" />);
+
+    expect(screen.getByRole('alert').textContent).toContain(
+      'Réglages refusés.'
+    );
+    expect(screen.queryByRole('button', { name: 'Réessayer' })).toBeNull();
   });
 
   it('offers to sign in again when the error is an expired session', () => {
     mockBacktest.mockReturnValueOnce({
-      error: 'Session expirée, merci de vous reconnecter',
+      error: { message: 'Ta session a expiré.', action: 'reconnect' },
       status: 'error',
-      run: vi.fn(),
+      retry: vi.fn(),
+      canRetry: true,
     });
     render(<LabHeader title="Lab" />);
 

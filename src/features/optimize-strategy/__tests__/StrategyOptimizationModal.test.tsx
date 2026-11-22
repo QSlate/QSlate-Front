@@ -12,7 +12,6 @@ import { useAuthStore } from '@/entities/user/model';
 import { useLabStore } from '@/features/lab-state';
 import { apiClient } from '@/shared/api';
 import { AppearanceProvider } from '@/shared/theme';
-import { LabToolbar } from '@/widgets/lab-toolbar/LabToolbar';
 
 import {
   calculateTotalPermutations,
@@ -24,15 +23,7 @@ const mockBacktest = {
   status: 'idle',
   run: vi.fn(),
   error: null,
-  config: {
-    strategyId: 'momentum-eth',
-    startDate: '2026-01-01',
-    endDate: '2026-06-01',
-    timeframe: '1h',
-    capital: 100000,
-  },
   result: null,
-  setConfig: vi.fn(),
 };
 
 vi.mock('@/features/run-backtest/BacktestProvider', () => ({
@@ -283,36 +274,6 @@ describe('Strategy Parameter Optimization & Grid Search', () => {
       expect(useLabStore.getState().toast?.message).toContain(
         'Applied optimal parameters'
       );
-    });
-  });
-
-  describe('LabToolbar Integration', () => {
-    it('opens Optimization modal when Optimize button is clicked in toolbar', () => {
-      useLabStore.setState({ isOptimizationModalOpen: false });
-
-      render(
-        <AppearanceProvider value={{ theme: 'dark', colorblindMode: 'none' }}>
-          <LabToolbar onAddWidget={vi.fn()} />
-          <StrategyOptimizationModal />
-        </AppearanceProvider>
-      );
-
-      expect(
-        screen.queryByRole('heading', {
-          name: /Strategy Parameter Optimization & Grid Search/i,
-        })
-      ).toBeNull();
-
-      const optimizeToolbarBtn = screen.getByRole('button', {
-        name: /Open strategy parameter optimization/i,
-      });
-      fireEvent.click(optimizeToolbarBtn);
-
-      expect(
-        screen.getByRole('heading', {
-          name: /Strategy Parameter Optimization & Grid Search/i,
-        })
-      ).toBeDefined();
     });
   });
 });

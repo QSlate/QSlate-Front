@@ -1,3 +1,5 @@
+import type { BacktestRunRequest } from './run-request';
+
 export interface Strategy {
   id: string;
   name: string;
@@ -56,7 +58,8 @@ export interface BacktestMetrics {
 export interface BacktestResult {
   id: string;
   source: 'mock' | 'backend';
-  config: BacktestConfig;
+  /** Initial capital in USD when known (used to rebase the equity curve). */
+  initialCapital: number | null;
   equity: EquityPoint[];
   monthlyReturns: MonthlyReturn[];
   trades: Trade[];
@@ -65,9 +68,18 @@ export interface BacktestResult {
   longestDrawdownDays: number;
 }
 
-/** Implement this boundary with the backend client when its contract is available. */
+export interface BacktestRunOptions {
+  readonly signal?: AbortSignal | undefined;
+  /** Called once the lab service accepted the job (for live logs). */
+  readonly onAccepted?: ((backtestId: string) => void) | undefined;
+}
+
+/** Runs one backtest end to end and resolves with its artifacts. */
 export interface BacktestService {
-  run(config: BacktestConfig, signal?: AbortSignal): Promise<BacktestResult>;
+  run(
+    request: BacktestRunRequest,
+    options?: BacktestRunOptions
+  ): Promise<BacktestResult>;
 }
 
 export const STRATEGIES: Strategy[] = [
@@ -87,7 +99,7 @@ export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
 export const EMPTY_BACKTEST_RESULT: BacktestResult = {
   id: '',
   source: 'backend',
-  config: DEFAULT_BACKTEST_CONFIG,
+  initialCapital: null,
   equity: [],
   monthlyReturns: [],
   trades: [],

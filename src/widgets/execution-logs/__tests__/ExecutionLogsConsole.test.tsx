@@ -13,23 +13,19 @@ import { useAuthStore } from '@/entities/user/model';
 import { useLabStore } from '@/features/lab-state';
 import { apiClient } from '@/shared/api';
 import { AppearanceProvider } from '@/shared/theme';
-import { LabToolbar } from '@/widgets/lab-toolbar/LabToolbar';
 
 import { ExecutionLogsConsole } from '../ui/ExecutionLogsConsole';
 
-const mockBacktest = {
+const mockBacktest: {
+  status: string;
+  run: () => void;
+  error: { message: string; action: string; code: string } | null;
+  result: null;
+} = {
   status: 'idle',
   run: vi.fn(),
   error: null,
-  config: {
-    strategyId: 'momentum-eth',
-    startDate: '2026-01-01',
-    endDate: '2026-06-01',
-    timeframe: '1h',
-    capital: 100000,
-  },
   result: null,
-  setConfig: vi.fn(),
 };
 
 vi.mock('@/features/run-backtest/BacktestProvider', () => ({
@@ -201,18 +197,23 @@ describe('ExecutionLogsConsole', () => {
     expect(useLabStore.getState().isExecutionLogsOpen).toBe(false);
   });
 
-  it('automatically opens console and logs error traceback when backtest status is error', () => {
+  it('automatically opens console and logs the run error when backtest status is error', () => {
     useLabStore.setState({ isExecutionLogsOpen: false });
     mockBacktest.status = 'error';
+    mockBacktest.error = {
+      message:
+        "L'exécution des backtests est désactivée ou indisponible sur ce serveur.",
+      action: 'retry',
+      code: 'execution_unavailable',
+    };
 
     renderWithProviders(<ExecutionLogsConsole />);
 
     expect(useLabStore.getState().isExecutionLogsOpen).toBe(true);
     expect(
-      screen.getByText(
-        /Simulation execution failed: Python traceback captured/i
-      )
+      screen.getByText(/\[ERROR\] L'exécution des backtests est désactivée/)
     ).toBeDefined();
+    mockBacktest.error = null;
   });
 
   it('fetches historical logs from backend API when loadedBacktestId is present', async () => {
@@ -249,20 +250,5 @@ describe('ExecutionLogsConsole', () => {
         screen.getByText('[BACKEND] Execution completed with 0 errors.')
       ).toBeDefined();
     });
-  });
-
-  it('toggles execution logs via LabToolbar button', () => {
-    useLabStore.setState({ isExecutionLogsOpen: false });
-
-    renderWithProviders(<LabToolbar onAddWidget={vi.fn()} />);
-
-    const logsBtn = screen.getByRole('button', {
-      name: 'Toggle execution logs',
-    });
-    expect(logsBtn).toBeDefined();
-    expect(logsBtn.getAttribute('aria-pressed')).toBe('false');
-
-    fireEvent.click(logsBtn);
-    expect(useLabStore.getState().isExecutionLogsOpen).toBe(true);
   });
 });

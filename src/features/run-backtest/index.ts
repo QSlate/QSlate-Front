@@ -1,1 +1,5 @@
-export { BacktestProvider, useBacktest } from './BacktestProvider';
+export {
+  BacktestProvider,
+  type BacktestStatus,
+  useBacktest,
+} from './BacktestProvider';

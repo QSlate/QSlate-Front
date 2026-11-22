@@ -35,7 +35,7 @@ export function LabWorkspaceHeader() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-  const { status, config, result } = useBacktest();
+  const { status, result } = useBacktest();
 
   useEffect(() => {
     if (isAuthenticated && accessToken) {
@@ -86,12 +86,6 @@ export function LabWorkspaceHeader() {
         !item.isPinned
       );
     });
-  const dirty =
-    config.strategyId !== result.config.strategyId ||
-    config.startDate !== result.config.startDate ||
-    config.endDate !== result.config.endDate ||
-    config.timeframe !== result.config.timeframe ||
-    config.capital !== result.config.capital;
 
   return (
     <div className="lab-workspace-heading">
@@ -164,12 +158,10 @@ export function LabWorkspaceHeader() {
         {result.id ? <span className="lab-demo-badge">BACKTEST</span> : null}
         <span className="lab-run-status" role="status">
           {status === 'running'
-            ? 'Simulating backtest…'
-            : dirty
-              ? 'Parameters changed · run to update'
-              : status === 'success'
-                ? 'Simulation complete'
-                : ''}
+            ? 'Backtest en cours…'
+            : status === 'success'
+              ? 'Backtest terminé'
+              : ''}
         </span>
       </div>
       <div

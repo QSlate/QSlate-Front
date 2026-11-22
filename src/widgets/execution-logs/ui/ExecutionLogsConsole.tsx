@@ -171,19 +171,11 @@ export function ExecutionLogsConsole() {
     } else if (backtestStatus === 'error') {
       setIsOpen(true);
       void fetchLogsHistory(true);
-      const isAuthError =
-        Boolean(backtestError) &&
-        (backtestError!.toLowerCase().includes('token') ||
-          backtestError!.toLowerCase().includes('session') ||
-          backtestError!.toLowerCase().includes('authentif') ||
-          backtestError!.toLowerCase().includes('reconnecter'));
       setRawLogs((prev) => [
         ...prev,
-        isAuthError
-          ? `[${new Date().toLocaleTimeString()}] [ERROR] Authentification requise : votre session a expiré ou est invalide. Veuillez vous reconnecter sur /login pour exécuter ce backtest.`
-          : `[${new Date().toLocaleTimeString()}] [ERROR] Simulation execution failed: Python traceback captured in kernel sandbox.${
-              backtestError ? ` (${backtestError})` : ''
-            }`,
+        `[${new Date().toLocaleTimeString()}] [ERROR] ${
+          backtestError?.message ?? 'Le backtest a échoué.'
+        }`,
       ]);
     }
   }, [backtestStatus, backtestError, setIsOpen, fetchLogsHistory]);

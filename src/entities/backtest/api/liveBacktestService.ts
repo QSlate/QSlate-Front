@@ -1,229 +1,83 @@
-import { useAuthStore } from '@/entities/user/model';
-import { useLabStore } from '@/features/lab-state';
-import {
-  apiClient,
-  ApiError,
-  type BacktestJob,
-  type BacktestRunPayload,
-} from '@/shared/api';
+import { apiClient, type BacktestJob } from '@/shared/api';
 
+import { BacktestJobError } from '../model/run-error';
 import {
-  type BacktestConfig,
+  type BacktestRunRequest,
+  toBacktestRunPayload,
+} from '../model/run-request';
+import {
   type BacktestResult,
+  type BacktestRunOptions,
   type BacktestService,
   type EquityPoint,
   type MonthlyReturn,
   type Trade,
 } from '../model/types';
 
-const DEFAULT_STRATEGY_ID = '6ABA8SdBPvDUzJS_GlWVp4CgP3NHjqecm5rZLuQaBXE';
-const DEFAULT_VERSION_ID = 'Kazk9Z7E-NzcqT9_XM2Nl-8logVhbBsGuVcDeEPufYw';
-const DEFAULT_DATASET_ID = 'binance-eth-4h';
-const DEFAULT_DATASET_VERSION = 'v1';
+const POLL_INTERVAL_MS = 400;
+/**
+ * Upper bound for status polling. Long runs on large datasets are normal;
+ * this only stops an orphaned loop. Step 4 of #144 replaces polling with the
+ * backtest WebSocket stream.
+ */
+const POLL_TIMEOUT_MS = 10 * 60_000;
 
-const DEFAULT_STRATEGY_SOURCE = `from simulator import Strategy, Context
+function cancelledByUser(): DOMException {
+  return new DOMException('Backtest was cancelled by user', 'AbortError');
+}
 
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-class RsiTrendStrategy(Strategy):
-    """Example modular strategy using indicators, parameters, and stop management."""
-
-    rsi_period: int = 14
-    sma_period: int = 50
-    rsi_oversold: float = 30.0
-    rsi_overbought: float = 70.0
-    allocation_usd: float = 1500.0
-    stop_loss_pct: float = 2.0
-    take_profit_pct: float = 5.0
-    timeout_bars: int = 48
-
-    def on_init(self, ctx: Context) -> None:
-        pass
-
-    def on_bar(self, ctx: Context) -> None:
-        rsi_series = ctx.indicators.rsi(self.rsi_period)
-        sma_series = ctx.indicators.sma(self.sma_period)
-
-        if len(rsi_series) < max(self.rsi_period, self.sma_period) + 1:
-            return
-
-        current_rsi = rsi_series.iloc[-1]
-        current_sma = sma_series.iloc[-1]
-        current_price = ctx.price
-
-        ctx.record(rsi_val=float(current_rsi), sma_val=float(current_sma))
-
-        if not ctx.has_position:
-            if current_rsi < self.rsi_oversold and current_price > current_sma:
-                sl_price = current_price * (1.0 - self.stop_loss_pct / 100.0)
-                tp_price = current_price * (1.0 + self.take_profit_pct / 100.0)
-                ctx.buy(
-                    usd_amount=self.allocation_usd,
-                    stop_loss=sl_price,
-                    take_profit=tp_price,
-                    timeout_bars=self.timeout_bars,
-                )
-        elif ctx.has_position:
-            if current_rsi > self.rsi_overbought:
-                ctx.close_all(reason="RSI Overbought")
-
-    def on_stop(self, ctx: Context) -> None:
-        pass
-`;
-
+/**
+ * Runs exactly the given request on the lab service: enqueue, poll the job
+ * status, then load its artifacts. It never creates strategies nor falls
+ * back to hard-coded ids; errors are raised as-is for the caller to
+ * describe (see describeRunError).
+ */
 export class LiveBacktestService implements BacktestService {
   public async run(
-    config: BacktestConfig,
-    signal?: AbortSignal
+    request: BacktestRunRequest,
+    options: BacktestRunOptions = {}
   ): Promise<BacktestResult> {
-    const token = useAuthStore.getState().accessToken ?? apiClient.getToken();
-    const labState = useLabStore.getState();
+    const { signal, onAccepted } = options;
+    let job: BacktestJob = await apiClient.runBacktest(
+      toBacktestRunPayload(request)
+    );
 
-    // Strategy parameters and version resolution
-    let strategyId = labState.strategyId;
-    let versionId = labState.versionId;
-
-    if (token) {
-      try {
-        const userStrategies = await apiClient.getStrategies(
-          { limit: 5 },
-          token
-        );
-        if (userStrategies.items && userStrategies.items.length > 0) {
-          const matching = userStrategies.items.find(
-            (s) => s.id === strategyId
-          );
-          if (matching) {
-            versionId = matching.version_id;
-          } else {
-            strategyId = userStrategies.items[0].id;
-            versionId = userStrategies.items[0].version_id;
-          }
-          labState.setStrategyMeta({
-            id: strategyId,
-            version_id: versionId,
-          });
-        } else {
-          const created = await apiClient.createStrategy(
-            {
-              name: 'RsiTrendStrategy',
-              source: DEFAULT_STRATEGY_SOURCE,
-              parameters: {
-                rsi_period: 14,
-                sma_period: 50,
-                rsi_oversold: 30,
-                rsi_overbought: 70,
-                allocation_usd: 1500,
-                stop_loss_pct: 2,
-                take_profit_pct: 5,
-                timeout_bars: 48,
-              },
-            },
-            token
-          );
-          strategyId = created.id;
-          versionId = created.version_id;
-          labState.setStrategyMeta({
-            id: strategyId,
-            version_id: versionId,
-          });
-        }
-      } catch (err) {
-        if (err instanceof ApiError && err.statusCode === 401) {
-          useAuthStore.getState().clearAuth();
-          throw new Error(
-            'Session expirée ou non valide. Veuillez vous reconnecter pour exécuter ce backtest.'
-          );
-        }
-        // fallback to default IDs
-      }
-    }
-
-    strategyId = strategyId || DEFAULT_STRATEGY_ID;
-    versionId = versionId || DEFAULT_VERSION_ID;
-    const parameters = labState.activeStrategyParameters || {};
-
-    const customDs = labState.selectedCustomDataset;
-    const datasetId = customDs ? customDs.id : DEFAULT_DATASET_ID;
-    const datasetVersionId = customDs
-      ? customDs.version_id
-      : DEFAULT_DATASET_VERSION;
-
-    const payload: BacktestRunPayload = {
-      strategy_id: strategyId,
-      strategy_version_id: versionId,
-      dataset_id: datasetId,
-      dataset_version_id: datasetVersionId,
-      initial_capital: String(config.capital),
-      parameters,
-      window: 20,
+    const cancel = async () => {
+      await apiClient.cancelBacktest(job.backtest_id).catch(() => undefined);
+      throw cancelledByUser();
     };
 
-    let job: BacktestJob;
-    try {
-      job = await apiClient.runBacktest(payload, undefined, token);
-    } catch (err) {
-      if (err instanceof ApiError && err.statusCode === 401) {
-        useAuthStore.getState().clearAuth();
-        throw new Error(
-          'Session expirée ou non valide. Veuillez vous reconnecter pour exécuter ce backtest.'
-        );
-      }
-      const message =
-        err instanceof Error
-          ? err.message
-          : 'Erreur lors du lancement du backtest sur le serveur';
-      throw new Error(message);
-    }
+    if (signal?.aborted) return cancel();
+    onAccepted?.(job.backtest_id);
 
-    if (signal?.aborted) {
-      await apiClient.cancelBacktest(job.backtest_id, token).catch(() => {});
-      throw new DOMException('Backtest was cancelled by user', 'AbortError');
-    }
-
-    // Set active backtest ID in store for live logs streaming
-    labState.setLoadedBacktestId(job.backtest_id);
-
-    // Poll status until completion or failure
-    const startTime = Date.now();
-    const TIMEOUT_MS = 60_000;
-
-    while (Date.now() - startTime < TIMEOUT_MS) {
-      if (signal?.aborted) {
-        await apiClient.cancelBacktest(job.backtest_id, token).catch(() => {});
-        throw new DOMException('Backtest was cancelled by user', 'AbortError');
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 400));
-
-      try {
-        job = await apiClient.getBacktestStatus(job.backtest_id, token);
-      } catch {
-        // If status poll fails, continue next cycle
-        continue;
-      }
-
-      if (job.status === 'completed') {
-        break;
-      }
-
+    const startedAt = Date.now();
+    while (job.status !== 'completed') {
       if (job.status === 'failed' || job.status === 'cancelled') {
-        throw new Error(
-          job.error || `Backtest failed with status ${job.status}`
-        );
+        throw new BacktestJobError(job.status, job.error ?? null);
+      }
+      if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
+        throw new BacktestJobError('timeout', null);
+      }
+      await wait(POLL_INTERVAL_MS);
+      if (signal?.aborted) return cancel();
+      try {
+        job = await apiClient.getBacktestStatus(job.backtest_id);
+      } catch {
+        // Transient status failures are retried on the next tick.
       }
     }
 
-    if (job.status !== 'completed') {
-      throw new Error('Backtest execution timed out');
-    }
-
-    return await fetchBacktestArtifacts(job.backtest_id, config, token);
+    return fetchBacktestArtifacts(job.backtest_id, request.initialCapital);
   }
 }
 
 export async function fetchBacktestArtifacts(
   backtestId: string,
-  config: BacktestConfig,
+  initialCapital: number | null,
   token?: string | null
 ): Promise<BacktestResult> {
   // Fetch summary metrics, trades and equity curve
@@ -277,17 +131,15 @@ export async function fetchBacktestArtifacts(
                 : Math.floor(
                     new Date(String(p.timestamp || p.time)).getTime() / 1000
                   );
-            const nav = Number(p.nav || p.equity || config.capital);
-            const benchmark = Number(p.benchmark || config.capital);
+            const nav = Number(p.nav ?? p.equity);
+            const benchmark = Number(p.benchmark ?? initialCapital ?? nav);
             return {
               time: Number.isFinite(parsedTime) ? parsedTime : 0,
-              nav: Number.isFinite(nav) ? nav : config.capital,
-              benchmark: Number.isFinite(benchmark)
-                ? benchmark
-                : config.capital,
+              nav,
+              benchmark: Number.isFinite(benchmark) ? benchmark : nav,
             };
           })
-          .filter((p) => p.time > 0)
+          .filter((p) => p.time > 0 && Number.isFinite(p.nav))
       : [];
 
   const equity: EquityPoint[] = parsedEquity;
@@ -295,7 +147,7 @@ export async function fetchBacktestArtifacts(
   return {
     id: backtestId,
     source: 'backend',
-    config,
+    initialCapital,
     equity,
     monthlyReturns: computeMonthlyReturns(equity),
     trades,

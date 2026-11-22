@@ -12,14 +12,14 @@ import {
 } from 'react';
 
 import {
-  type BacktestConfig,
   type BacktestResult,
+  type BacktestRunError,
+  type BacktestRunRequest,
   type BacktestService,
-  DEFAULT_BACKTEST_CONFIG,
+  describeRunError,
   EMPTY_BACKTEST_RESULT,
   fetchBacktestArtifacts,
   liveBacktestService,
-  validateBacktest,
 } from '@/entities/backtest';
 import { useAuthStore } from '@/entities/user/model';
 import { useLabStore } from '@/features/lab-state';
@@ -27,17 +27,59 @@ import { apiClient } from '@/shared/api';
 
 const LAST_RESULT_STORAGE_KEY = 'qslate_last_backtest_result';
 
+export type BacktestStatus = 'idle' | 'running' | 'success' | 'error';
+
 interface BacktestContextValue {
-  config: BacktestConfig;
-  setConfig: (config: BacktestConfig) => void;
   result: BacktestResult;
-  status: 'idle' | 'running' | 'success' | 'error';
-  error: string | null;
-  run: () => Promise<void>;
+  status: BacktestStatus;
+  error: BacktestRunError | null;
+  /** Starts a run with exactly this request (ignored while one is running). */
+  run: (request: BacktestRunRequest) => Promise<void>;
+  /** Runs the last submitted request again. */
+  retry: () => Promise<void>;
+  /** Stops the current run and asks the server to cancel it. */
   cancel: () => void;
+  /** Whether a previous request exists for `retry`. */
+  canRetry: boolean;
 }
 
 const BacktestContext = createContext<BacktestContextValue | null>(null);
+
+function persistResult(result: BacktestResult) {
+  try {
+    localStorage.setItem(LAST_RESULT_STORAGE_KEY, JSON.stringify(result));
+  } catch {
+    // Storage may be full or unavailable (private mode): keep it in memory.
+  }
+}
+
+function readPersistedResult(): BacktestResult {
+  if (typeof window === 'undefined') return EMPTY_BACKTEST_RESULT;
+  try {
+    const saved = localStorage.getItem(LAST_RESULT_STORAGE_KEY);
+    if (!saved) return EMPTY_BACKTEST_RESULT;
+    const parsed = JSON.parse(saved) as BacktestResult;
+    if (
+      parsed &&
+      parsed.source === 'backend' &&
+      parsed.id &&
+      Array.isArray(parsed.equity) &&
+      parsed.equity.length > 0
+    ) {
+      return {
+        ...parsed,
+        initialCapital:
+          typeof parsed.initialCapital === 'number'
+            ? parsed.initialCapital
+            : null,
+      };
+    }
+    localStorage.removeItem(LAST_RESULT_STORAGE_KEY);
+  } catch {
+    // Corrupted entry: start from an empty result.
+  }
+  return EMPTY_BACKTEST_RESULT;
+}
 
 export function BacktestProvider({
   children,
@@ -46,147 +88,86 @@ export function BacktestProvider({
   children: ReactNode;
   service?: BacktestService;
 }) {
-  const [config, updateConfig] = useState(() => ({
-    ...DEFAULT_BACKTEST_CONFIG,
-  }));
-  const [result, setResult] = useState<BacktestResult>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(LAST_RESULT_STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved) as BacktestResult;
-          if (
-            parsed &&
-            parsed.source === 'backend' &&
-            parsed.id &&
-            Array.isArray(parsed.equity) &&
-            parsed.equity.length > 0
-          ) {
-            return parsed;
-          }
-          // Clean up stale mock data from localStorage
-          localStorage.removeItem(LAST_RESULT_STORAGE_KEY);
-        }
-      } catch {
-        // ignore
-      }
-    }
-    return EMPTY_BACKTEST_RESULT;
-  });
-  const [status, setStatus] = useState<BacktestContextValue['status']>('idle');
-  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<BacktestResult>(readPersistedResult);
+  const [status, setStatus] = useState<BacktestStatus>('idle');
+  const [error, setError] = useState<BacktestRunError | null>(null);
+  const [lastRequest, setLastRequest] = useState<BacktestRunRequest | null>(
+    null
+  );
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
 
   const loadedBacktestId = useLabStore((state) => state.loadedBacktestId);
+  const setLoadedBacktestId = useLabStore((state) => state.setLoadedBacktestId);
   const token = useAuthStore((state) => state.accessToken);
 
-  // Restore latest completed backtest on load or when loadedBacktestId changes
+  // Restore the selected (or latest completed) backtest on load.
   useEffect(() => {
     let cancelled = false;
 
     void (async () => {
-      const targetId = loadedBacktestId;
-      if (targetId) {
-        try {
-          const loaded = await fetchBacktestArtifacts(targetId, config, token);
-          if (!cancelled && loaded) {
-            setResult(loaded);
-            if (typeof window !== 'undefined') {
-              try {
-                localStorage.setItem(
-                  LAST_RESULT_STORAGE_KEY,
-                  JSON.stringify(loaded)
-                );
-              } catch {
-                // ignore
-              }
-            }
-          }
-        } catch {
-          // ignore
-        }
-      } else if (token) {
-        try {
+      try {
+        let targetId = loadedBacktestId;
+        if (!targetId && token) {
           const runs = await apiClient.getBacktests({ limit: 1 }, token);
           const latest = runs.items?.[0];
-          if (latest && latest.status === 'completed' && latest.backtest_id) {
-            const loaded = await fetchBacktestArtifacts(
-              latest.backtest_id,
-              config,
-              token
-            );
-            if (!cancelled && loaded) {
-              setResult(loaded);
-              if (typeof window !== 'undefined') {
-                try {
-                  localStorage.setItem(
-                    LAST_RESULT_STORAGE_KEY,
-                    JSON.stringify(loaded)
-                  );
-                } catch {
-                  // ignore
-                }
-              }
-            }
+          if (latest && latest.status === 'completed') {
+            targetId = latest.backtest_id;
           }
-        } catch {
-          // ignore
         }
+        if (!targetId) return;
+        const loaded = await fetchBacktestArtifacts(targetId, null, token);
+        if (!cancelled) {
+          setResult(loaded);
+          persistResult(loaded);
+        }
+      } catch {
+        // Restoring is best effort: keep the current result.
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [loadedBacktestId, token, config]);
+  }, [loadedBacktestId, token]);
 
-  const setConfig = useCallback((next: BacktestConfig) => {
-    updateConfig({ ...next });
-    if (!controller.current) {
+  const run = useCallback(
+    async (request: BacktestRunRequest) => {
+      if (controller.current) return;
+      const job = new AbortController();
+      controller.current = job;
+      setLastRequest(request);
       setError(null);
-      setStatus((current) => (current === 'error' ? 'idle' : current));
-    }
-  }, []);
-
-  const run = useCallback(async () => {
-    if (controller.current) return;
-    const validation = validateBacktest(config);
-    if (validation) {
-      setError(validation);
-      setStatus('error');
-      return;
-    }
-    const request = new AbortController();
-    controller.current = request;
-    setError(null);
-    setStatus('running');
-    try {
-      const next = await service.run({ ...config }, request.signal);
-      if (!request.signal.aborted) {
-        setResult(next);
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem(LAST_RESULT_STORAGE_KEY, JSON.stringify(next));
-          } catch {
-            // ignore
-          }
+      setStatus('running');
+      try {
+        const next = await service.run(request, {
+          signal: job.signal,
+          onAccepted: setLoadedBacktestId,
+        });
+        if (!job.signal.aborted) {
+          setResult(next);
+          persistResult(next);
+          setStatus('success');
         }
-        setStatus('success');
+      } catch (cause) {
+        if (!job.signal.aborted) {
+          const described = describeRunError(cause);
+          if (described.action === 'reconnect') {
+            useAuthStore.getState().clearAuth();
+          }
+          setError(described);
+          setStatus('error');
+        }
+      } finally {
+        if (controller.current === job) controller.current = null;
       }
-    } catch (cause) {
-      if (!request.signal.aborted) {
-        setError(
-          cause instanceof Error
-            ? cause.message
-            : 'Unable to run this backtest. Please try again.'
-        );
-        setStatus('error');
-      }
-    } finally {
-      if (controller.current === request) controller.current = null;
-    }
-  }, [config, service]);
+    },
+    [service, setLoadedBacktestId]
+  );
+
+  const retry = useCallback(async () => {
+    if (lastRequest) await run(lastRequest);
+  }, [lastRequest, run]);
 
   const cancel = useCallback(() => {
     if (controller.current) {
@@ -197,8 +178,16 @@ export function BacktestProvider({
   }, []);
 
   const value = useMemo(
-    () => ({ config, setConfig, result, status, error, run, cancel }),
-    [config, setConfig, result, status, error, run, cancel]
+    () => ({
+      result,
+      status,
+      error,
+      run,
+      retry,
+      cancel,
+      canRetry: lastRequest !== null,
+    }),
+    [result, status, error, run, retry, cancel, lastRequest]
   );
 
   return (
