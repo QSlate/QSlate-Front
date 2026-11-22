@@ -172,6 +172,11 @@ export function MaxDrawdownWidget() {
 }
 
 const GAUGE_MAX = 3;
+/**
+ * Beyond this the engine divided by a near-zero volatility (a few flat
+ * trades): the figure is noise, not a ratio worth showing.
+ */
+const MAX_MEANINGFUL_SHARPE = 100;
 
 /** Semicircular 0–3 gauge for the Sharpe ratio. */
 function SharpeGauge({ value }: { readonly value: number }) {
@@ -229,6 +234,14 @@ export function SharpeWidget() {
         const sharpe = metrics.sharpe;
         if (sharpe === null)
           return <ResultUnavailable description={NOT_REPORTED} />;
+        if (Math.abs(sharpe) > MAX_MEANINGFUL_SHARPE) {
+          return (
+            <KpiValue
+              value="—"
+              sub="Trop peu de variations pour un ratio fiable"
+            />
+          );
+        }
         return (
           <div className="flex h-full items-end justify-between gap-2">
             <KpiValue

@@ -86,6 +86,16 @@ describe('result widgets', () => {
     expect(screen.getByText(/Aucun trade/)).toBeTruthy();
   });
 
+  it('hides a degenerate Sharpe ratio', () => {
+    withResult({
+      ...RESULT,
+      metrics: { ...RESULT.metrics, totalTrades: 3, sharpe: -5.6e15 },
+    });
+    render(<SharpeWidget />);
+    expect(screen.getByText('—')).toBeTruthy();
+    expect(screen.getByText(/Trop peu de variations/)).toBeTruthy();
+  });
+
   it('shows no Sharpe ratio when the run has no trade', () => {
     withResult({ ...RESULT, metrics: { ...RESULT.metrics, sharpe: 0 } });
     render(<SharpeWidget />);
