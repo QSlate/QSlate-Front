@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-import { useLayoutStore } from '@/entities/layout';
 import { useInvalidateStrategies } from '@/entities/strategy';
 import { useLabStore } from '@/features/lab-state';
 import {
@@ -122,10 +121,6 @@ export function MarketplaceView() {
 
   const { theme } = useAppearance();
   const isLight = theme === 'light';
-
-  const layout = useLayoutStore((state) => state.layout);
-  const addWidget = useLayoutStore((state) => state.addWidget);
-  const removeWidget = useLayoutStore((state) => state.removeWidget);
 
   // Local state for live API data
   const [items, setItems] = useState<MarketplaceItem[]>([]);
@@ -262,8 +257,7 @@ export function MarketplaceView() {
 
   // Handle 1-click Install / Uninstall
   const handleToggleInstall = async (item: MarketplaceItem) => {
-    const isCurrentlyInstalled =
-      installedIds.includes(item.id) || layout.some((l) => l.i === item.id);
+    const isCurrentlyInstalled = installedIds.includes(item.id);
 
     setIsInstallingId(item.id);
 
@@ -274,7 +268,6 @@ export function MarketplaceView() {
           // Allow local fallback if simulated item
         });
         removeInstalledId(item.id);
-        removeWidget(item.id);
         // Installed strategies appear in the run composer's strategy list.
         if (item.kind === 'strategy') void invalidateStrategies();
 
@@ -295,9 +288,6 @@ export function MarketplaceView() {
             // Allow local fallback if simulated item
           });
         addInstalledId(item.id);
-        if (item.kind === 'widget') {
-          addWidget(item.id);
-        }
         if (item.kind === 'strategy') void invalidateStrategies();
 
         setItems((prev) =>
@@ -491,9 +481,7 @@ export function MarketplaceView() {
       ) : items.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {items.map((item) => {
-            const isInstalled =
-              installedIds.includes(item.id) ||
-              layout.some((l) => l.i === item.id);
+            const isInstalled = installedIds.includes(item.id);
             const isOperating = isInstallingId === item.id;
 
             return (

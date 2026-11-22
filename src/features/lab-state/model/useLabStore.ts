@@ -20,7 +20,6 @@ export interface ToastNotice {
 
 export interface LabState {
   activeTab: LabTab;
-  isAddWidgetDrawerOpen: boolean;
   ideActiveFile: string;
   ideFiles: Record<string, string>;
   ideAstStatus: 'valid' | 'synthesizing' | 'invalid';
@@ -49,8 +48,6 @@ export interface LabState {
   selectedCustomDataset: CustomDataset | null;
 
   setActiveTab: (tab: LabTab) => void;
-  setAddWidgetDrawerOpen: (open: boolean) => void;
-  toggleAddWidgetDrawer: () => void;
   setIdeActiveFile: (file: string) => void;
   updateIdeFileContent: (file: string, content: string) => void;
   toggleIdeSplitView: () => void;
@@ -100,7 +97,6 @@ const INITIAL_FILES = Object.fromEntries(
 
 export const useLabStore = create<LabState>((set, get) => ({
   activeTab: 'workspace',
-  isAddWidgetDrawerOpen: false,
   ideActiveFile: 'strategy.py',
   ideFiles: INITIAL_FILES,
   ideAstStatus: 'valid',
@@ -132,11 +128,6 @@ export const useLabStore = create<LabState>((set, get) => ({
   selectedCustomDataset: null,
 
   setActiveTab: (tab) => set({ activeTab: tab }),
-
-  setAddWidgetDrawerOpen: (open) => set({ isAddWidgetDrawerOpen: open }),
-
-  toggleAddWidgetDrawer: () =>
-    set((state) => ({ isAddWidgetDrawerOpen: !state.isAddWidgetDrawerOpen })),
 
   setIdeActiveFile: (file) => set({ ideActiveFile: file }),
 

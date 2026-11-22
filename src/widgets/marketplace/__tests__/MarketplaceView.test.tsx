@@ -8,7 +8,6 @@ import {
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useLayoutStore } from '@/entities/layout';
 import { useLabStore } from '@/features/lab-state';
 import { apiClient } from '@/shared/api';
 import { renderWithQuery } from '@/shared/lib/test';
@@ -19,7 +18,6 @@ import { MarketplaceView } from '../ui/MarketplaceView';
 describe('MarketplaceView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useLayoutStore.getState().resetLayout();
     useLabStore.setState({
       marketplaceSearch: '',
       marketplaceCategory: 'All',

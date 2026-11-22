@@ -9,25 +9,12 @@ describe('useLabStore', () => {
     vi.useFakeTimers();
     useLabStore.setState({
       activeTab: 'workspace',
-      isAddWidgetDrawerOpen: false,
       ideActiveFile: 'strategy.py',
       ideAstStatus: 'valid',
       marketplaceSearch: '',
       marketplaceCategory: 'All',
       toast: null,
     });
-  });
-
-  it('toggles the Add Widget drawer', () => {
-    expect(useLabStore.getState().isAddWidgetDrawerOpen).toBe(false);
-    act(() => {
-      useLabStore.getState().toggleAddWidgetDrawer();
-    });
-    expect(useLabStore.getState().isAddWidgetDrawerOpen).toBe(true);
-    act(() => {
-      useLabStore.getState().toggleAddWidgetDrawer();
-    });
-    expect(useLabStore.getState().isAddWidgetDrawerOpen).toBe(false);
   });
 
   it('updates ide files and resets AST status', () => {
