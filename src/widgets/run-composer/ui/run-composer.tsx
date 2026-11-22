@@ -1,19 +1,20 @@
 'use client';
 
-import { Database, Play, Square } from 'lucide-react';
+import { Database, Play, SlidersHorizontal, Square } from 'lucide-react';
 import {
   type ChangeEvent,
-  type ReactNode,
   useEffect,
   useRef,
+  useState,
   useSyncExternalStore,
 } from 'react';
 
 import { formatCandleCount } from '@/entities/dataset';
 import { cn } from '@/shared/lib/class-names';
-import { Button, Kbd, Tooltip } from '@/shared/ui';
+import { Button, IconButton, Kbd, Tooltip } from '@/shared/ui';
 
 import { useRunComposer } from '../model/use-run-composer';
+import { AdvancedSettingsDrawer } from './advanced-settings-drawer';
 import {
   ComposerSelectToken,
   TOKEN_CLASS,
@@ -30,17 +31,13 @@ function Separator() {
   return <span aria-hidden="true" className="h-[22px] w-px bg-line-strong" />;
 }
 
-interface RunComposerProps {
-  /** Extra controls rendered before the run button (advanced settings). */
-  readonly advanced?: ReactNode | undefined;
-}
-
 /**
  * Header "composer" pill: strategy, dataset and capital, then the run
  * button (⌘/Ctrl + Enter), which becomes "Arrêter" while a run is active.
  */
-export function RunComposer({ advanced }: RunComposerProps) {
+export function RunComposer() {
   const model = useRunComposer();
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const {
     selection,
     strategies,
@@ -49,6 +46,7 @@ export function RunComposer({ advanced }: RunComposerProps) {
     dataset,
     fieldErrors,
     blockReason,
+    advancedChanges,
     canRun,
     isRunning,
     update,
@@ -152,7 +150,18 @@ export function RunComposer({ advanced }: RunComposerProps) {
           USD
         </span>
       </label>
-      {advanced}
+      <Tooltip content="Paramètres, frais, glissement et chauffe">
+        {(triggerProps) => (
+          <IconButton
+            {...triggerProps}
+            icon={<SlidersHorizontal size={16} />}
+            label="Réglages avancés"
+            count={advancedChanges}
+            aria-haspopup="dialog"
+            onClick={() => setAdvancedOpen(true)}
+          />
+        )}
+      </Tooltip>
       {isRunning ? (
         <Button
           variant="danger"
@@ -192,6 +201,11 @@ export function RunComposer({ advanced }: RunComposerProps) {
           )}
         </Tooltip>
       )}
+      <AdvancedSettingsDrawer
+        open={advancedOpen}
+        onClose={() => setAdvancedOpen(false)}
+        model={model}
+      />
     </div>
   );
 }
