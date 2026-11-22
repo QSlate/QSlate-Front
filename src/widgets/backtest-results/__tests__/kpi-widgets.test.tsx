@@ -7,6 +7,7 @@ import { type BacktestResult, EMPTY_METRICS } from '@/entities/backtest';
 import {
   MaxDrawdownWidget,
   NetReturnWidget,
+  SharpeWidget,
   WinRateWidget,
 } from '../ui/kpi-widgets';
 import { TradesTableWidget } from '../ui/trade-widgets';
@@ -55,17 +56,25 @@ describe('result widgets', () => {
   it('shows the net return with an arrow and the capital change', () => {
     withResult(RESULT);
     render(<NetReturnWidget />);
-    expect(screen.getByText('▲ +18,4 %')).toBeTruthy();
+    expect(screen.getByText('+18,4 %')).toBeTruthy();
     expect(screen.getByText('+1 842 USD')).toBeTruthy();
   });
 
   it('shows the drawdown as a loss and hides unreported metrics', () => {
     withResult(RESULT);
     render(<MaxDrawdownWidget />);
-    expect(screen.getByText('▼ −4,2 %')).toBeTruthy();
+    expect(screen.getByText('−4,2 %')).toBeTruthy();
     cleanup();
     render(<WinRateWidget />);
     expect(screen.getByText(/Aucun trade/)).toBeTruthy();
+  });
+
+  it('shows no Sharpe ratio when the run has no trade', () => {
+    withResult({ ...RESULT, metrics: { ...RESULT.metrics, sharpe: 0 } });
+    render(<SharpeWidget />);
+    expect(screen.getByText('—')).toBeTruthy();
+    expect(screen.getByText('Aucun trade sur la période')).toBeTruthy();
+    expect(screen.queryByText(/Rendement faible/)).toBeNull();
   });
 
   it('marks widgets busy while a run is live', () => {

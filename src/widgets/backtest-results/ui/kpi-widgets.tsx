@@ -53,7 +53,10 @@ interface KpiValueProps {
   readonly sub?: ReactNode | undefined;
 }
 
+const GLYPH_PATTERN = /^([▲▼])\s*(.*)$/u;
+
 function KpiValue({ value, tone = 'flat', sub }: KpiValueProps) {
+  const glyph = GLYPH_PATTERN.exec(value);
   return (
     <div className="relative z-[1]">
       <div
@@ -62,13 +65,29 @@ function KpiValue({ value, tone = 'flat', sub }: KpiValueProps) {
           TONE_CLASS[tone]
         )}
       >
-        {value}
+        {glyph ? (
+          <>
+            {/* The ▲/▼ glyphs render taller than digits: scale them to the
+                cap height and keep them on the value's baseline. */}
+            <span className="mr-[0.2em] inline-block align-baseline text-[0.62em]">
+              {glyph[1]}
+            </span>
+            {glyph[2]}
+          </>
+        ) : (
+          value
+        )}
       </div>
       {sub ? (
         <div className="mt-1 truncate text-[11.5px] text-fg-3">{sub}</div>
       ) : null}
     </div>
   );
+}
+
+/** Ratio KPIs are meaningless without a single trade: no misleading "0,00". */
+function NoTradesValue() {
+  return <KpiValue value="—" sub="Aucun trade sur la période" />;
 }
 
 const NOT_REPORTED = "Le moteur n'a pas fourni cette mesure pour ce backtest.";
@@ -206,6 +225,7 @@ export function SharpeWidget() {
     <KpiFrame
       label="Ratio de Sharpe"
       render={({ metrics }) => {
+        if (metrics.totalTrades === 0) return <NoTradesValue />;
         const sharpe = metrics.sharpe;
         if (sharpe === null)
           return <ResultUnavailable description={NOT_REPORTED} />;
@@ -262,11 +282,7 @@ export function WinRateWidget() {
       label="Trades gagnants"
       render={({ metrics }) => {
         const total = metrics.totalTrades;
-        if (total === 0) {
-          return (
-            <ResultUnavailable description="Aucun trade n'a été ouvert sur la période." />
-          );
-        }
+        if (total === 0) return <NoTradesValue />;
         const winRate = metrics.winRatePct;
         if (winRate === null)
           return <ResultUnavailable description={NOT_REPORTED} />;
