@@ -8,6 +8,7 @@ import { useHydratedStore } from '@/shared/lib/store';
 
 import { isPeriodPreset, type PeriodPreset } from './run-period';
 import { isParameterValue } from './strategy-parameters';
+import { DEFAULT_WARMUP_WINDOW } from './warmup';
 
 export const COMPOSER_STORAGE_KEY = 'qslate_backtest_composer';
 const COMPOSER_STORAGE_VERSION = 1;
@@ -41,7 +42,7 @@ export const DEFAULT_COMPOSER_SELECTION: ComposerSelection = {
   capital: DEFAULT_CAPITAL_USD,
   commissionPercent: RUN_LIMITS.commissionRate.default * 100,
   slippageBps: RUN_LIMITS.slippageBps.default,
-  window: RUN_LIMITS.window.default,
+  window: DEFAULT_WARMUP_WINDOW,
   periodPreset: 'all',
   periodStart: null,
   periodEnd: null,

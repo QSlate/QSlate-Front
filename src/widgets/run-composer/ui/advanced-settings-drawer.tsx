@@ -4,6 +4,7 @@ import { FlaskConical, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { type ReactNode, useId } from 'react';
 
 import {
+  DEFAULT_WARMUP_WINDOW,
   describeParameters,
   type ParameterField,
 } from '@/features/compose-backtest';
@@ -19,6 +20,7 @@ import {
 } from '@/shared/ui';
 
 import type { RunComposerModel } from '../model/use-run-composer';
+import { WarmupWarning } from './warmup-warning';
 
 const CHANGED_FRAME =
   'border-brand-line bg-brand-soft shadow-[0_0_0_3px_var(--brand-soft)] hover:border-brand-line';
@@ -266,6 +268,8 @@ export function AdvancedSettingsDrawer({
     selection,
     fieldErrors,
     advancedChanges,
+    warmup,
+    isRunning,
     update,
     setParameter,
     resetAdvanced,
@@ -371,11 +375,18 @@ export function AdvancedSettingsDrawer({
           helper="Bougies lues avant le premier signal pour initialiser les indicateurs."
           suffix="bougies"
           value={selection.window}
-          defaultValue={20}
+          defaultValue={DEFAULT_WARMUP_WINDOW}
           step={1}
           error={fieldErrors.window}
           onChange={(window) => update({ window })}
         />
+        {warmup ? (
+          <WarmupWarning
+            warmup={warmup}
+            disabled={isRunning}
+            onFix={(window) => update({ window })}
+          />
+        ) : null}
       </section>
     </Drawer>
   );

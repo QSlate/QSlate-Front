@@ -45,3 +45,8 @@ export {
   type ParameterKind,
   validateParameterValue,
 } from './model/strategy-parameters';
+export {
+  DEFAULT_WARMUP_WINDOW,
+  type WarmupShortfall,
+  warmupShortfall,
+} from './model/warmup';

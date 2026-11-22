@@ -54,7 +54,7 @@ describe('composer store', () => {
     const reset = useComposerStore.getState().selections.u;
     expect(reset?.parameterOverrides).toEqual({});
     expect(reset?.commissionPercent).toBe(0);
-    expect(reset?.window).toBe(20);
+    expect(reset?.window).toBe(200);
   });
 
   it('sanitizes corrupted persisted selections', () => {

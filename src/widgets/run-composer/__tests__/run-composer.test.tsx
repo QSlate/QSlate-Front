@@ -173,6 +173,21 @@ describe('RunComposer', () => {
     expect((await launchButton()).getAttribute('aria-disabled')).toBe('true');
   });
 
+  it('offers to raise a warm-up shorter than a strategy period', async () => {
+    mockCatalog([STRATEGY], [DATASET]);
+    vi.spyOn(apiClient, 'getStrategy').mockResolvedValue({
+      ...STRATEGY,
+      source: '',
+      parameters: { slow_period: 260 },
+    });
+    renderComposer();
+    const fix = await screen.findByRole('button', { name: 'Ajuster à 260' });
+    fireEvent.click(fix);
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Ajuster à 260' })).toBeNull()
+    );
+  });
+
   it('shows the capital with a thousands separator outside editing', async () => {
     mockCatalog([STRATEGY], [DATASET]);
     renderComposer();

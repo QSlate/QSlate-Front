@@ -10,6 +10,7 @@ import type { ComposerSelection } from './composer-store';
 import { commissionPercentToRate } from './cost-units';
 import { resolvePeriod } from './run-period';
 import { effectiveOverrides, parameterErrors } from './strategy-parameters';
+import { DEFAULT_WARMUP_WINDOW } from './warmup';
 
 export type ComposerField =
   'capital' | 'commissionPercent' | 'slippageBps' | 'window';
@@ -164,7 +165,7 @@ export function countAdvancedChanges(
     params +
     Number(selection.commissionPercent !== RUN_LIMITS.commissionRate.default) +
     Number(selection.slippageBps !== RUN_LIMITS.slippageBps.default) +
-    Number(selection.window !== RUN_LIMITS.window.default)
+    Number(selection.window !== DEFAULT_WARMUP_WINDOW)
   );
 }
 

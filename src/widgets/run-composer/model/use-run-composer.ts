@@ -19,12 +19,15 @@ import {
   type ComposerPatch,
   type ComposerSelection,
   countAdvancedChanges,
+  describeParameters,
   parameterErrors,
   resolveDataset,
   resolveStrategy,
   useComposerSelection,
   useComposerStore,
   validateComposerFields,
+  type WarmupShortfall,
+  warmupShortfall,
 } from '@/features/compose-backtest';
 import { useBacktest } from '@/features/run-backtest';
 import type { StrategyParameterSchema, StrategySummary } from '@/shared/api';
@@ -56,6 +59,8 @@ export interface RunComposerModel {
   readonly periodError: string | null;
   readonly fieldErrors: ComposerFieldErrors;
   readonly advancedChanges: number;
+  /** A strategy period longer than the warm-up window (it would never trade). */
+  readonly warmup: WarmupShortfall | null;
   readonly isLoading: boolean;
   readonly blockReason: RunBlockReason | null;
   readonly canRun: boolean;
@@ -231,6 +236,14 @@ export function useRunComposer(): RunComposerModel {
       strategyDefaults,
       parameterSchema
     ),
+    warmup:
+      strategyDefaults && strategyId !== null
+        ? warmupShortfall(
+            selection.window,
+            describeParameters(strategyDefaults, parameterSchema),
+            selection.parameterOverrides[strategyId] ?? {}
+          )
+        : null,
     isLoading,
     blockReason,
     canRun,

@@ -184,7 +184,7 @@ describe('buildRunRequest', () => {
       dataset_id: 'ds-eth',
       dataset_version_id: 'dsv-1',
       initial_capital: '10000',
-      window: 20,
+      window: 200,
       commission_rate: 0,
       slippage_bps: 0,
     });
