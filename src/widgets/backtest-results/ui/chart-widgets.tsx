@@ -30,6 +30,15 @@ import {
   TimeSeriesChart,
 } from './time-series-chart';
 
+const AXIS_PERCENT = new Intl.NumberFormat('fr-FR', {
+  maximumFractionDigits: 1,
+});
+
+function formatAxisPercent(value: number): string {
+  const rounded = Math.abs(value) < 0.05 ? 0 : value;
+  return `${AXIS_PERCENT.format(rounded)} %`;
+}
+
 const TONE = { up: 'text-gain', down: 'text-loss', flat: 'text-fg' } as const;
 
 interface ChartFrameProps {
@@ -170,7 +179,7 @@ function DrawdownChart({ result }: { readonly result: BacktestResult }) {
         points={points}
         tone="loss"
         fill="above"
-        formatAxis={(value) => `${value.toFixed(0)} %`}
+        formatAxis={formatAxisPercent}
         tooltip={(point) => [
           {
             label: 'Sous le sommet',

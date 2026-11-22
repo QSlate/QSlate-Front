@@ -217,7 +217,11 @@ export function TimeSeriesChart({
               </text>
             </g>
           ))}
-          {ticks(startTime, startTime + timeSpan, 4).map((time, index, all) => (
+          {ticks(
+            startTime,
+            startTime + timeSpan,
+            Math.max(2, Math.min(5, Math.floor(width / 120)))
+          ).map((time, index, all) => (
             <text
               key={time}
               x={x(time)}
