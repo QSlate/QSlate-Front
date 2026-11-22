@@ -41,17 +41,25 @@ export interface DashboardEditor {
 export function useDashboardEditor(): DashboardEditor {
   const dashboards = useDashboards();
   const actions = useDashboardActions();
-  const store = useDashboardStore();
+  const activeId = useDashboardStore((state) => state.activeId);
+  const layouts = useDashboardStore((state) => state.layouts);
+  const draft = useDashboardStore((state) => state.draft);
+  const catalogOpen = useDashboardStore((state) => state.catalogOpen);
+  const setActive = useDashboardStore((state) => state.setActive);
+  const saveLayout = useDashboardStore((state) => state.saveLayout);
+  const forgetLayout = useDashboardStore((state) => state.forgetLayout);
+  const startEditing = useDashboardStore((state) => state.startEditing);
+  const updateDraft = useDashboardStore((state) => state.updateDraft);
+  const stopEditing = useDashboardStore((state) => state.stopEditing);
+  const setCatalogOpen = useDashboardStore((state) => state.setCatalogOpen);
   const showToast = useLabStore((state) => state.showToast);
 
   const items = dashboards.data ?? [];
-  const active =
-    items.find((item) => item.id === store.activeId) ?? items[0] ?? null;
+  const active = items.find((item) => item.id === activeId) ?? items[0] ?? null;
   const key = active?.id ?? LOCAL_DASHBOARD_KEY;
-  const saved = layoutFor(store.layouts, key);
-  const layout = store.draft ?? saved;
-  const editing = store.draft !== null;
-  const { startEditing, updateDraft, stopEditing, setCatalogOpen } = store;
+  const saved = layoutFor(layouts, key);
+  const layout = draft ?? saved;
+  const editing = draft !== null;
 
   const start = useCallback(() => {
     if (!editing) startEditing(saved);
@@ -63,15 +71,14 @@ export function useDashboardEditor(): DashboardEditor {
   }, [editing, saved, setCatalogOpen, startEditing]);
 
   const commit = (id: string, next: DashboardLayout) => {
-    store.saveLayout(id, next);
-    if (id !== key) store.forgetLayout(key);
-    store.setActive(id);
+    saveLayout(id, next);
+    if (id !== key) forgetLayout(key);
+    setActive(id);
     stopEditing();
     showToast('Dashboard enregistré', 'success');
   };
 
   const save = () => {
-    const draft = store.draft;
     if (!draft || actions.save.isPending || actions.create.isPending) return;
     if (!active) {
       actions.create.mutate(DEFAULT_DASHBOARD_TITLE, {
@@ -103,7 +110,7 @@ export function useDashboardEditor(): DashboardEditor {
     editing,
     dirty: editing && !sameLayout(layout, saved),
     saving: actions.save.isPending || actions.create.isPending,
-    catalogOpen: store.catalogOpen,
+    catalogOpen,
     start,
     openCatalog,
     closeCatalog: () => setCatalogOpen(false),
