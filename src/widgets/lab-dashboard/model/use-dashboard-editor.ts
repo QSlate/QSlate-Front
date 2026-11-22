@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 import type { LabWidgetType } from '@/entities/widget';
 import {
@@ -28,6 +28,8 @@ export interface DashboardEditor {
   readonly editing: boolean;
   readonly dirty: boolean;
   readonly saving: boolean;
+  /** Last save failure, shown in the edit bar; the draft is kept. */
+  readonly saveError: string | null;
   readonly catalogOpen: boolean;
   readonly start: () => void;
   readonly openCatalog: () => void;
@@ -38,6 +40,8 @@ export interface DashboardEditor {
   readonly cancel: () => void;
   readonly save: () => void;
 }
+
+const SAVE_ERROR = "Impossible d'enregistrer le dashboard.";
 
 /** Edit session of the active dashboard ("Personnaliser"). */
 export function useDashboardEditor(): DashboardEditor {
@@ -55,6 +59,7 @@ export function useDashboardEditor(): DashboardEditor {
   const stopEditing = useDashboardStore((state) => state.stopEditing);
   const setCatalogOpen = useDashboardStore((state) => state.setCatalogOpen);
   const showToast = useLabStore((state) => state.showToast);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const items = dashboards.data ?? [];
   const active = items.find((item) => item.id === activeId) ?? items[0] ?? null;
@@ -64,8 +69,15 @@ export function useDashboardEditor(): DashboardEditor {
   const editing = draft !== null;
 
   const start = useCallback(() => {
-    if (!editing) startEditing(saved);
+    if (editing) return;
+    setSaveError(null);
+    startEditing(saved);
   }, [editing, saved, startEditing]);
+
+  const cancel = useCallback(() => {
+    setSaveError(null);
+    stopEditing();
+  }, [stopEditing]);
 
   const openCatalog = useCallback(() => {
     if (!editing) startEditing(saved);
@@ -82,11 +94,11 @@ export function useDashboardEditor(): DashboardEditor {
 
   const save = () => {
     if (!draft || actions.save.isPending || actions.create.isPending) return;
+    setSaveError(null);
     if (!active) {
       actions.create.mutate(DEFAULT_DASHBOARD_TITLE, {
         onSuccess: (created) => commit(created.id, draft),
-        onError: () =>
-          showToast("Impossible d'enregistrer le dashboard.", 'error'),
+        onError: () => setSaveError(SAVE_ERROR),
       });
       return;
     }
@@ -100,7 +112,7 @@ export function useDashboardEditor(): DashboardEditor {
             'warning'
           );
         } else {
-          showToast("Impossible d'enregistrer le dashboard.", 'error');
+          setSaveError(SAVE_ERROR);
         }
       },
     });
@@ -112,6 +124,7 @@ export function useDashboardEditor(): DashboardEditor {
     editing,
     dirty: editing && !sameLayout(layout, saved),
     saving: actions.save.isPending || actions.create.isPending,
+    saveError: editing ? saveError : null,
     catalogOpen,
     start,
     openCatalog,
@@ -119,7 +132,7 @@ export function useDashboardEditor(): DashboardEditor {
     change: updateDraft,
     add: (type) => updateDraft(addDashboardWidget(layout, type)),
     remove: (type) => updateDraft(removeDashboardWidget(layout, type)),
-    cancel: stopEditing,
+    cancel,
     save,
   };
 }

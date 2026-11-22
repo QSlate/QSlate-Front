@@ -100,6 +100,33 @@ describe('useDashboardEditor', () => {
     expect(list.mock.calls.length).toBeGreaterThan(1);
   });
 
+  it('keeps the draft and exposes the error when the save fails', async () => {
+    vi.spyOn(apiClient, 'getDashboards').mockResolvedValue({
+      items: [SUMMARY],
+    });
+    vi.spyOn(apiClient, 'getDashboard').mockResolvedValue({
+      ...SUMMARY,
+      widgets: [],
+      layout: [],
+    });
+    vi.spyOn(apiClient, 'updateDashboardLayout').mockRejectedValue(
+      new ApiError(500, 'internal', 'boom')
+    );
+    const { result } = renderHook(() => useDashboardEditor(), { wrapper });
+    await waitFor(() => expect(result.current.active).not.toBeNull());
+
+    act(() => result.current.start());
+    act(() => result.current.remove('trades'));
+    act(() => result.current.save());
+
+    await waitFor(() => expect(result.current.saveError).not.toBeNull());
+    expect(result.current.editing).toBe(true);
+    expect(result.current.dirty).toBe(true);
+
+    act(() => result.current.cancel());
+    expect(result.current.saveError).toBeNull();
+  });
+
   it('creates a server dashboard on the first save', async () => {
     vi.spyOn(apiClient, 'getDashboards').mockResolvedValue({ items: [] });
     const create = vi
