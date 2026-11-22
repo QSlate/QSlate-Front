@@ -292,6 +292,19 @@ select:not(:disabled) {
   cursor: pointer;
 }
 
+/* Dashboard resize corner: always visible, inset from the card edge. */
+.react-grid-item > .react-resizable-handle.qs-resize-corner {
+  right: 6px;
+  bottom: 6px;
+  width: 14px;
+  height: 14px;
+  opacity: 1;
+}
+
+.react-grid-item > .react-resizable-handle.qs-resize-corner::after {
+  content: none;
+}
+
 .react-grid-placeholder {
   background: var(--accent) !important;
   opacity: 0.08 !important;

@@ -2,11 +2,12 @@
 
 import 'react-grid-layout/css/styles.css';
 
-import { useState } from 'react';
+import { type Ref, useState } from 'react';
 import {
   GridLayout,
   type Layout,
   type LayoutItem,
+  type ResizeHandleAxis,
   useContainerWidth,
 } from 'react-grid-layout';
 
@@ -48,11 +49,23 @@ function toGrid(layout: DashboardLayout, editing: boolean): Layout {
   });
 }
 
-function ResizeCorner() {
+/**
+ * Resize corner. A render function (not an element) so react-resizable's
+ * ref and mouse/touch handlers land on the DOM node itself.
+ */
+export function renderResizeCorner(
+  axis: ResizeHandleAxis,
+  ref: Ref<HTMLElement>
+) {
   return (
     <span
+      ref={ref}
       aria-hidden="true"
-      className="react-resizable-handle absolute bottom-1.5 right-1.5 z-[3] size-3.5 cursor-se-resize rounded-br-[5px] border-b-[2.5px] border-r-[2.5px] border-brand"
+      className={cn(
+        'react-resizable-handle',
+        `react-resizable-handle-${axis}`,
+        'qs-resize-corner z-[3] rounded-br-[5px] border-b-[2.5px] border-r-[2.5px] border-brand'
+      )}
     />
   );
 }
@@ -129,7 +142,7 @@ export function DashboardGrid({
           resizeConfig={{
             enabled: editing,
             handles: ['se'],
-            handleComponent: <ResizeCorner />,
+            handleComponent: renderResizeCorner,
           }}
           onDragStop={(next) => onChange(fromGridLayout(next))}
           onResize={(_layout, _old, item) => setResizing(item)}
