@@ -1,11 +1,9 @@
-import './lab.css';
-
 import type { Metadata } from 'next';
 
 import { LabWorkspace } from './LabWorkspace';
 
 export const metadata: Metadata = {
-  title: 'Lab Workspace · QSlate',
+  title: 'Lab · QSlate',
   description: 'Hyper-modular quantitative backtesting laboratory',
 };
 

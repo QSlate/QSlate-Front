@@ -1,20 +1,19 @@
-import '../lab.css';
-
 import type { Metadata } from 'next';
 
-import { LabShell } from '@/widgets/lab-shell';
+import { LabHeader } from '@/widgets/lab-frame';
 import { MarketplaceView } from '@/widgets/marketplace';
 
 export const metadata: Metadata = {
-  title: 'Widget Marketplace · QSlate',
+  title: 'Market · QSlate',
   description:
     'Discover and embed verified quantitative trading modules, alternative data, and risk analytics',
 };
 
 export default function MarketplacePage() {
   return (
-    <LabShell>
+    <>
+      <LabHeader title="Market" />
       <MarketplaceView />
-    </LabShell>
+    </>
   );
 }

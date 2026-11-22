@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 
 import { DEFAULT_LAYOUT, useLayoutStore } from '@/entities/layout';
 import { useAuthStore } from '@/entities/user/model';
-import { useBacktest } from '@/features/run-backtest/BacktestProvider';
+import { useBacktest } from '@/features/run-backtest';
 import { useHydratedStore } from '@/shared/lib/store';
 
 export function LabWorkspaceHeader() {

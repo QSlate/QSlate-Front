@@ -13,18 +13,9 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 
 import { DEFAULT_LAYOUT, useLayoutStore } from '@/entities/layout';
-import { useUserStore } from '@/entities/user/model';
-import { CustomDatasetsDrawer } from '@/features/custom-datasets';
 import { useLabStore } from '@/features/lab-state';
-import { StrategyOptimizationModal } from '@/features/optimize-strategy';
-import {
-  BacktestProvider,
-  useBacktest,
-} from '@/features/run-backtest/BacktestProvider';
 import { useHydratedStore } from '@/shared/lib/store';
 import { Dialog } from '@/shared/ui/dialog';
-import { Toast } from '@/shared/ui/toast';
-import { AddWidgetDrawer } from '@/widgets/add-widget-drawer';
 import {
   MonteCarloWidget,
   OrderBookWidget,
@@ -35,7 +26,6 @@ import {
   EquityToolbar,
   EquityWidget,
   MetricsWidget,
-  ResultControlsProvider,
   TradeLogWidget,
   TradeToolbar,
 } from '@/widgets/backtest-results';
@@ -43,8 +33,7 @@ import {
   DynamicGridWrapper,
   type WidgetDefinition,
 } from '@/widgets/dynamic-grid';
-import { ExecutionLogsConsole } from '@/widgets/execution-logs';
-import { LabSidebar } from '@/widgets/lab-sidebar/LabSidebar';
+import { LabHeader } from '@/widgets/lab-frame';
 import { LabToolbar } from '@/widgets/lab-toolbar/LabToolbar';
 
 import { LabWorkspaceHeader } from './LabWorkspaceHeader';
@@ -112,22 +101,16 @@ const widgets: Record<string, WidgetDefinition & { description: string }> = {
   },
 };
 
-function Workspace() {
+export function LabWorkspace() {
   const layout = useHydratedStore(
     useLayoutStore,
     (state) => state.layout,
     DEFAULT_LAYOUT
   );
-  const colorblind = useHydratedStore(
-    useUserStore,
-    (state) => state.colorblindMode,
-    'none'
-  );
   const removeWidget = useLayoutStore((state) => state.removeWidget);
   const openDrawer = useLabStore((state) => state.setAddWidgetDrawerOpen);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [rowHeight, setRowHeight] = useState(32);
-  const { error, run, status } = useBacktest();
   useEffect(() => {
     const resize = () =>
       setRowHeight(
@@ -153,52 +136,33 @@ function Workspace() {
   const ExpandedToolbar = expandedWidget?.toolbar;
 
   return (
-    <div className="lab-shell" data-colorblind={colorblind}>
-      <LabSidebar />
-      <main className="lab-main">
-        <LabToolbar onAddWidget={() => openDrawer(true)} />
-        {error ? (
-          <div className="lab-error" role="alert">
-            <span>{error}</span>
+    <>
+      <LabHeader title="Lab" />
+      <LabToolbar onAddWidget={() => openDrawer(true)} />
+      <section className="lab-workspace" aria-label="Espace de travail du Lab">
+        <LabWorkspaceHeader />
+        {layout.length ? (
+          <DynamicGridWrapper
+            widgets={visibleWidgets}
+            onRemove={removeWidget}
+            onExpand={setExpanded}
+            rowHeight={rowHeight}
+          />
+        ) : (
+          <div className="lab-empty-workspace">
+            <ChartNoAxesCombined size={32} strokeWidth={1} />
+            <h2>A clear space for your next idea.</h2>
+            <p>Add a widget to start exploring your strategy.</p>
             <button
               type="button"
-              onClick={() => void run()}
-              disabled={status === 'running'}
+              className="lab-button"
+              onClick={() => openDrawer(true)}
             >
-              Try again
+              Add Widget
             </button>
           </div>
-        ) : null}
-        <section className="lab-workspace" aria-label="Lab workspace">
-          <LabWorkspaceHeader />
-          {layout.length ? (
-            <DynamicGridWrapper
-              widgets={visibleWidgets}
-              onRemove={removeWidget}
-              onExpand={setExpanded}
-              rowHeight={rowHeight}
-            />
-          ) : (
-            <div className="lab-empty-workspace">
-              <ChartNoAxesCombined size={32} strokeWidth={1} />
-              <h2>A clear space for your next idea.</h2>
-              <p>Add a widget to start exploring your strategy.</p>
-              <button
-                type="button"
-                className="lab-button"
-                onClick={() => openDrawer(true)}
-              >
-                Add Widget
-              </button>
-            </div>
-          )}
-        </section>
-      </main>
-      <AddWidgetDrawer />
-      <ExecutionLogsConsole />
-      <StrategyOptimizationModal />
-      <CustomDatasetsDrawer />
-      <Toast />
+        )}
+      </section>
       {expandedWidget && ExpandedComponent ? (
         <Dialog
           title={expandedWidget.title}
@@ -215,16 +179,6 @@ function Workspace() {
           </div>
         </Dialog>
       ) : null}
-    </div>
-  );
-}
-
-export function LabWorkspace() {
-  return (
-    <BacktestProvider>
-      <ResultControlsProvider>
-        <Workspace />
-      </ResultControlsProvider>
-    </BacktestProvider>
+    </>
   );
 }

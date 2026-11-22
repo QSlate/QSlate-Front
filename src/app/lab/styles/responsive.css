@@ -1,8 +1,4 @@
 @media (min-width: 1600px) {
-  .lab-sidebar {
-    width: 214px;
-    flex-basis: 214px;
-  }
   .lab-toolbar {
     gap: 18px;
   }
@@ -26,10 +22,6 @@
   }
 }
 @media (max-width: 1100px) {
-  .lab-sidebar {
-    width: 170px;
-    flex-basis: 170px;
-  }
   .lab-toolbar {
     flex-wrap: wrap;
   }
@@ -56,35 +48,6 @@
   }
 }
 @media (max-width: 767px) {
-  .lab-sidebar,
-  .lab-sidebar.is-collapsed {
-    width: 48px;
-    flex-basis: 48px;
-  }
-  .lab-sidebar .sidebar-label {
-    display: none;
-  }
-  .lab-brand {
-    justify-content: center;
-    padding: 0;
-  }
-  .lab-nav-item {
-    justify-content: center;
-    padding: 10px 0;
-  }
-  .lab-sidebar-bottom {
-    padding: 6px;
-  }
-  .lab-user-card {
-    border: 0;
-    padding: 4px;
-  }
-  .lab-sidebar-controls {
-    flex-direction: column;
-  }
-  .lab-collapse-button {
-    display: none;
-  }
   .lab-toolbar {
     padding: 8px;
     gap: 8px;
@@ -265,10 +228,6 @@
 }
 
 @media (pointer: coarse) {
-  .lab-sidebar .lab-nav-item,
-  .lab-sidebar-controls .lab-button {
-    min-height: 44px;
-  }
   .lab-toolbar-actions .lab-button,
   .lab-select-shell,
   .lab-date-range,

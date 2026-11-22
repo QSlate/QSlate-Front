@@ -1,19 +1,18 @@
-import '../lab.css';
-
 import type { Metadata } from 'next';
 
 import { BacktestRunsView } from '@/widgets/backtest-runs';
-import { LabShell } from '@/widgets/lab-shell';
+import { LabHeader } from '@/widgets/lab-frame';
 
 export const metadata: Metadata = {
-  title: 'Backtest Runs · QSlate',
+  title: 'Historique · QSlate',
   description: 'Auditable institutional quantitative simulation run history',
 };
 
 export default function RunsPage() {
   return (
-    <LabShell>
+    <>
+      <LabHeader title="Historique" />
       <BacktestRunsView />
-    </LabShell>
+    </>
   );
 }
