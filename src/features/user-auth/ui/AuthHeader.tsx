@@ -8,7 +8,7 @@ import {
   selectColorblindMode,
   useUserStore,
   useUserTheme,
-} from '@/entities/user/model';
+} from '@/entities/user';
 import { useHydratedStore } from '@/shared/lib/store';
 
 export function AuthHeader() {

@@ -10,7 +10,7 @@ import {
   vi,
 } from 'vitest';
 
-import { useAuthStore } from '@/entities/user/model';
+import { useAuthStore } from '@/entities/user';
 import { apiClient, type MarketplaceItem } from '@/shared/api';
 import { renderWithQuery } from '@/shared/lib/test';
 

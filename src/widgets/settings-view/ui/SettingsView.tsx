@@ -20,7 +20,7 @@ import {
   useState,
 } from 'react';
 
-import { useAuthStore, useUserStore } from '@/entities/user/model';
+import { useAuthStore, useUserStore } from '@/entities/user';
 import { useLabStore } from '@/features/lab-state';
 import { apiClient, type APIKeyDto, type NewAPIKeyDto } from '@/shared/api';
 import { cn } from '@/shared/lib/class-names';

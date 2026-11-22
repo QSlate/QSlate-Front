@@ -9,7 +9,7 @@ import { Check, Download, LayoutGrid, Search, Star, Store } from 'lucide-react';
 import { useDeferredValue, useState } from 'react';
 
 import { useInvalidateStrategies, useStrategies } from '@/entities/strategy';
-import { useAuthStore } from '@/entities/user/model';
+import { useAuthStore } from '@/entities/user';
 import { useLabStore } from '@/features/lab-state';
 import { apiClient, type MarketplaceItem } from '@/shared/api';
 import { cn, FOCUS_RING } from '@/shared/lib/class-names';

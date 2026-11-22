@@ -3,8 +3,8 @@
 import { ArrowRight, Play } from 'lucide-react';
 import Link from 'next/link';
 
-import { useUserTheme } from '@/entities/user/model';
-import { DeviceShowcase } from '@/shared/ui/device-showcase/DeviceShowcase';
+import { useUserTheme } from '@/entities/user';
+import { DeviceShowcase } from '@/shared/ui/device-showcase';
 
 export function LandingHero() {
   const theme = useUserTheme();

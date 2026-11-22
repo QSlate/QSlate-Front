@@ -6,11 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import {
-  useAuthStore,
-  useUserStore,
-  useUserTheme,
-} from '@/entities/user/model';
+import { useAuthStore, useUserStore, useUserTheme } from '@/entities/user';
 import { useHydratedStore } from '@/shared/lib/store';
 
 export function MarketingNavbar() {

@@ -17,7 +17,7 @@ import {
   type BacktestWatchOptions,
   EMPTY_METRICS,
 } from '@/entities/backtest';
-import { useAuthStore } from '@/entities/user/model';
+import { useAuthStore } from '@/entities/user';
 import { useLabStore } from '@/features/lab-state';
 import { ApiError } from '@/shared/api';
 

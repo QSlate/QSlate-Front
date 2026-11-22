@@ -9,7 +9,7 @@ import {
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useUserStore } from '@/entities/user/model';
+import { useUserStore } from '@/entities/user';
 import { ThemeSync } from '@/features/theme-sync';
 
 const render = (ui: ReactElement) => renderUI(ui, { wrapper: ThemeSync });

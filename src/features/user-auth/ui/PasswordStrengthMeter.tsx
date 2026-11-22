@@ -2,7 +2,7 @@
 
 import { Check, X } from 'lucide-react';
 
-import { selectColorblindMode, useUserStore } from '@/entities/user/model';
+import { selectColorblindMode, useUserStore } from '@/entities/user';
 import { useHydratedStore } from '@/shared/lib/store';
 
 export interface PasswordCriteria {

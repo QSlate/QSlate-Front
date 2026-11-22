@@ -17,7 +17,7 @@ import {
   vi,
 } from 'vitest';
 
-import { useUserStore } from '@/entities/user/model';
+import { useUserStore } from '@/entities/user';
 import { apiClient } from '@/shared/api';
 import { AppearanceProvider } from '@/shared/theme';
 

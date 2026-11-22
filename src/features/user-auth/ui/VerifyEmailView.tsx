@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-import { useAuthStore } from '@/entities/user/model';
+import { useAuthStore } from '@/entities/user';
 import { apiClient, ApiError } from '@/shared/api';
 
 export function VerifyEmailView() {

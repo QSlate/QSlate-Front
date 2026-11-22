@@ -7,7 +7,7 @@ import {
   DEFAULT_USER_PREFERENCES,
   useAuthStore,
   useUserStore,
-} from '@/entities/user/model';
+} from '@/entities/user';
 import { apiClient } from '@/shared/api';
 import { useAppearance } from '@/shared/theme';
 

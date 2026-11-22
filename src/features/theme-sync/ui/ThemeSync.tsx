@@ -9,7 +9,7 @@ import {
   useAuthStore,
   useUserStore,
   useUserTheme,
-} from '@/entities/user/model';
+} from '@/entities/user';
 import { apiClient } from '@/shared/api';
 import { useHydratedStore } from '@/shared/lib/store';
 import {

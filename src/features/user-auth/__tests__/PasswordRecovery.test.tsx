@@ -2,7 +2,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useAuthStore } from '@/entities/user/model';
+import { useAuthStore } from '@/entities/user';
 import { apiClient } from '@/shared/api';
 
 import { ForgotPasswordForm } from '../ui/ForgotPasswordForm';

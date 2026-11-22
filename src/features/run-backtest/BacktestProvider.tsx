@@ -22,7 +22,7 @@ import {
   liveBacktestService,
   MAX_RUN_LOG_LINES,
 } from '@/entities/backtest';
-import { useAuthStore } from '@/entities/user/model';
+import { useAuthStore } from '@/entities/user';
 import { useLabStore } from '@/features/lab-state';
 import { apiClient, type BacktestJob } from '@/shared/api';
 
