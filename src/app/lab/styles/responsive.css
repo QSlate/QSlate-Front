@@ -1,39 +1,10 @@
 @media (min-width: 1600px) {
-  .lab-toolbar {
-    gap: 18px;
-  }
-  .lab-config-fields {
-    gap: 10px;
-  }
-  .lab-timeframe {
-    width: 95px;
-  }
   .lab-trades td {
     padding-top: 6px;
     padding-bottom: 6px;
   }
 }
-@media (max-width: 1250px) {
-  .lab-toolbar {
-    gap: 7px;
-  }
-  .lab-strategy {
-    min-width: 160px;
-  }
-}
 @media (max-width: 1100px) {
-  .lab-toolbar {
-    flex-wrap: wrap;
-  }
-  .lab-config-fields {
-    flex-basis: 100%;
-  }
-  .lab-toolbar-actions {
-    margin-left: auto;
-  }
-  .lab-select-shell {
-    max-width: none;
-  }
   .lab-shell .lab-widget-title {
     font-size: 9px;
   }
@@ -43,68 +14,8 @@
   .lab-ranges button {
     padding: 2px 3px;
   }
-  .lab-strategy-label {
-    display: none;
-  }
 }
 @media (max-width: 767px) {
-  .lab-toolbar {
-    padding: 8px;
-    gap: 8px;
-  }
-  .lab-config-fields {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 68px;
-    gap: 6px;
-  }
-  .lab-strategy {
-    grid-column: 1 / -1;
-    min-width: 0;
-  }
-  .lab-select-shell,
-  .lab-timeframe,
-  .lab-date-range,
-  .lab-capital {
-    height: 30px;
-  }
-  .lab-date-range {
-    grid-column: 1 / -1;
-    justify-content: center;
-  }
-  .lab-date-range input {
-    flex: 1;
-    width: 80px;
-    max-width: 120px;
-    font-size: 10px;
-  }
-  .lab-timeframe {
-    grid-column: 2;
-    grid-row: 3;
-    width: 100%;
-  }
-  .lab-capital {
-    grid-column: 1;
-    grid-row: 3;
-  }
-  .lab-capital input {
-    flex: 1;
-  }
-  .lab-toolbar-actions {
-    width: 100%;
-    justify-content: space-between;
-    gap: 4px;
-  }
-  .lab-toolbar-actions .lab-button {
-    padding: 6px;
-    min-height: 36px;
-    font-size: 10px !important;
-  }
-  .lab-run-button kbd {
-    display: none;
-  }
-  .lab-colorblind > span:not(.lab-palette) {
-    display: none;
-  }
   .lab-workspace {
     padding: 0 8px 8px;
   }
@@ -225,16 +136,6 @@
 .lab-shell .lab-widget[data-minimized='true'] .widget-action-bar {
   width: auto;
   flex-wrap: nowrap;
-}
-
-@media (pointer: coarse) {
-  .lab-toolbar-actions .lab-button,
-  .lab-select-shell,
-  .lab-date-range,
-  .lab-timeframe,
-  .lab-capital {
-    min-height: 40px;
-  }
 }
 
 @media (max-width: 375px) {
