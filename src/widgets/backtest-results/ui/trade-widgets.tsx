@@ -50,8 +50,13 @@ function TradeFrame({ label, render }: TradeFrameProps) {
   );
 }
 
+const ONE_DECIMAL = new Intl.NumberFormat('fr-FR', {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
 function binLabel(from: number, to: number): string {
-  return `${from.toFixed(1)} à ${to.toFixed(1)} %`;
+  return `${ONE_DECIMAL.format(from)} à ${ONE_DECIMAL.format(to)} %`;
 }
 
 function Histogram({ trades }: { readonly trades: readonly Trade[] }) {
@@ -95,9 +100,9 @@ function Histogram({ trades }: { readonly trades: readonly Trade[] }) {
         aria-hidden="true"
         className="flex justify-between font-mono text-[10.5px] text-fg-3"
       >
-        <span>▼ {bins[0]?.from.toFixed(1)} %</span>
+        <span>{formatSignedPercent(bins[0]?.from ?? 0)}</span>
         <span>0 %</span>
-        <span>▲ {bins[bins.length - 1]?.to.toFixed(1)} %</span>
+        <span>{formatSignedPercent(bins[bins.length - 1]?.to ?? 0)}</span>
       </div>
       <ChartDataTable
         caption="Nombre de trades par tranche de rendement"
