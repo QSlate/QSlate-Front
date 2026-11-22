@@ -1,16 +1,14 @@
 'use client';
 
-import type { BacktestRunRequest } from '@/entities/backtest';
 import { formatDatasetLabel, useRunDatasets } from '@/entities/dataset';
 import { useStrategies } from '@/entities/strategy';
+import type { RunDescriptor } from '@/features/run-backtest';
 
 const AMOUNT = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 });
 const PERCENT = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 3 });
 
 /** "RsiTrend · ETH / USDT · 1 h · 10 000 USD · frais 0,1 %" for a finished run. */
-export function useRunSummary(
-  request: BacktestRunRequest | null
-): string | null {
+export function useRunSummary(request: RunDescriptor | null): string | null {
   const strategies = useStrategies();
   const datasets = useRunDatasets();
   if (!request) return null;
@@ -21,8 +19,12 @@ export function useRunSummary(
   return [
     strategy?.name,
     dataset ? formatDatasetLabel(dataset) : undefined,
-    `${AMOUNT.format(request.initialCapital)} USD`,
-    `frais ${PERCENT.format(request.commissionRate * 100)} %`,
+    request.initialCapital === null
+      ? undefined
+      : `${AMOUNT.format(request.initialCapital)} USD`,
+    request.commissionRate === null
+      ? undefined
+      : `frais ${PERCENT.format(request.commissionRate * 100)} %`,
   ]
     .filter(Boolean)
     .join(' · ');

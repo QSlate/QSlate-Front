@@ -57,7 +57,7 @@ export function RunStatusStrip({ children }: RunStatusStripProps) {
   const { status, activeRun, lastRun, runLogs, result } = useBacktest();
   const running = status === 'running' || status === 'cancelling';
   const now = useNow(running || lastRun !== null, running ? 1_000 : 30_000);
-  const summary = useRunSummary(lastRun?.request ?? null);
+  const summary = useRunSummary(lastRun?.descriptor ?? null);
   const progress = activeRun?.job?.progress ?? null;
   const lastLine = runLogs.length > 0 ? runLogs[runLogs.length - 1] : null;
 

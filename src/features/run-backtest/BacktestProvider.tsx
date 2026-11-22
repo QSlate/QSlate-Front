@@ -24,7 +24,7 @@ import {
 } from '@/entities/backtest';
 import { useAuthStore } from '@/entities/user/model';
 import { useLabStore } from '@/features/lab-state';
-import { apiClient } from '@/shared/api';
+import { apiClient, type BacktestJob } from '@/shared/api';
 
 import {
   clearActiveRun,
@@ -46,11 +46,54 @@ export interface ActiveRun {
 }
 
 /** The last run that finished in this session (for the summary line). */
+/** What the status strip says about a finished run. */
+export interface RunDescriptor {
+  readonly strategyId: string;
+  readonly datasetId: string;
+  readonly initialCapital: number | null;
+  readonly commissionRate: number | null;
+}
+
 export interface FinishedRun {
   readonly backtestId: string;
-  readonly request: BacktestRunRequest | null;
+  readonly descriptor: RunDescriptor | null;
   readonly startedAt: number;
   readonly finishedAt: number;
+}
+
+function describeRequest(
+  request: BacktestRunRequest | null
+): RunDescriptor | null {
+  return request
+    ? {
+        strategyId: request.strategyId,
+        datasetId: request.datasetId,
+        initialCapital: request.initialCapital,
+        commissionRate: request.commissionRate,
+      }
+    : null;
+}
+
+/** Timing and settings of a completed job, as stored by the lab service. */
+export function finishedRunFromJob(job: BacktestJob): FinishedRun | null {
+  const startedAt = Date.parse(job.created_at);
+  const finishedAt = Date.parse(job.updated_at);
+  if (!Number.isFinite(startedAt) || !Number.isFinite(finishedAt)) return null;
+  const capital = Number(job.input.initial_capital);
+  return {
+    backtestId: job.backtest_id,
+    startedAt,
+    finishedAt,
+    descriptor: {
+      strategyId: job.input.strategy_id,
+      datasetId: job.input.dataset_id,
+      initialCapital: Number.isFinite(capital) ? capital : null,
+      commissionRate:
+        typeof job.input.commission_rate === 'number'
+          ? job.input.commission_rate
+          : null,
+    },
+  };
 }
 
 /** Loading state of the displayed result. */
@@ -194,7 +237,7 @@ export function BacktestProvider({
         setLoadedBacktestId(run.backtestId);
         setLastRun({
           backtestId: run.backtestId,
-          request: run.request,
+          descriptor: describeRequest(run.request),
           startedAt: run.startedAt,
           finishedAt: Date.now(),
         });
@@ -340,9 +383,14 @@ export function BacktestProvider({
         setResultStatus((current) =>
           current === 'empty' ? 'loading' : current
         );
-        const loaded = await service.fetchResult(targetId);
+        const [loaded, job] = await Promise.all([
+          service.fetchResult(targetId),
+          apiClient.getBacktestStatus(targetId).catch(() => null),
+        ]);
         if (!cancelled && version === resultVersionRef.current) {
           commitResult(loaded);
+          if (job && job.status === 'completed')
+            setLastRun(finishedRunFromJob(job));
         }
       } catch {
         // Restoring is best effort: keep the current result, if any.
