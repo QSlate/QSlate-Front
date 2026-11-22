@@ -8,8 +8,8 @@ const projectRoot = path.resolve(fileURLToPath(new URL('.', import.meta.url)));
 const nextConfig: NextConfig = {
   // The Dockerfile runs .next/standalone/server.js
   output: 'standalone',
-  // Keep the dev "N" badge away from the lab rail avatar (bottom-left).
-  devIndicators: { position: 'bottom-right' },
+  // The dev "N" badge overlaps dashboard widgets; hide it entirely.
+  devIndicators: false,
   turbopack: { root: projectRoot },
   outputFileTracingRoot: projectRoot,
   webpack: (config) => {
