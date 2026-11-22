@@ -178,7 +178,12 @@ export function PriceChartCanvas({
       autoSize: true,
       crosshair: { mode: CrosshairMode.Normal },
       rightPriceScale: { borderVisible: false },
-      timeScale: { borderVisible: false, timeVisible: true },
+      // Hourly years hold ~9 000 bars: allow them to fit the width.
+      timeScale: {
+        borderVisible: false,
+        timeVisible: true,
+        minBarSpacing: 0.02,
+      },
       localization: { locale: 'fr-FR' },
     });
     const candleSeries = chart.addSeries(CandlestickSeries, {
@@ -223,6 +228,17 @@ export function PriceChartCanvas({
       markerPlugin.setMarkers(markerData(dataRef.current.markers, palette));
     };
     retheme();
+    // autoSize measures the container asynchronously: re-apply the span
+    // once a real width exists, or "Tout" would fit a zero-width chart.
+    let sized = false;
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      if (sized || !entry || entry.contentRect.width === 0) return;
+      sized = true;
+      requestAnimationFrame(() =>
+        showSpan(chart, dataRef.current.candles, dataRef.current.spanSeconds)
+      );
+    });
+    resizeObserver.observe(container);
     const observer = new MutationObserver(retheme);
     observer.observe(document.documentElement, {
       attributes: true,
@@ -230,6 +246,7 @@ export function PriceChartCanvas({
     });
 
     return () => {
+      resizeObserver.disconnect();
       observer.disconnect();
       chart.unsubscribeCrosshairMove(handleCrosshair);
       markerPlugin.detach();
