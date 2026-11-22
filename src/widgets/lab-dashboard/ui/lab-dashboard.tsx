@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import { useDashboardStore } from '@/features/customize-lab';
 import { cn } from '@/shared/lib/class-names';
 import { isEscapeConsumed } from '@/shared/lib/dom';
-import { Button, EmptyState, Kbd } from '@/shared/ui';
+import { Button, EmptyState, Kbd, Tooltip } from '@/shared/ui';
 
 import type { WidgetComponents } from '../model/types';
 import { useDashboardEditor } from '../model/use-dashboard-editor';
@@ -145,14 +145,26 @@ export function CustomizeDashboardButton() {
   const exit = useExitEditMode(editor);
   return (
     <>
-      <Button
-        variant="secondary"
-        leadingIcon={<LayoutDashboard size={15} />}
-        aria-pressed={editor.editing}
-        onClick={editor.editing ? exit.request : editor.start}
+      {/* The label is visually hidden below xl: the tooltip names the icon. */}
+      <Tooltip
+        content={
+          editor.editing
+            ? 'Quitter la personnalisation'
+            : 'Personnaliser le dashboard'
+        }
       >
-        <span className="max-xl:sr-only">Personnaliser</span>
-      </Button>
+        {(triggerProps) => (
+          <Button
+            {...triggerProps}
+            variant="secondary"
+            leadingIcon={<LayoutDashboard size={15} />}
+            aria-pressed={editor.editing}
+            onClick={editor.editing ? exit.request : editor.start}
+          >
+            <span className="max-xl:sr-only">Personnaliser</span>
+          </Button>
+        )}
+      </Tooltip>
       {exit.dialog}
     </>
   );

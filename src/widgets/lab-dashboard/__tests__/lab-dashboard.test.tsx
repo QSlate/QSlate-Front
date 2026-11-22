@@ -119,6 +119,14 @@ describe('LabDashboard edit mode', () => {
     expect(toggle().getAttribute('aria-pressed')).toBe('false');
   });
 
+  it('names the icon-only toggle with a tooltip', () => {
+    renderLab();
+    fireEvent.focus(toggle());
+    expect(screen.getByRole('tooltip').textContent).toBe(
+      'Personnaliser le dashboard'
+    );
+  });
+
   it('asks before discarding unsaved changes', () => {
     renderLab();
     fireEvent.click(toggle());
