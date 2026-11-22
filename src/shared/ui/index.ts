@@ -16,5 +16,6 @@ export * from './select';
 export * from './skeleton';
 export * from './sparkline';
 export * from './stat';
+export * from './switch';
 export * from './tabs';
 export * from './tooltip';
