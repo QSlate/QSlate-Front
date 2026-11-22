@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { type BacktestResult, EMPTY_METRICS } from '@/entities/backtest';
@@ -10,7 +10,10 @@ import {
   SharpeWidget,
   WinRateWidget,
 } from '../ui/kpi-widgets';
-import { TradesTableWidget } from '../ui/trade-widgets';
+import {
+  TradeDistributionWidget,
+  TradesTableWidget,
+} from '../ui/trade-widgets';
 
 const backtest = vi.fn();
 vi.mock('@/features/run-backtest', () => ({
@@ -31,6 +34,20 @@ const RESULT: BacktestResult = {
   equity: [],
   trades: [],
   truncated: false,
+};
+
+const RESULT_TRADE: BacktestResult['trades'][number] = {
+  id: 't',
+  side: 'long',
+  entryTime: 1,
+  exitTime: 2,
+  entryPrice: 10,
+  exitPrice: 11,
+  sizeUsd: 100,
+  pnlUsd: 10,
+  pnlPct: 10,
+  feeUsd: 0,
+  exitReason: 'Take Profit',
 };
 
 function withResult(result: BacktestResult | null, status = 'idle') {
@@ -120,5 +137,23 @@ describe('result widgets', () => {
     render(<TradesTableWidget />);
     expect(screen.getAllByRole('row')).toHaveLength(3);
     screen.getByRole('button', { name: 'Perdants' }).click();
+  });
+
+  it('labels the trade distribution axes and explains each bar', () => {
+    const trade = RESULT_TRADE;
+    withResult({
+      ...RESULT,
+      trades: [
+        { ...trade, id: 'a', pnlPct: 10 },
+        { ...trade, id: 'b', pnlPct: -10 },
+        { ...trade, id: 'c', pnlPct: 5 },
+      ],
+    });
+    render(<TradeDistributionWidget />);
+    expect(screen.getAllByText('0').length).toBeGreaterThan(1);
+    expect(screen.getByText('+10 %')).toBeTruthy();
+    expect(screen.getByText('−10 %')).toBeTruthy();
+    fireEvent.keyDown(screen.getByRole('img'), { key: 'ArrowRight' });
+    expect(screen.getByRole('status').textContent).toMatch(/1 trade$/u);
   });
 });
