@@ -39,10 +39,19 @@ export function ThemeSync({ children }: { children?: ReactNode }) {
 
   const isInitialMount = useRef(true);
 
-  // Sync dataset attribute on document root
+  // Mirror appearance preferences on <html> so design tokens apply globally.
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (colorblindMode === 'none') {
+      delete root.dataset.colorblind;
+    } else {
+      root.dataset.colorblind = colorblindMode;
+    }
+  }, [colorblindMode]);
 
   // Hydrate preferences on login / mount
   useEffect(() => {
