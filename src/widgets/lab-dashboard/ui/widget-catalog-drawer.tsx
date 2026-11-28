@@ -160,6 +160,58 @@ function WidgetPreview({ type }: { readonly type: LabWidgetType }) {
           ))}
         </ChartPreview>
       );
+    case 'replay':
+      return (
+        <ChartPreview>
+          {[
+            [10, 10, 30, 14, 24, 'gain'],
+            [28, 6, 26, 10, 20, 'gain'],
+            [46, 10, 30, 14, 22, 'loss'],
+            [64, 4, 22, 8, 18, 'gain'],
+          ].map(([x, top, bottom, bodyTop, bodyBottom, tone]) => (
+            <g key={x}>
+              <path
+                d={`M${x} ${top} V${bottom}`}
+                stroke="var(--fg-3)"
+                strokeWidth="1.2"
+                vectorEffect="non-scaling-stroke"
+              />
+              <rect
+                x={Number(x) - 4}
+                y={bodyTop}
+                width="8"
+                height={Number(bodyBottom) - Number(bodyTop)}
+                rx="1.5"
+                fill={`var(--${tone})`}
+              />
+            </g>
+          ))}
+          <path
+            d="M74 2 V34"
+            stroke="var(--brand)"
+            strokeWidth="1"
+            strokeDasharray="2 2"
+            vectorEffect="non-scaling-stroke"
+          />
+          <rect
+            x="0"
+            y="39"
+            width="140"
+            height="3"
+            rx="1.5"
+            fill="var(--line-strong)"
+          />
+          <rect x="0" y="39" width="74" height="3" rx="1.5" fill="var(--a1)" />
+          <circle
+            cx="110"
+            cy="18"
+            r="9"
+            fill="var(--brand-soft)"
+            stroke="var(--brand-line)"
+          />
+          <path d="M107 13.5 L114.5 18 L107 22.5 Z" fill="var(--brand)" />
+        </ChartPreview>
+      );
     case 'drawdowns':
       return (
         <ChartPreview>
