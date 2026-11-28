@@ -30,3 +30,10 @@ export {
   useDashboardStore,
   useSavedDashboardLayouts,
 } from './model/dashboard-store';
+export {
+  DASHBOARD_TEMPLATES,
+  type DashboardTemplate,
+  type DashboardTemplateId,
+  DEFAULT_DASHBOARD_TEMPLATE,
+  templateLayout,
+} from './model/dashboard-templates';
