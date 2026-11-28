@@ -13,7 +13,7 @@ export interface PriceMarker {
 export const MAX_PRICE_MARKERS = 600;
 
 /** Index of the last candle starting at or before `time` (-1 if none). */
-function candleIndexAt(times: readonly number[], time: number): number {
+export function candleIndexAt(times: readonly number[], time: number): number {
   let low = 0;
   let high = times.length - 1;
   let found = -1;
