@@ -79,7 +79,7 @@ export function LabWorkspace() {
       ) : (
         <>
           <RunStatusStrip>
-            <DashboardTabs />
+            <DashboardTabs components={WIDGET_COMPONENTS} />
           </RunStatusStrip>
           <LabDashboard components={WIDGET_COMPONENTS} />
         </>
