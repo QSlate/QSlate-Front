@@ -4,7 +4,9 @@ import { Copy, Ellipsis, Pencil, Plus, Trash2 } from 'lucide-react';
 import { type FormEvent, useEffect, useId, useRef, useState } from 'react';
 
 import {
+  type DashboardTemplateId,
   DEFAULT_DASHBOARD_TITLE,
+  templateLayout,
   useActiveDashboardId,
   useDashboardActions,
   useDashboards,
@@ -14,6 +16,9 @@ import {
 import { useLabStore } from '@/features/lab-state';
 import { cn, FOCUS_RING } from '@/shared/lib/class-names';
 import { Button, Dialog, IconButton, Input } from '@/shared/ui';
+
+import type { WidgetComponents } from '../model/types';
+import { CreateDashboardDialog } from './create-dashboard-dialog';
 
 type DialogState =
   | { readonly kind: 'create' }
@@ -91,7 +96,12 @@ function TitleDialog({
  * Dashboard tabs: one per server dashboard (or a local "Mon dashboard"
  * before the first save), with create, rename, duplicate and delete.
  */
-export function DashboardTabs() {
+interface DashboardTabsProps {
+  /** Widget contents, for the template preview of "Nouveau dashboard". */
+  readonly components: WidgetComponents;
+}
+
+export function DashboardTabs({ components }: DashboardTabsProps) {
   const dashboards = useDashboards();
   const actions = useDashboardActions();
   const activeId = useActiveDashboardId();
@@ -132,9 +142,10 @@ export function DashboardTabs() {
 
   const failed = (message: string) => showToast(message, 'error');
 
-  const create = (title: string) =>
+  const create = (title: string, template: DashboardTemplateId) =>
     actions.create.mutate(title, {
       onSuccess: (created) => {
+        saveLayout(created.id, templateLayout(template));
         setActive(created.id);
         setDialog(null);
       },
@@ -284,10 +295,8 @@ export function DashboardTabs() {
         onClick={() => setDialog({ kind: 'create' })}
       />
       {dialog?.kind === 'create' ? (
-        <TitleDialog
-          heading="Nouveau dashboard"
-          initial=""
-          submitLabel="Créer"
+        <CreateDashboardDialog
+          components={components}
           pending={actions.create.isPending}
           onSubmit={create}
           onClose={() => setDialog(null)}
