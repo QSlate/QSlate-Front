@@ -35,7 +35,7 @@ describe('dashboard templates', () => {
   });
 
   it('keeps every widget in the complete template and none in the empty one', () => {
-    expect(templateLayout('complete')).toHaveLength(10);
+    expect(templateLayout('complete')).toHaveLength(11);
     expect(templateLayout('empty')).toEqual([]);
   });
 

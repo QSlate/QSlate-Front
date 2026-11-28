@@ -8,6 +8,9 @@ import { consumeEscape } from '@/shared/lib/dom';
 
 export type TooltipSide = 'top' | 'bottom' | 'right';
 
+/** Horizontal anchor of a top/bottom bubble: centered, or flush right. */
+export type TooltipAlign = 'center' | 'end';
+
 /** Props to spread on the focusable trigger element. */
 export interface TooltipTriggerProps {
   readonly 'aria-describedby': string | undefined;
@@ -19,17 +22,23 @@ export interface TooltipProps {
   /** Render prop receiving the ARIA props for the focusable trigger. */
   readonly children: (triggerProps: TooltipTriggerProps) => ReactNode;
   readonly side?: TooltipSide | undefined;
+  /** For top/bottom: `end` keeps the bubble inside a right-edge container. */
+  readonly align?: TooltipAlign | undefined;
   readonly className?: string | undefined;
 }
 
 // Each side also draws an invisible bridge (::before) over the gap between
 // trigger and bubble, so moving the pointer onto the bubble keeps it open.
 const SIDE_CLASSES: Readonly<Record<TooltipSide, string>> = {
-  bottom:
-    'left-1/2 top-[calc(100%+8px)] -translate-x-1/2 before:inset-x-0 before:-top-2 before:h-2',
-  top: 'bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 before:inset-x-0 before:-bottom-2 before:h-2',
+  bottom: 'top-[calc(100%+8px)] before:inset-x-0 before:-top-2 before:h-2',
+  top: 'bottom-[calc(100%+8px)] before:inset-x-0 before:-bottom-2 before:h-2',
   right:
     'left-[calc(100%+10px)] top-1/2 -translate-y-1/2 before:inset-y-0 before:-left-2.5 before:w-2.5',
+};
+
+const ALIGN_CLASSES: Readonly<Record<TooltipAlign, string>> = {
+  center: 'left-1/2 -translate-x-1/2',
+  end: 'right-0',
 };
 
 /**
@@ -41,6 +50,7 @@ export function Tooltip({
   content,
   children,
   side = 'bottom',
+  align = 'center',
   className,
 }: TooltipProps) {
   const id = useId();
@@ -74,7 +84,8 @@ export function Tooltip({
           id={id}
           className={cn(
             'absolute z-40 w-max before:absolute max-w-[250px] whitespace-normal rounded-[9px] bg-fg px-[11px] py-[9px] text-left text-xs font-normal leading-normal text-canvas shadow-pop',
-            SIDE_CLASSES[side]
+            SIDE_CLASSES[side],
+            side === 'right' ? null : ALIGN_CLASSES[align]
           )}
         >
           {content}

@@ -11,9 +11,12 @@ import {
 } from '../model/dashboard-layout';
 
 describe('dashboard layout', () => {
-  it('places every widget but the opt-in price chart by default', () => {
+  it('places every widget but the opt-in price chart and replay by default', () => {
     expect(DEFAULT_DASHBOARD_LAYOUT).toHaveLength(9);
-    expect(availableWidgets(DEFAULT_DASHBOARD_LAYOUT)).toEqual(['price-chart']);
+    expect(availableWidgets(DEFAULT_DASHBOARD_LAYOUT)).toEqual([
+      'price-chart',
+      'replay',
+    ]);
   });
 
   it('drops unknown, duplicate and malformed stored items', () => {

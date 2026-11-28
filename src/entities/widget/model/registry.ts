@@ -66,6 +66,16 @@ export const LAB_WIDGETS: readonly LabWidgetDefinition[] = [
     minSize: { w: 5, h: 6 },
   },
   {
+    type: 'replay',
+    title: 'Replay du backtest',
+    description:
+      'Rejoue le backtest affiché bougie par bougie : le prix se dévoile et les achats et ventes de la stratégie apparaissent au moment où ils ont eu lieu.',
+    category: 'market',
+    tone: 'brand',
+    defaultSize: { w: 12, h: 10 },
+    minSize: { w: 6, h: 9 },
+  },
+  {
     type: 'drawdowns',
     title: 'Baisses dans le temps',
     description:

@@ -6,6 +6,7 @@ export type LabWidgetType =
   | 'win-rate'
   | 'capital-chart'
   | 'price-chart'
+  | 'replay'
   | 'drawdowns'
   | 'monthly-returns'
   | 'trade-distribution'

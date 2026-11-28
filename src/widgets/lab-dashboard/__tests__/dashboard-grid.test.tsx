@@ -20,6 +20,7 @@ const COMPONENTS: WidgetComponents = {
   'win-rate': Empty,
   'capital-chart': Empty,
   'price-chart': Empty,
+  replay: Empty,
   drawdowns: Empty,
   'monthly-returns': Empty,
   'trade-distribution': Empty,

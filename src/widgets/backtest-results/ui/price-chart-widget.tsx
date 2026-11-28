@@ -9,22 +9,14 @@ import {
   formatDatasetLabel,
   type RunDataset,
   useDatasetCandles,
-  useRunDatasets,
 } from '@/entities/dataset';
-import { useBacktest } from '@/features/run-backtest';
-import { cn } from '@/shared/lib/class-names';
 import { SegmentedControl } from '@/shared/ui';
 
-import {
-  directionOf,
-  formatAmount,
-  formatDayTime,
-  formatPrice,
-  formatSignedPercent,
-  MONTH_LABELS,
-} from '../model/format';
+import { formatAmount, formatPrice, MONTH_LABELS } from '../model/format';
 import { tradeMarkers } from '../model/price-markers';
+import { runRange, useRunDataset } from '../model/run-dataset';
 import { useResultView } from '../model/use-result-view';
+import { OhlcLegend } from './ohlc-legend';
 import {
   ResultEmpty,
   ResultError,
@@ -55,17 +47,6 @@ const SPANS: readonly {
   { value: '1y', label: '1A', ariaLabel: '1 an', seconds: 365 * DAY },
   { value: 'all', label: 'Tout', ariaLabel: 'Toute la période', seconds: null },
 ];
-
-/** Run period from the equity curve (the candles the engine read). */
-function runRange(
-  result: BacktestResult
-): { readonly from: number; readonly to: number } | null {
-  const first = result.equity[0];
-  const last = result.equity[result.equity.length - 1];
-  if (!first || !last || last.time <= first.time) return null;
-  // `end` is exclusive: include the last candle.
-  return { from: first.time, to: last.time + DAY };
-}
 
 /** Monthly OHLCV rows of the hidden data table. */
 function monthlyRows(candles: readonly Candle[]) {
@@ -98,48 +79,6 @@ function monthlyRows(candles: readonly Candle[]) {
       formatAmount(month.volume),
     ];
   });
-}
-
-interface OhlcLegendProps {
-  readonly candle: Candle;
-}
-
-/** "18 mars 25 14:00 · O … H … L … C … ▲ +0,4 % · Vol …" */
-function OhlcLegend({ candle }: OhlcLegendProps) {
-  const change =
-    candle.open === 0 ? 0 : ((candle.close - candle.open) / candle.open) * 100;
-  const direction = directionOf(change);
-  return (
-    <div className="pointer-events-none absolute left-1 top-0 z-[2] flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 rounded-md bg-[color-mix(in_srgb,var(--surface)_80%,transparent)] px-1.5 py-0.5 font-mono text-[10.5px] text-fg-3">
-      <span>{formatDayTime(candle.time)}</span>
-      {(
-        [
-          ['O', candle.open],
-          ['H', candle.high],
-          ['B', candle.low],
-          ['C', candle.close],
-        ] as const
-      ).map(([label, value]) => (
-        <span key={label}>
-          {label} <b className="font-medium text-fg">{formatPrice(value)}</b>
-        </span>
-      ))}
-      <b
-        className={cn(
-          'font-medium',
-          direction === 'up' && 'text-gain',
-          direction === 'down' && 'text-loss',
-          direction === 'flat' && 'text-fg-2'
-        )}
-      >
-        {formatSignedPercent(change, 2)}
-      </b>
-      <span>
-        Vol{' '}
-        <b className="font-medium text-fg-2">{formatAmount(candle.volume)}</b>
-      </span>
-    </div>
-  );
 }
 
 interface PriceChartProps {
@@ -234,27 +173,6 @@ function PriceChart({ result, dataset }: PriceChartProps) {
       />
     </div>
   );
-}
-
-/** Dataset of the displayed run, at the version the run read. */
-function useRunDataset(): {
-  readonly dataset: RunDataset | null;
-  readonly known: boolean;
-} {
-  const { lastRun } = useBacktest();
-  const datasets = useRunDatasets();
-  const descriptor = lastRun?.descriptor ?? null;
-  if (!descriptor) return { dataset: null, known: true };
-  const dataset = datasets.data?.find(
-    (item) => item.id === descriptor.datasetId
-  );
-  if (!dataset) return { dataset: null, known: !datasets.isPending };
-  return {
-    dataset: descriptor.datasetVersionId
-      ? { ...dataset, versionId: descriptor.datasetVersionId }
-      : dataset,
-    known: true,
-  };
 }
 
 /** "Graphique de prix": candlesticks, volume and trades of the run's data. */

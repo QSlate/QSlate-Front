@@ -51,26 +51,27 @@ export const DASHBOARD_TEMPLATES: readonly DashboardTemplate[] = [
     id: 'complete',
     title: 'Analyse complète',
     description:
-      'Tous les widgets : performance, risque, rendements mensuels, répartition et journal des trades.',
+      'Tous les widgets : performance, risque, rendements mensuels, répartition, journal des trades et replay.',
     layout: layoutOf([
       ...DEFAULT_DASHBOARD_LAYOUT.filter((item) => item.i !== 'trades').map(
         ({ i, x, y, w, h }): Placement => [i, x, y, w, h]
       ),
       ['price-chart', 0, 15, 12, 8],
       ['trades', 0, 23, 12, 7],
+      ['replay', 0, 30, 12, 10],
     ]),
   },
   {
     id: 'trades',
     title: 'Analyse des trades',
     description:
-      'Les entrées et sorties sur le prix, la part de trades gagnants, leur répartition et le journal détaillé.',
+      'Le replay du backtest bougie par bougie, la part de trades gagnants, leur répartition et le journal détaillé.',
     layout: layoutOf([
-      ['price-chart', 0, 0, 8, 8],
-      ['win-rate', 8, 0, 4, 3],
-      ['trade-distribution', 8, 3, 4, 5],
-      ['monthly-returns', 0, 8, 12, 5],
-      ['trades', 0, 13, 12, 7],
+      ['replay', 0, 0, 12, 10],
+      ['win-rate', 0, 10, 4, 5],
+      ['trade-distribution', 4, 10, 8, 5],
+      ['monthly-returns', 0, 15, 12, 5],
+      ['trades', 0, 20, 12, 7],
     ]),
   },
   {
