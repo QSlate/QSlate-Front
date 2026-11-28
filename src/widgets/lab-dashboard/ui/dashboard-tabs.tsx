@@ -18,6 +18,7 @@ import { cn, FOCUS_RING } from '@/shared/lib/class-names';
 import { Button, Dialog, IconButton, Input } from '@/shared/ui';
 
 import type { WidgetComponents } from '../model/types';
+import { useDashboardUrl } from '../model/use-dashboard-url';
 import { CreateDashboardDialog } from './create-dashboard-dialog';
 
 type DialogState =
@@ -94,7 +95,8 @@ function TitleDialog({
 
 /**
  * Dashboard tabs: one per server dashboard (or a local "Mon dashboard"
- * before the first save), with create, rename, duplicate and delete.
+ * before the first save), with create, rename, duplicate and delete. The
+ * shown dashboard is kept in the URL.
  */
 interface DashboardTabsProps {
   /** Widget contents, for the template preview of "Nouveau dashboard". */
@@ -102,6 +104,7 @@ interface DashboardTabsProps {
 }
 
 export function DashboardTabs({ components }: DashboardTabsProps) {
+  useDashboardUrl();
   const dashboards = useDashboards();
   const actions = useDashboardActions();
   const activeId = useActiveDashboardId();

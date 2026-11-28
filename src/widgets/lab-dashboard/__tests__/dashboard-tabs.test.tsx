@@ -188,3 +188,45 @@ describe('DashboardTabs creation', () => {
     );
   });
 });
+
+describe('DashboardTabs URL', () => {
+  const OTHER = { ...SUMMARY, id: 'o'.repeat(43), title: 'Swing' };
+
+  afterEach(() => window.history.replaceState(null, '', '/lab'));
+
+  it('opens the dashboard named in the URL', async () => {
+    vi.spyOn(apiClient, 'getDashboards').mockResolvedValue({
+      items: [SUMMARY, OTHER],
+    });
+    window.history.replaceState(null, '', `/lab?dashboard=${OTHER.id}`);
+    renderWithQuery(<DashboardTabs components={COMPONENTS} />);
+
+    await waitFor(() =>
+      expect(useDashboardStore.getState().activeId).toBe(OTHER.id)
+    );
+    const tab = await screen.findByRole('tab', { name: 'Swing' });
+    expect(tab.getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('ignores an unknown id and writes the shown dashboard', async () => {
+    window.history.replaceState(null, '', '/lab?dashboard=unknown&tab=1');
+    renderWithQuery(<DashboardTabs components={COMPONENTS} />);
+
+    await waitFor(() =>
+      expect(window.location.search).toBe(`?dashboard=${SUMMARY.id}&tab=1`)
+    );
+    expect(useDashboardStore.getState().activeId).toBe(SUMMARY.id);
+  });
+
+  it('follows a tab change', async () => {
+    vi.spyOn(apiClient, 'getDashboards').mockResolvedValue({
+      items: [SUMMARY, OTHER],
+    });
+    renderWithQuery(<DashboardTabs components={COMPONENTS} />);
+    fireEvent.click(await screen.findByRole('tab', { name: 'Swing' }));
+
+    await waitFor(() =>
+      expect(window.location.search).toBe(`?dashboard=${OTHER.id}`)
+    );
+  });
+});
