@@ -18,6 +18,7 @@ import {
 
 import type { Candle } from '@/entities/dataset';
 
+import { formatPrice } from '../model/format';
 import type { PriceMarker } from '../model/price-markers';
 
 export interface ChartPalette {
@@ -131,7 +132,8 @@ export function createCandlestickChart(
       timeVisible: true,
       minBarSpacing: 0.02,
     },
-    localization: { locale: 'fr-FR' },
+    // "64 210,5": French separators on the price axis and labels.
+    localization: { locale: 'fr-FR', priceFormatter: formatPrice },
   });
   const candles = chart.addSeries(CandlestickSeries, {
     priceLineVisible: false,
